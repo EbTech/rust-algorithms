@@ -1,0 +1,6 @@
+[package]
+name = "algorithms"
+version = "0.1.0"
+authors = ["EbTech <aramebtech@gmail.com>"]
+
+[dependencies]
