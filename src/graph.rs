@@ -62,15 +62,29 @@ impl<V, E> Graph<V, E> where V: Clone {
         self.verts[b].first = Some(self.edges.len() - 1);
     }
     
-    pub fn adj_list(&self, u: usize) -> Vec<(usize, usize)> {
-        let mut adj = Vec::new();
-        let mut next_e = self.verts[u].first;
-        while let Some(e) = next_e {
-            let v = self.edges[e ^ 1].endp;
-            next_e = self.edges[e].next;
-            adj.push((e, v));
+    pub fn adj_list<'a>(&'a self, u: usize) -> GraphIterator<'a, V, E> {
+        GraphIterator { graph: self, next_e: self.verts[u].first }
+    }
+}
+
+pub struct GraphIterator<'a, V: 'a, E: 'a> {
+    graph: &'a Graph<V, E>,
+    next_e: Option<usize>
+}
+
+impl<'a, V, E> ::std::iter::Iterator for GraphIterator<'a, V, E> {
+    // produces an outgoing edge and vertex
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(e) = self.next_e {
+            let v = self.graph.edges[e ^ 1].endp;
+            self.next_e = self.graph.edges[e].next;
+            Some((e, v))
         }
-        adj
+        else {
+            None
+        }
     }
 }
 
@@ -111,7 +125,7 @@ impl FlowGraph {
         g.verts[s].data.lev = Some(0);
         while let Some(u) = q.pop_front() {
             g.verts[u].data.cur = g.verts[u].first;
-            for (e, v) in g.adj_list(u) {
+            for (e, v) in g.adj_list(u).collect::<Vec<_>>() {
                 let edge = &g.edges[e];
                 if g.verts[v].data.lev == None && edge.data.flow < edge.data.cap {
                     q.push_back(v);
