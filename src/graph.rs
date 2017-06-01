@@ -61,6 +61,17 @@ impl<V, E> Graph<V, E> where V: Clone {
         });
         self.verts[b].first = Some(self.edges.len() - 1);
     }
+    
+    pub fn adj_list(&self, u: usize) -> Vec<(usize, usize)> {
+        let mut adj = Vec::new();
+        let mut next_e = self.verts[u].first;
+        while let Some(e) = next_e {
+            let v = self.edges[e ^ 1].endp;
+            next_e = self.edges[e].next;
+            adj.push((e, v));
+        }
+        adj
+    }
 }
 
 #[derive(Clone)]
@@ -100,16 +111,12 @@ impl FlowGraph {
         g.verts[s].data.lev = Some(0);
         while let Some(u) = q.pop_front() {
             g.verts[u].data.cur = g.verts[u].first;
-            let mut e = g.verts[u].first;
-            while let Some(edge_id) = e {
-                let edge = &g.edges[edge_id];
-                let rev_edge = &g.edges[edge_id ^ 1];
-                let v = rev_edge.endp;
+            for (e, v) in g.adj_list(u) {
+                let edge = &g.edges[e];
                 if g.verts[v].data.lev == None && edge.data.flow < edge.data.cap {
                     q.push_back(v);
                     g.verts[v].data.lev = Some(g.verts[u].data.lev.unwrap() + 1);
                 }
-                e = g.edges[edge_id].next;
             }
         }
         return g.verts[t].data.lev != None;
@@ -119,20 +126,20 @@ impl FlowGraph {
         if u == t { return f; }
         let mut df = 0;
         
-        while let Some(edge_id) = self.graph.verts[u].data.cur {
-            let v = self.graph.edges[edge_id ^ 1].endp;
+        while let Some(e) = self.graph.verts[u].data.cur {
+            let v = self.graph.edges[e ^ 1].endp;
             if let (Some(lu), Some(lv)) = (self.graph.verts[u].data.lev, self.graph.verts[v].data.lev) {
-                let rem_cap = self.graph.edges[edge_id].data.cap
-                            - self.graph.edges[edge_id].data.flow;
+                let rem_cap = self.graph.edges[e].data.cap
+                            - self.graph.edges[e].data.flow;
                 if rem_cap > 0 && lv == lu + 1 {
                     let cf = self.dfs(v, t, ::std::cmp::min(rem_cap, f - df));
-                    self.graph.edges[edge_id].data.flow += cf;
-                    self.graph.edges[edge_id ^ 1].data.flow -= cf;
+                    self.graph.edges[e].data.flow += cf;
+                    self.graph.edges[e ^ 1].data.flow -= cf;
                     df += cf;
                     if df == f { break; }
                 }
             }
-            self.graph.verts[u].data.cur = self.graph.edges[edge_id].next;
+            self.graph.verts[u].data.cur = self.graph.edges[e].next;
         }
         return df;
     }
