@@ -22,138 +22,122 @@ impl DisjointSets {
     }
 }
 
-#[derive(Clone)]
-pub struct Vertex<V> {
-    pub first: Option<usize>,
-    pub data: V
+pub struct Graph {
+    pub first: Vec<Option<usize>>,
+    pub next: Vec<Option<usize>>,
+    pub endp: Vec<usize>,
 }
 
-pub struct Edge<E> {
-    pub endp: usize,
-    pub next: Option<usize>,
-    pub data: E
-}
-
-pub struct Graph<V, E> {
-    pub verts: Vec<Vertex<V>>,
-    pub edges: Vec<Edge<E>>,
-}
-
-impl<V, E> Graph<V, E> where V: Clone {
-    pub fn new(vmax: usize, emax: usize, vdata: V) -> Graph<V, E> {
+impl Graph {
+    pub fn new(vmax: usize, emax: usize) -> Graph {
         Graph {
-            verts: vec![Vertex{ first: None, data: vdata }; vmax],
-            edges: Vec::with_capacity(2 * emax)
+            first: vec![None; vmax],
+            next: Vec::with_capacity(2 * emax),
+            endp: Vec::with_capacity(2 * emax)
         }
     }
     
-    pub fn add_edge(&mut self, a: usize, b: usize, data: E, rdata: E) {
-        self.edges.push(Edge{
-            endp: a,
-            next: self.verts[a].first,
-            data: data
-        });
-        self.verts[a].first = Some(self.edges.len() - 1);
-        self.edges.push(Edge{
-            endp: b,
-            next: self.verts[b].first,
-            data: rdata
-        });
-        self.verts[b].first = Some(self.edges.len() - 1);
+    pub fn add_edge(&mut self, a: usize, b: usize) {
+        for &u in &[a, b] {
+            self.next.push(self.first[u]);
+            self.first[u] = Some(self.endp.len());
+            self.endp.push(u);
+        }
     }
     
-    pub fn adj_list<'a>(&'a self, u: usize) -> GraphIterator<'a, V, E> {
-        GraphIterator { graph: self, next_e: self.verts[u].first }
+    pub fn adj_list<'a>(&'a self, u: usize) -> AdjListIterator<'a> {
+        AdjListIterator { graph: self, next_e: self.first[u] }
     }
 }
 
-pub struct GraphIterator<'a, V: 'a, E: 'a> {
-    graph: &'a Graph<V, E>,
+pub struct AdjListIterator<'a> {
+    graph: &'a Graph,
     next_e: Option<usize>
 }
 
-impl<'a, V, E> ::std::iter::Iterator for GraphIterator<'a, V, E> {
+impl<'a> ::std::iter::Iterator for AdjListIterator<'a> {
     // produces an outgoing edge and vertex
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(e) = self.next_e {
-            let v = self.graph.edges[e ^ 1].endp;
-            self.next_e = self.graph.edges[e].next;
-            Some((e, v))
-        }
-        else {
-            None
-        }
+        self.next_e.map( |e| {
+            let v = self.graph.endp[e ^ 1];
+            self.next_e = self.graph.next[e];
+            (e, v)
+        })
     }
 }
 
 #[derive(Clone)]
-struct VFlowData {
+pub struct FlowVertex {
     lev: Option<usize>,
-    cur: Option<usize>
+    cur: Option<usize> // TODO: consider making this an AdjListIterator
 }
 
-pub struct EFlowData {
+pub struct FlowEdge {
     pub flow: i64,
     pub cap: i64,
     pub cost: i64
 }
 
 pub struct FlowGraph {
-    graph: Graph<VFlowData, EFlowData>
+    pub graph: Graph,
+    pub vdata: Vec<FlowVertex>,
+    pub edata: Vec<FlowEdge>,
 }
 
 impl FlowGraph {
     pub fn new(vmax: usize, emax: usize) -> FlowGraph {
-        let data = VFlowData { lev: None, cur: None };
-        let graph = Graph::new(vmax, emax, data);
-        FlowGraph { graph: graph }
+        let data = FlowVertex { lev: None, cur: None };
+        FlowGraph {
+            graph: Graph::new(vmax, emax),
+            vdata: vec![data; vmax],
+            edata: Vec::with_capacity(2 * emax)
+        }
     }
     
     pub fn add_edge(&mut self, a: usize, b: usize, cap: i64, cost: i64) {
-        let data = EFlowData { flow: 0, cap: cap, cost: cost };
-        let rdata = EFlowData { cost: -cost, ..data };
-        self.graph.add_edge(a, b, data, rdata);
+        let data = FlowEdge { flow: 0, cap: cap, cost: cost };
+        let rdata = FlowEdge { cost: -cost, ..data };
+        self.edata.push(data);
+        self.edata.push(rdata);
+        self.graph.add_edge(a, b);
     }
     
     fn bfs(&mut self, s: usize, t: usize) -> bool {
-        let g = &mut self.graph;
-        for v in &mut g.verts { v.data.lev = None; }
+        for v in &mut self.vdata { v.lev = None; }
         let mut q = ::std::collections::VecDeque::<usize>::new();
         q.push_back(s);
-        g.verts[s].data.lev = Some(0);
+        self.vdata[s].lev = Some(0);
         while let Some(u) = q.pop_front() {
-            g.verts[u].data.cur = g.verts[u].first;
-            for (e, v) in g.adj_list(u).collect::<Vec<_>>() {
-                let edge = &g.edges[e];
-                if g.verts[v].data.lev == None && edge.data.flow < edge.data.cap {
+            self.vdata[u].cur = self.graph.first[u];
+            for (e, v) in self.graph.adj_list(u) {
+                if self.vdata[v].lev == None && self.edata[e].flow < self.edata[e].cap {
                     q.push_back(v);
-                    g.verts[v].data.lev = Some(g.verts[u].data.lev.unwrap() + 1);
+                    self.vdata[v].lev = Some(self.vdata[u].lev.unwrap() + 1);
                 }
             }
         }
-        return g.verts[t].data.lev != None;
+        return self.vdata[t].lev != None;
     }
     
     fn dfs(&mut self, u: usize, t: usize, f: i64) -> i64 {
         if u == t { return f; }
         let mut df = 0;
         
-        while let Some(e) = self.graph.verts[u].data.cur {
-            let v = self.graph.edges[e ^ 1].endp;
-            if let (Some(lu), Some(lv)) = (self.graph.verts[u].data.lev, self.graph.verts[v].data.lev) {
-                let rem_cap = self.graph.edges[e].data.cap
-                            - self.graph.edges[e].data.flow;
+        while let Some(e) = self.vdata[u].cur {
+            let v = self.graph.endp[e ^ 1];
+            if let (Some(lu), Some(lv)) = (self.vdata[u].lev, self.vdata[v].lev) {
+                let rem_cap = self.edata[e].cap - self.edata[e].flow;
                 if rem_cap > 0 && lv == lu + 1 {
                     let cf = self.dfs(v, t, ::std::cmp::min(rem_cap, f - df));
-                    self.graph.edges[e].data.flow += cf;
-                    self.graph.edges[e ^ 1].data.flow -= cf;
+                    self.edata[e].flow += cf;
+                    self.edata[e ^ 1].flow -= cf;
                     df += cf;
                     if df == f { break; }
                 }
             }
-            self.graph.verts[u].data.cur = self.graph.edges[e].next;
+            self.vdata[u].cur = self.graph.next[e];
         }
         return df;
     }
