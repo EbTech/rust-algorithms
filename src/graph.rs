@@ -257,14 +257,11 @@ impl<'a> CCGraph<'a> {
     }
     
     pub fn two_sat_assign(&self) -> Option<Vec<bool>> {
-        let mut truth = Vec::with_capacity(self.graph.num_v()/2);
-        for i in 0..self.graph.num_v()/2 {
+        (0..self.graph.num_v()/2).map( |i| {
             let scc_true = self.vdata[2*i].cc;
             let scc_false = self.vdata[2*i+1].cc;
-            if scc_true == scc_false { return None; }
-            truth.push(scc_true < scc_false);
-        }
-        Some(truth)
+            if scc_true == scc_false { None } else { Some(scc_true < scc_false) }
+        }).collect()
     }
     
     /*fn bcc(&mut self, u: usize, par: usize) {
