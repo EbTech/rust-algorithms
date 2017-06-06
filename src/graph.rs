@@ -66,6 +66,30 @@ impl Graph {
             next_e: self.first[u]
         }
     }
+    
+    fn euler_helper(&self, u: usize, adj: &mut [AdjListIterator])
+        -> ::std::collections::LinkedList<usize> {
+        let mut edges = ::std::collections::LinkedList::new();
+        if let Some((e, v)) = adj[u].next() {
+            let mut tail_path = self.euler_helper(v, adj);
+            if let Some((e2, v2)) = adj[u].next() {
+                edges.push_back(e2);
+                edges.append(&mut self.euler_helper(v2, adj));
+            }
+            edges.push_back(e);
+            edges.append(&mut tail_path);
+            assert_eq!(None, adj[u].next());
+        }
+        edges
+    }
+    
+    // Finds an Euler path starting from u, assuming it exists, and that the
+    // graph is directed.
+    pub fn euler_path(&self, u: usize) -> ::std::collections::LinkedList<usize> {
+        let mut adj_iters = (0..self.num_v()).map(|u| self.adj_list(u))
+                            .collect::<Vec<_>>();
+        self.euler_helper(u, &mut adj_iters)
+    }
 }
 
 pub struct AdjListIterator<'a> {
@@ -319,6 +343,18 @@ impl<'a> CCGraph<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    
+    #[test]
+    fn test_euler()
+    {
+        let mut graph = Graph::new(3, 4);
+        graph.add_edge(0, 1);
+        graph.add_edge(1, 0);
+        graph.add_edge(1, 2);
+        graph.add_edge(2, 1);
+        let euler = graph.euler_path(0).into_iter().collect::<Vec<_>>();
+        assert_eq!(euler, vec![0, 2, 3, 1]);
+    }
     
     #[test]
     fn test_min_spanning_tree()
