@@ -67,28 +67,21 @@ impl Graph {
         }
     }
     
-    fn euler_helper(&self, u: usize, adj: &mut [AdjListIterator])
-        -> ::std::collections::LinkedList<usize> {
-        let mut edges = ::std::collections::LinkedList::new();
-        if let Some((e, v)) = adj[u].next() {
-            let mut tail_path = self.euler_helper(v, adj);
-            if let Some((e2, v2)) = adj[u].next() {
-                edges.push_back(e2);
-                edges.append(&mut self.euler_helper(v2, adj));
-            }
-            edges.push_back(e);
-            edges.append(&mut tail_path);
-            assert_eq!(None, adj[u].next());
+    fn euler_helper(&self, u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
+        while let Some((e, v)) = adj[u].next() {
+            self.euler_helper(v, adj, edges);
+            edges.push(e);
         }
-        edges
     }
     
     // Finds an Euler path starting from u, assuming it exists, and that the
     // graph is directed.
-    pub fn euler_path(&self, u: usize) -> ::std::collections::LinkedList<usize> {
+    pub fn euler_path(&self, u: usize) -> Vec<usize> {
         let mut adj_iters = (0..self.num_v()).map(|u| self.adj_list(u))
                             .collect::<Vec<_>>();
-        self.euler_helper(u, &mut adj_iters)
+        let mut edges = Vec::with_capacity(self.num_e());
+        self.euler_helper(u, &mut adj_iters, &mut edges);
+        edges.into_iter().rev().collect()
     }
 }
 
@@ -352,8 +345,7 @@ mod test {
         graph.add_edge(1, 0);
         graph.add_edge(1, 2);
         graph.add_edge(2, 1);
-        let euler = graph.euler_path(0).into_iter().collect::<Vec<_>>();
-        assert_eq!(euler, vec![0, 2, 3, 1]);
+        assert_eq!(graph.euler_path(0), vec![0, 2, 3, 1]);
     }
     
     #[test]
