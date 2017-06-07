@@ -1,5 +1,4 @@
-//use std::cmp::min;
-//const INF: i32 = 0x3f3f3f3f;
+
 
 pub struct DisjointSets {
     parent: Vec<usize>
@@ -17,7 +16,7 @@ impl DisjointSets {
     }
     
     // Returns true if u and v were previously in different sets.
-    pub fn union(&mut self, u: usize, v: usize) -> bool {
+    pub fn merge(&mut self, u: usize, v: usize) -> bool {
         let (pu, pv) = (self.find(u), self.find(v));
         self.parent[pu] = pv;
         pu != pv
@@ -67,21 +66,23 @@ impl Graph {
         }
     }
     
-    fn euler_helper(&self, u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
+    fn euler_recurse(&self, u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
         while let Some((e, v)) = adj[u].next() {
-            self.euler_helper(v, adj, edges);
+            self.euler_recurse(v, adj, edges);
             edges.push(e);
         }
     }
     
     // Finds an Euler path starting from u, assuming it exists, and that the
-    // graph is directed.
+    // graph is directed. To deal with undirected graphs, one simply needs to
+    // keep track of visited edges to avoid repeating them.
     pub fn euler_path(&self, u: usize) -> Vec<usize> {
         let mut adj_iters = (0..self.num_v()).map(|u| self.adj_list(u))
                             .collect::<Vec<_>>();
         let mut edges = Vec::with_capacity(self.num_e());
-        self.euler_helper(u, &mut adj_iters, &mut edges);
-        edges.into_iter().rev().collect()
+        self.euler_recurse(u, &mut adj_iters, &mut edges);
+        edges.reverse();
+        edges
     }
 }
 
@@ -111,7 +112,7 @@ pub fn min_spanning_tree(graph: &Graph, weights: &[i64]) -> Vec<usize> {
     
     let mut components = DisjointSets::new(graph.num_v());
     edges.into_iter()
-        .filter(|&e| components.union(graph.endp[2*e], graph.endp[2*e+1]))
+        .filter(|&e| components.merge(graph.endp[2*e], graph.endp[2*e+1]))
         .collect()
 }
 
