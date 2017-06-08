@@ -1,6 +1,4 @@
-
-
-// Based on http://codeforces.com/blog/entry/18051
+// Associative Range Query Tree based on http://codeforces.com/blog/entry/18051
 // Entries [0...size-1] are stored in t[size..2*size-1].
 // The range operation must be associative: in this example, we use addition.
 // In this example, the range operation assigns the value op to all entries.

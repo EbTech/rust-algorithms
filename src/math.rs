@@ -1,7 +1,4 @@
-
-
-// Find x,y such that d = gcd(a,b) = ax + by
-// * a^-1 (mod m): let (d, x, y) = egcd(a,m), 1); assert!(d, 1); return (x+m)%m;
+// Finds (d, x, y) such that d = gcd(a, b) = ax + by.
 pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
     if b == 0 {
         (a.abs(), a.signum(), 0)
@@ -12,17 +9,17 @@ pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
     }
 }
 
-// Assuming a != 0, find smallest y >= 0 such that ax + by = c (if possible)
+// Assuming a != 0, finds smallest y >= 0 such that ax + by = c.
 pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
-    let (d, _, mut y) = extended_gcd(a, b);
-    let z = (a / d).abs();
-    if c % d != 0 {
-        None
-    }
-    else {
-        y = (y*(c/d)%z + z)%z;
+    let (d, _, yy) = extended_gcd(a, b);
+    if c % d == 0 {
+        let z = (a / d).abs();
+        let y = (yy*(c/d)%z + z)%z;
         let x = (c - b*y)/a;
         Some((d, x, y))
+    }
+    else {
+        None
     }
 }
 

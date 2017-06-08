@@ -1,54 +1,62 @@
-// Palindrome substrings in O(n), Manacher's algorithm
-// length of odd palin centred at s[i] is len[2*i]
-// even palin btwn s[i],s[i+1]: len[2*i+1]
-// TODO: check for underflows
-// Alternative version:
-// for c in (..)
-//   while bla
-//     len[c] += 2;
-//     if len[c]-r+i == len[c-r+i] { len.push(len[c]-r+i); r += 1; }
-fn find_pals(text: &[u8]) -> Vec<usize> {
+// Data structure for Knuth-Morris-Pratt string matching against a pattern.
+pub struct Matcher<'a> {
+    pub pattern: &'a [u8],
+    pub fail: Vec<usize>
+}
+
+impl<'a> Matcher<'a> {
+    // Sets fail[i] = length of longest proper prefix-suffix of pattern[0...i].
+    pub fn new(pattern: &'a [u8]) -> Matcher {
+        let mut fail = Vec::with_capacity(pattern.len());
+        fail.push(0);
+        let mut len = 0;
+        for &ch in &pattern[1..] {
+            while len > 0 && pattern[len] != ch { len = fail[len-1]; }
+            if pattern[len] == ch { len += 1; }
+            fail.push(len);
+        }
+        Matcher { pattern: pattern, fail: fail }
+    }
+
+    // KMP algorithm, sets matches[i] = length of longest prefix of pattern
+    // matching a suffix of text[0...i].
+    pub fn kmp_match(&self, text: &[u8]) -> Vec<usize> {
+        let mut matches = Vec::with_capacity(text.len());
+        let mut len = 0;
+        for &ch in text {
+            if len == self.pattern.len() { len = self.fail[len-1]; }
+            while len > 0 && self.pattern[len] != ch { len = self.fail[len-1]; }
+            if self.pattern[len] == ch { len += 1; }
+            matches.push(len);
+        }
+        matches
+    }
+}
+
+// Manacher's algorithm for computing palindrome substrings in linear time.
+// len[2*i] = odd length of palindrome centred at text[i].
+// len[2*i+1] = even length of palindrome centred at text[i+0.5].
+pub fn palindromes(text: &[u8]) -> Vec<usize> {
     let mut len = Vec::with_capacity(2*text.len() - 1); 
-    len.push(1); len.push(0);
-    let mut i = 1;
-    while i < 2*text.len() - 2 {
-        let max_len = ::std::cmp::min(i+1, 2*text.len()-1-i);
+    len.push(1);
+    while len.len() < len.capacity() {
+        let i = len.len() - 1;
+        let max_len = ::std::cmp::min(i + 1, len.capacity() - i);
         while len[i] < max_len && text[(i-len[i]-1)/2] == text[(i+len[i]+1)/2] {
             len[i] += 2;
         }
-        let mut d = 1;
-        while len[i-d] < len[i]-d { len[i+d] = len[i-d]; d += 1; }
-        len[i+d] = len[i]-d;
-        i += d;
+        if len[i] < 2 {
+            let a = 1 - len[i];
+            len.push(a);
+        }
+        else {
+            for d in 1.. {
+                let (a, b) = (len[i-d], len[i] - d);
+                if a < b { len.push(a); } else { len.push(b); break; }
+            }
+        }
     }
     len
-}
-
-// fail[i] = len of longest proper prefix-suffix of pat[0...i]
-fn kmp_init(pat: &[u8]) -> Vec<usize> {
-    let mut fail = Vec::with_capacity(pat.len());
-    fail.push(0);
-    let mut len = 0;
-    for &ch in &pat[1..] {
-        while len > 0 && pat[len] != ch { len = fail[len-1]; }
-        if pat[len] == ch { len += 1; }
-        fail.push(len);
-    }
-    fail
-}
-
-// matches[i] = len of longest prefix of pat matching with suffix of text[0...i]
-fn kmp_match(text: &[u8], pat: &[u8]) -> Vec<usize> {
-    let fail = kmp_init(pat);
-    let mut matches = Vec::with_capacity(text.len());
-    let mut len = 0;
-    for &ch in text {
-        if len == pat.len() { len = fail[len-1]; }
-        while len > 0 && pat[len] != ch { len = fail[len-1]; }
-        if pat[len] == ch { len += 1; }
-        matches.push(len);
-    }
-    matches
 }
 
 #[cfg(test)]
@@ -58,10 +66,10 @@ mod test {
     #[test]
     fn test_string() {
         let text = "abcbc".as_bytes();
-        let pat = "bc".as_bytes();
-        let matches = kmp_match(text, pat);
-        //let pal_len = find_pals(text);
+        let pattern = "bc".as_bytes();
+        let matches = Matcher::new(pattern).kmp_match(text);
+        let pal_len = palindromes(text);
         assert_eq!(matches, vec![0, 1, 2, 1, 2]);
-        //assert_eq!(pal_len, vec![1, 0, 1, 0, 3, 0, 3, 0, 1]);
+        assert_eq!(pal_len, vec![1, 0, 1, 0, 3, 0, 3, 0, 1]);
     }
 }

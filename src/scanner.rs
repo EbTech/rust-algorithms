@@ -1,5 +1,4 @@
-
-
+// Generic utility for reading data from standard input.
 pub struct Scanner {
     buffer: ::std::collections::VecDeque<String>
 }
@@ -10,7 +9,8 @@ impl Scanner {
             buffer: ::std::collections::VecDeque::new()
         }
     }
-
+    
+    // Use "turbofish" syntax next::<T>() to select data type of next token.
     pub fn next<T: ::std::str::FromStr>(&mut self) -> T {
         while self.buffer.is_empty() {
             let mut input = String::new();
