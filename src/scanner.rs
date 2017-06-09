@@ -22,3 +22,19 @@ impl Scanner {
     }
 }
 
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    
+    #[test]
+    fn test_scanner()
+    {
+        let mut scan = Scanner::new();
+        for _ in 0..0 {
+            let x = scan.next::<i32>();
+            let y = scan.next::<i32>();
+            assert_eq!(x + y, 42);
+        }
+    }
+}
