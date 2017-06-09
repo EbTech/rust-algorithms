@@ -158,6 +158,9 @@ mod test {
         graph.add_undirected_edge(1, 2);
         graph.add_undirected_edge(2, 0);
         let weights = [7, 3, 5];
-        assert_eq!(graph.min_spanning_tree(&weights), vec![1, 2]);
+        let mst = graph.min_spanning_tree(&weights);
+        let mst_cost = mst.iter().map(|&e| weights[e]).sum::<i64>();
+        assert_eq!(mst, vec![1, 2]);
+        assert_eq!(mst_cost, 8);
     }
 }
