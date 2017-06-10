@@ -1,4 +1,4 @@
-use super::*;
+use graph::Graph;
 use ::std::cmp::min;
 
 // Strongly connected, 2-vertex-connected, and 2-edge-connected components
@@ -17,29 +17,34 @@ pub struct CCGraph<'a> {
     pub graph: &'a Graph,
     pub vdata: Vec<CCVertex>,
     pub vcc: Vec<usize>,
-    pub n_cc: usize,
-    pub n_vcc: usize,
+    pub num_cc: usize,
+    pub num_vcc: usize,
     t: usize,
     verts: Vec<usize>,
-    //edges: Vec<usize>
+    edges: Vec<usize>
 }
 
 impl<'a> CCGraph<'a> {
-    pub fn new(graph: &'a Graph) -> CCGraph {
+    pub fn new(graph: &'a Graph, is_directed: bool) -> CCGraph {
         let data = CCVertex { cc: 0, low: 0, vis: 0 };
         let mut cc_graph = CCGraph {
             graph: graph,
             vdata: vec![data; graph.num_v()],
             vcc: vec![0; graph.num_e()],
-            n_cc: 0,
-            n_vcc: 0,
+            num_cc: 0,
+            num_vcc: 0,
             t: 0,
             verts: Vec::new(),
-            //edges: Vec::new()
+            edges: Vec::new()
         };
         for i in 0..graph.num_v() {
             if cc_graph.vdata[i].vis == 0 {
-                cc_graph.scc(i);
+                if is_directed {
+                    cc_graph.scc(i);
+                }
+                else {
+                    cc_graph.bcc(i, 0); // TODO: default 2nd arg at root
+                }
             }
         }
         cc_graph
@@ -58,9 +63,9 @@ impl<'a> CCGraph<'a> {
             }
         }
         if self.vdata[u].vis <= self.vdata[u].low {
-            self.n_cc += 1;
+            self.num_cc += 1;
             while let Some(v) = self.verts.pop() {
-                self.vdata[v].cc = self.n_cc;
+                self.vdata[v].cc = self.num_cc;
                 if v == u { break; }
             }
         }
@@ -75,58 +80,58 @@ impl<'a> CCGraph<'a> {
     }
     
     // Biconnected components are a work in progress.
-    /*fn bcc(&mut self, u: usize, par: usize) {
+    fn bcc(&mut self, u: usize, par: usize) {
         self.t += 1;
         self.vdata[u].low = self.t;
         self.vdata[u].vis = self.t;
         self.verts.push(u);
         for (e, v) in self.graph.adj_list(u) {
-          if self.vdata[v] == None {
-              self.edges.push_back(e);
+          if self.vdata[v].vis == 0 {
+              self.edges.push(e);
               self.bcc(v, e);
               self.vdata[u].low = min(self.vdata[u].low, self.vdata[v].low);
               if self.vdata[u].vis <= self.vdata[v].low { // u is a cut vertex unless it's a one-child root
-                  do {
-                      let E = self.edges.top();
-                      self.edges.pop_back();
-                      vcc[E] = self.n_vcc;
-                      vcc[E^1] = self.n_vcc;
-                  } while e != E && e != (E^1);
-                  self.n_vcc += 1;
+                  while let Some(top_e) = self.edges.pop() {
+                      self.vcc[top_e] = self.num_vcc;
+                      self.vcc[top_e ^ 1] = self.num_vcc;
+                      if e ^ top_e <= 1 { break; }
+                  }
+                  self.num_vcc += 1;
               }
           }
           else if self.vdata[v].vis < self.vdata[u].vis && e != (par^1) {
               self.vdata[u].low = min(self.vdata[u].low, self.vdata[v].vis);
-              self.edges.push_back(e);
+              self.edges.push(e);
           }
           else if v == u { // e is a self-loop
-              self.vcc[e] = self.n_vcc;
-              self.vcc[e ^ 1] = self.n_vcc;
-              self.n_vcc += 1;
+              self.vcc[e] = self.num_vcc;
+              self.vcc[e ^ 1] = self.num_vcc;
+              self.num_vcc += 1;
           }
         } 
         if self.vdata[u].vis <= self.vdata[u].low { // par is a cut edge unless par==-1
             while let Some(v) = self.verts.pop() {
-                self.vdata[v].cc = self.n_cc;
+                self.vdata[v].cc = self.num_cc;
                 if v == u { break; }
             }
-            self.n_cc += 1; 
+            self.num_cc += 1; 
         }
     }
     
     pub fn is_cut_vertex(&self, u: usize) -> bool {
-        let vcc = self.vcc[self.graph.first[u]];
-        for (e, _) in self.graph.adj_list(u) {
-            if (self.vcc[e] != vcc) { return true; }
+        if let Some(first_e) = self.graph.first[u] {
+            self.graph.adj_list(u).any(|(e, _)| {self.vcc[e] != self.vcc[first_e]})
         }
-        false
+        else {
+            false
+        }
     }
     
     pub fn is_cut_edge(&self, e: usize) -> bool {
         let u = self.graph.endp[e ^ 1];
         let v = self.graph.endp[e];
         self.vdata[u].cc != self.vdata[v].cc
-    }*/
+    }
 }
 
 #[cfg(test)]
@@ -142,10 +147,25 @@ mod test {
         graph.add_two_sat_clause(x, z);
         graph.add_two_sat_clause(y^1, z^1);
         graph.add_two_sat_clause(y, y);
-        assert_eq!(CCGraph::new(&graph).two_sat_assign(),
+        assert_eq!(CCGraph::new(&graph, true).two_sat_assign(),
                    Some(vec![true, true, false]));
             
         graph.add_two_sat_clause(z, z);
-        assert_eq!(CCGraph::new(&graph).two_sat_assign(), None);
+        assert_eq!(CCGraph::new(&graph, true).two_sat_assign(), None);
+    }
+    
+    #[test]
+    fn test_biconnected()
+    {
+        let mut graph = Graph::new(3, 6);
+        graph.add_undirected_edge(0, 1);
+        graph.add_undirected_edge(1, 2);
+        graph.add_undirected_edge(1, 2);
+        
+        let cc_graph = CCGraph::new(&graph, false);
+        let bridges = (0..graph.num_e()).filter(|&e| cc_graph.is_cut_edge(e)).collect::<Vec<_>>();
+        let articulation_points = (0..graph.num_v()).filter(|&u| cc_graph.is_cut_vertex(u)).collect::<Vec<_>>();
+        assert_eq!(bridges, vec![0, 1]);
+        assert_eq!(articulation_points, vec![1]);
     }
 }

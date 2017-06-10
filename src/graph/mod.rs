@@ -8,12 +8,12 @@ pub struct DisjointSets {
 }
 
 impl DisjointSets {
-    // Initialize disjoint sets containing one element each.
+    // Initializes disjoint sets containing one element each.
     pub fn new(size: usize) -> DisjointSets {
         DisjointSets { parent: (0..size).collect() }
     }
     
-    // Find the set's representative. Do path compression along the way to make
+    // Finds the set's representative. Do path compression along the way to make
     // future queries faster.
     pub fn find(&mut self, u: usize) -> usize {
         let pu = self.parent[u];
@@ -21,7 +21,7 @@ impl DisjointSets {
         self.parent[u]
     }
     
-    // Merge the sets containing u and v into a single set containing their
+    // Merges the sets containing u and v into a single set containing their
     // union. Returns true if u and v were previously in different sets.
     pub fn merge(&mut self, u: usize, v: usize) -> bool {
         let (pu, pv) = (self.find(u), self.find(v));
@@ -38,7 +38,7 @@ pub struct Graph {
 }
 
 impl Graph {
-    // Initialize a graph with vmax vertices and no edges. For best efficiency,
+    // Initializes a graph with vmax vertices and no edges. For best efficiency,
     // emax should be a tight upper bound on the number of edges to insert.
     pub fn new(vmax: usize, emax: usize) -> Graph {
         Graph {
@@ -52,7 +52,7 @@ impl Graph {
     pub fn num_v(&self) -> usize { self.first.len() }
     pub fn num_e(&self) -> usize { self.next.len() }
     
-    // Add a directed edge from u to v.
+    // Adds a directed edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize) {
         self.next.push(self.first[u]);
         self.first[u] = Some(self.endp.len());
