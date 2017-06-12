@@ -5,6 +5,7 @@ A collection of famous data structures and algorithms, emphasizing beauty and cl
 This repository is distributed under the [MIT License](LICENSE). The license text need not be included in contest submissions, though I would appreciate linking back to this repo for others to find. Enjoy!
 
 ## Academic Programming Competitions
+
 The original intent of this project was to build a reference for use in programming competitions such as [Codeforces](http://codeforces.com) and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify in time-constrained settings.
 
 Most competitive programmers use C/C++ because it allows for fast coding as well as fast execution. However, these languages are notoriously unsafe, wasting a considerable share of the contestant's time and attention on accident prevention. Java is the next most popular choice, offering a bit of safety at some expense to coding and execution speed. To my delight, I found that Rust provides a lot more safety than Java without the visual clutter, and it's *fast*. 
