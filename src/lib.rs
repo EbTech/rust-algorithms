@@ -1,4 +1,4 @@
-pub mod arqtree;
+pub mod arq_tree;
 pub mod graph;
 pub mod math;
 pub mod scanner;

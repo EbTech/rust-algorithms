@@ -165,6 +165,7 @@ mod test {
         let mut graph = FlowGraph::new(3, 2);
         graph.add_edge(0, 1, 4, 1);
         graph.add_edge(1, 2, 3, 1);
+        
         let flow = graph.dinic(0, 2);
         assert_eq!(flow, 3);
     }
@@ -177,6 +178,7 @@ mod test {
         graph.add_edge(1, 2, 7, 8);
         graph.add_edge(2, 3, 7, 8);
         graph.add_edge(1, 3, 7, 10);
+        
         let (cost, flow) = graph.mcf(0, 3);
         assert_eq!(cost, 18);
         assert_eq!(flow, 10);

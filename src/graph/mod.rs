@@ -147,6 +147,7 @@ mod test {
         graph.add_edge(1, 0);
         graph.add_edge(1, 2);
         graph.add_edge(2, 1);
+        
         assert_eq!(graph.euler_path(0), vec![0, 2, 3, 1]);
     }
     
@@ -158,6 +159,7 @@ mod test {
         graph.add_undirected_edge(1, 2);
         graph.add_undirected_edge(2, 0);
         let weights = [7, 3, 5];
+        
         let mst = graph.min_spanning_tree(&weights);
         let mst_cost = mst.iter().map(|&e| weights[e]).sum::<i64>();
         assert_eq!(mst, vec![1, 2]);

@@ -67,9 +67,11 @@ mod test {
     fn test_string() {
         let text = "abcbc".as_bytes();
         let pattern = "bc".as_bytes();
+        
         let matches = Matcher::new(pattern).kmp_match(text);
-        let pal_len = palindromes(text);
         assert_eq!(matches, vec![0, 1, 2, 1, 2]);
+        
+        let pal_len = palindromes(text);
         assert_eq!(pal_len, vec![1, 0, 1, 0, 3, 0, 3, 0, 1]);
     }
 }

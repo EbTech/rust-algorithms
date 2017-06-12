@@ -82,7 +82,6 @@ impl<'a> ConnectivityGraph<'a> {
         vertices
     }
     
-    // Biconnected components are a work in progress.
     fn bcc(&mut self, u: usize, par: usize, t: &mut usize, vis: &mut [usize],
            low: &mut [usize], verts: &mut Vec<usize>, edges: &mut Vec<usize>) {
         *t += 1;
@@ -145,6 +144,19 @@ mod test {
     use super::*;
     
     #[test]
+    fn test_toposort()
+    {
+        let mut graph = Graph::new(4, 4);
+        graph.add_edge(0, 2);
+        graph.add_edge(3, 2);
+        graph.add_edge(3, 1);
+        graph.add_edge(1, 0);
+        
+        assert_eq!(ConnectivityGraph::new(&graph, true).topological_sort(),
+                   vec![3, 1, 0, 2]);
+    }
+    
+    #[test]
     fn test_two_sat()
     {
         let mut graph = Graph::new(6, 8);
@@ -168,9 +180,12 @@ mod test {
         graph.add_undirected_edge(1, 2);
         graph.add_undirected_edge(1, 2);
         
-        let cc_graph = ConnectivityGraph::new(&graph, false);
-        let bridges = (0..graph.num_e()).filter(|&e| cc_graph.is_cut_edge(e)).collect::<Vec<_>>();
-        let articulation_points = (0..graph.num_v()).filter(|&u| cc_graph.is_cut_vertex(u)).collect::<Vec<_>>();
+        let cg = ConnectivityGraph::new(&graph, false);
+        let bridges = (0..graph.num_e())
+                    .filter(|&e| cg.is_cut_edge(e)).collect::<Vec<_>>();
+        let articulation_points = (0..graph.num_v())
+                    .filter(|&u| cg.is_cut_vertex(u)).collect::<Vec<_>>();
+        
         assert_eq!(bridges, vec![0, 1]);
         assert_eq!(articulation_points, vec![1]);
     }

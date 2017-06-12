@@ -28,11 +28,13 @@ mod test {
     use super::*;
     
     #[test]
-    fn test_gcd() {
+    fn test_egcd() {
         let (a, b) = (14, 35);
+        
         let (d, x, y) = extended_gcd(a, b);
         assert_eq!(d, 7);
         assert_eq!(a*x + b*y, d);
+        
         assert_eq!(canon_egcd(a, b, d), Some((d, -2, 1)));
         assert_eq!(canon_egcd(b, a, d), Some((d, -1, 3)));
     }
