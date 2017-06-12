@@ -1,4 +1,5 @@
 // Associative Range Query Tree based on http://codeforces.com/blog/entry/18051
+// Stores 
 // Entries [0...size-1] are stored in t[size..2*size-1].
 // The range operation must be associative: in this example, we use addition.
 // In this example, the range operation assigns the value op to all entries.
@@ -46,6 +47,7 @@ impl ARQT {
         }
     }
     
+    // Performs op on all entries from l to r, inclusive.
     pub fn modify(&mut self, mut l: usize, mut r: usize, op: i32) {
         l += self.d.len(); r += self.d.len();
         let (l0, r0) = (l, r);
@@ -58,6 +60,7 @@ impl ARQT {
         self.pull(l0); self.pull(r0);
     }
     
+    // Returns the aggregate range query on all entries from l to r, inclusive.
     pub fn query(&mut self, mut l: usize, mut r: usize) -> i32 {
         l += self.d.len(); r += self.d.len();
         self.push(l); self.push(r);

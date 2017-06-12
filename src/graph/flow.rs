@@ -1,5 +1,4 @@
-use graph::Graph;
-use graph::AdjListIterator;
+use graph::{Graph, AdjListIterator};
 use ::std::cmp::min;
 const INF: i64 = 0x3f3f3f3f;
 
@@ -22,14 +21,15 @@ impl FlowGraph {
     
     // Adds an edge with specified capacity and cost. The reverse edge is also
     // added for residual graph computation, but has zero capacity.
-    pub fn add_edge(&mut self, a: usize, b: usize, cap: i64, cost: i64) {
+    pub fn add_edge(&mut self, u: usize, v: usize, cap: i64, cost: i64) {
         self.cap.push(cap); self.cost.push(cost);
         self.cap.push(0); self.cost.push(-cost);
-        self.graph.add_undirected_edge(a, b);
+        self.graph.add_undirected_edge(u, v);
     }
     
-    // Dinic's maximum flow / Hopcroft-Karp maximum bipartite matching: V^2E in
-    // general, min(V^(2/3),sqrt(E))E on unit capacity, sqrt(V)E on bipartite.
+    // Dinic's maximum flow / Hopcroft-Karp maximum bipartite matching:
+    // V^2E in general, min(V^(2/3),sqrt(E))E when all edges are unit capacity,
+    // sqrt(V)E when all vertices are unit capacity as in bipartite graphs.
     pub fn dinic(&self, s: usize, t: usize) -> i64 {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
@@ -39,7 +39,7 @@ impl FlowGraph {
         max_flow
     }
     
-    // Pushes a saturating flow that increases the residual's s-t distance.
+    // Pushes a blocking flow that increases the residual's s-t distance.
     pub fn dinic_augment(&self, s: usize, t: usize, flow: &mut [i64]) -> Option<i64> {
         let mut dist = vec![INF; self.graph.num_v()];
         let mut q = ::std::collections::VecDeque::new();
@@ -113,7 +113,7 @@ impl FlowGraph {
         (min_cost, max_flow)
     }
     
-    // Pushes along an augmenting path of minimum cost while maintaining the
+    // Pushes along an augmenting path of minimum cost, while maintaining the
     // vertex potentials so that no negative-weight residual edges appear.
     pub fn mcf_augment(&self, s: usize, t: usize, pot: &mut [i64], flow: &mut [i64]) -> Option<(i64, i64)> {
         let mut vis = vec![false; self.graph.num_v()];
