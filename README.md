@@ -11,12 +11,12 @@ Most competitive programmers use C/C++ because it allows for fast coding as well
 
 ## Programming Language Advocacy
 
-My other goal is to show the world that C++ kinda sucks, and that *it doesn't have to be that way*. Rather than trying to persuade you with words, this repository aims to show by example.
+My other goal is to show the world that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example.
 
 ## Contents
 
 - [Basic graph representations](src/graph/mod.rs): adjacency lists, minimum spanning tree, Euler path, disjoint set union 
-- [Network flows](src/graph/flow.rs): Dinic's blocking flow, min cost max flow, bipartite matching
+- [Network flows](src/graph/flow.rs): Dinic's blocking flow, Hopcroft-Karp bipartite matching, min cost max flow
 - [Connected components](src/graph/connectivity.rs): 2-edge-, 2-vertex- and strongly connected components, topological sort, 2-SAT
 - [Associative range query](src/arq_tree.rs): known colloquially as *segtrees*
 - [Math](src/math.rs): Euclid's GCD algorithm, Bezout's identity
