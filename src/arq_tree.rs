@@ -13,69 +13,90 @@
 pub struct ArqTree {
     d: Vec<Option<i64>>,
     t: Vec<i64>,
-    s: Vec<i64>
+    s: Vec<i64>,
 }
 
 impl ArqTree {
-    pub fn new(size: usize) -> ArqTree {
-        let mut s = vec![1; 2*size];
+    pub fn new(size: usize) -> Self {
+        let mut s = vec![1; 2 * size];
         for i in (0..size).rev() {
-            s[i] = s[i<<1] + s[i<<1|1];
+            s[i] = s[i << 1] + s[i << 1 | 1];
         }
-        ArqTree {
+        Self {
             d: vec![None; size],
-            t: vec![0; 2*size],                       // monoid identity
-            s: s
+            t: vec![0; 2 * size], // monoid identity
+            s: s,
         }
     }
-    
+
     fn apply(&mut self, p: usize, f: i64) {
-        self.t[p] = f * self.s[p];                   // hom application
-        if p < self.d.len() { self.d[p] = Some(f); } // hom composition
+        self.t[p] = f * self.s[p]; // hom application
+        if p < self.d.len() {
+            self.d[p] = Some(f);
+        } // hom composition
     }
-    
+
     fn push(&mut self, p: usize) {
         for s in (1..32).rev() {
             let i = p >> s;
             if let Some(f) = self.d[i] {
-                self.apply(i<<1, f);
-                self.apply(i<<1|1, f);
+                self.apply(i << 1, f);
+                self.apply(i << 1 | 1, f);
                 self.d[i] = None;
             }
         }
     }
-    
+
     fn pull(&mut self, mut p: usize) {
         while p > 1 {
             p >>= 1;
             if self.d[p] == None {
-                self.t[p] = self.t[p<<1] + self.t[p<<1|1]; // monoid op
+                self.t[p] = self.t[p << 1] + self.t[p << 1 | 1]; // monoid op
             }
         }
     }
-    
+
     // Performs the homomorphism f on all entries from l to r, inclusive.
     pub fn modify(&mut self, mut l: usize, mut r: usize, f: i64) {
-        l += self.d.len(); r += self.d.len();
+        l += self.d.len();
+        r += self.d.len();
         let (l0, r0) = (l, r);
-        self.push(l0); self.push(r0);
+        self.push(l0);
+        self.push(r0);
         while l <= r {
-          if l & 1 == 1 { self.apply(l, f); l += 1; }
-          if r & 1 == 0 { self.apply(r, f); r -= 1; }
-          l >>= 1; r >>= 1;
+            if l & 1 == 1 {
+                self.apply(l, f);
+                l += 1;
+            }
+            if r & 1 == 0 {
+                self.apply(r, f);
+                r -= 1;
+            }
+            l >>= 1;
+            r >>= 1;
         }
-        self.pull(l0); self.pull(r0);
+        self.pull(l0);
+        self.pull(r0);
     }
-    
+
     // Returns the aggregate range query on all entries from l to r, inclusive.
     pub fn query(&mut self, mut l: usize, mut r: usize) -> i64 {
-        l += self.d.len(); r += self.d.len();
-        self.push(l); self.push(r);
-        let mut res = 0;                                     // monoid identity
+        l += self.d.len();
+        r += self.d.len();
+        self.push(l);
+        self.push(r);
+        let mut res = 0; // monoid identity
         while l <= r {
-            if l & 1 == 1 { res = res + self.t[l]; l += 1; } // monoid op
-            if r & 1 == 0 { res = self.t[r] + res; r -= 1; } // monoid op
-            l >>= 1; r >>= 1;
+            if l & 1 == 1 {
+                res = res + self.t[l];
+                l += 1;
+            } // monoid op
+            if r & 1 == 0 {
+                res = self.t[r] + res;
+                r -= 1;
+            } // monoid op
+            l >>= 1;
+            r >>= 1;
         }
         res
     }
@@ -84,16 +105,14 @@ impl ArqTree {
 #[cfg(test)]
 mod test {
     use super::*;
-    
+
     #[test]
-    fn test_arq_tree()
-    {
+    fn test_arq_tree() {
         let mut tree = ArqTree::new(10);
-        
+
         tree.modify(1, 3, 10);
         tree.modify(3, 5, 1);
-        
+
         assert_eq!(tree.query(0, 9), 23);
     }
 }
-
