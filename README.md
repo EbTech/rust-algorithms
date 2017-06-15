@@ -16,7 +16,7 @@ Most competitive programmers use C/C++ because it allows for fast coding as well
 
 ## Programming Language Advocacy
 
-My other goal is to show the world that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's **Why Rust?**](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or simply [dive in](https://www.rust-lang.org).
+My other goal is to show the world that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or simply [dive in](https://www.rust-lang.org)!
 
 ## Contents
 

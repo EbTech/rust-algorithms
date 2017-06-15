@@ -8,9 +8,9 @@ use std::cmp::min;
 // - 2-vertex-connected components (2VCC)
 // Multiple-edges and self-loops should be correctly handled.
 pub struct ConnectivityGraph<'a> {
-    pub graph: &'a Graph,
-    pub cc: Vec<usize>, // stores id of a vertex's CC, SCC or 2ECC
-    pub vcc: Vec<usize>, // stores id of an edge's 2VCC
+    pub graph: &'a Graph, // Immutable graph, frozen for lifetime of this obj.
+    pub cc: Vec<usize>, // Stores id of a vertex's CC, SCC or 2ECC.
+    pub vcc: Vec<usize>, // Stores id of an edge's 2VCC.
     pub num_cc: usize,
     pub num_vcc: usize,
 }

@@ -4,7 +4,7 @@ const INF: i64 = 0x3f3f3f3f;
 
 // Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
-    pub graph: Graph,
+    pub graph: Graph, // Owned graph, controlled by this FlowGraph object.
     pub cap: Vec<i64>,
     pub cost: Vec<i64>,
 }

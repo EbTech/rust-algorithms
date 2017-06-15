@@ -55,7 +55,7 @@ impl Graph {
         self.first.len()
     }
 
-    // Returns the number of edges, counting twice for undirected edges.
+    // Returns the number of edges, double-counting undirected edges.
     pub fn num_e(&self) -> usize {
         self.endp.len()
     }
