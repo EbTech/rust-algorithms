@@ -8,6 +8,8 @@ This repository is distributed under the [MIT License](LICENSE). The license tex
 
 When learning a new algorithm or data structure, it's often helpful to see or play with a concrete implementation. As such, this repository catalogues several classic algorithms in their simplest forms.
 
+In addition, the Rust language has outstanding pedagogical attributes. Its compiler acts as a teacher, enforcing strict discipline while pointing to clearer ways to structure one's logic.
+
 ## For Competition Programmers
 
 The original intent of this project was to build a reference for use in programming competitions such as [Codeforces](http://codeforces.com) and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify in time-constrained settings.
@@ -16,7 +18,7 @@ Most competitive programmers use C/C++ because it allows for fast coding as well
 
 ## Programming Language Advocacy
 
-My other goal is to show the world that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or simply [dive in](https://www.rust-lang.org)!
+My other goal is to show the world that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in](https://www.rust-lang.org)!
 
 ## Contents
 
