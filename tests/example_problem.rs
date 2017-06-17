@@ -1,11 +1,12 @@
-// To make a single-file Codeforces contest submission, dump the module contents
-// directly here instead of these use statements.
-/*extern crate algorithms;
+// To make a self-contained file for contest submission, dump each desired
+// module's contents directly here instead of these use statements.
+extern crate algorithms;
 use algorithms::scanner::*;
 use algorithms::graph::*;
 
 fn main1() {
-    let mut scan = Scanner::new();
+    let stdin = std::io::stdin();
+    let mut scan = Scanner::new(stdin.lock());
     let mut graph = Graph::new(1, 0);
     for _ in 0..0 {
         let u = scan.next::<usize>();
@@ -15,13 +16,13 @@ fn main1() {
 }
 
 #[test]
-fn integration() {
+fn main() {
     // If your contest solution requires a lot of stack space, make sure to
-    // run it on a custom thread.
+    // run it in a custom thread.
     std::thread::Builder::new()
         .stack_size(50_000_000)
         .spawn(main1)
         .unwrap()
         .join()
         .unwrap();
-}*/
+}

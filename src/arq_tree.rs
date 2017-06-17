@@ -32,8 +32,8 @@ impl ArqTree {
     fn apply(&mut self, p: usize, f: i64) {
         self.t[p] = f * self.s[p]; // hom application
         if p < self.d.len() {
-            self.d[p] = Some(f);
-        } // hom composition
+            self.d[p] = Some(f); // hom composition
+        }
     }
 
     fn push(&mut self, p: usize) {
@@ -88,13 +88,13 @@ impl ArqTree {
         let mut res = 0; // monoid identity
         while l <= r {
             if l & 1 == 1 {
-                res = res + self.t[l];
+                res = res + self.t[l]; // monoid op
                 l += 1;
-            } // monoid op
+            }
             if r & 1 == 0 {
-                res = self.t[r] + res;
+                res = self.t[r] + res; // monoid op
                 r -= 1;
-            } // monoid op
+            }
             l >>= 1;
             r >>= 1;
         }

@@ -1,6 +1,6 @@
 # Algorithms Cookbook in Rust
 
-A collection of classic data structures and algorithms, emphasizing beauty and clarity over full generality. As such, this should not be viewed as a blackbox *library*, but as a whitebox *cookbook* demonstrating the translation of abstract concepts into precise code. I hope it will be useful to students and educators, as well as competition programmers.
+A collection of classic data structures and algorithms, emphasizing beauty and clarity over full generality. As such, this should not be viewed as a blackbox *library*, but as a whitebox *cookbook* demonstrating the translation of abstract concepts into executable code. I hope it will be useful to students and educators, as well as competition programmers.
 
 This repository is distributed under the [MIT License](LICENSE). The license text need not be included in contest submissions, though I would appreciate linking back to this repo for others to find. Enjoy!
 
@@ -12,13 +12,13 @@ In addition, the Rust language has outstanding pedagogical attributes. Its compi
 
 ## For Competition Programmers
 
-The original intent of this project was to build a reference for use in programming competitions such as [Codeforces](http://codeforces.com) and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify in time-constrained settings.
+The original intent of this project was to build a reference for use in programming competitions such as [Codeforces](http://codeforces.com) and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify under time pressure.
 
 Most competitive programmers use C/C++ because it allows for fast coding as well as fast execution. However, these languages are notoriously unsafe, wasting a considerable share of the contestant's time and attention on accident prevention and debugging. Java is the next most popular choice, offering a bit of safety at some expense to coding and execution speed. To my delight, I found that Rust provides a lot more safety than Java without the visual clutter, and it's *fast*. A proficient Rust programmer stands to gain a competitive advantage as well as a more pleasant experience!
 
 ## Programming Language Advocacy
 
-My other goal is to show the world that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in](https://www.rust-lang.org)!
+My other goal is to show developers that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in](https://www.rust-lang.org)!
 
 ## Contents
 

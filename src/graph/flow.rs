@@ -35,14 +35,22 @@ impl FlowGraph {
     pub fn dinic(&self, s: usize, t: usize) -> i64 {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
-        while let Some(df) = self.dinic_augment(s, t, &mut flow) {
-            max_flow += df;
+        loop {
+            let dist = self.dinic_search(s, &flow);
+            if dist[t] == INF {
+                break;
+            }
+            // Keep track of adjacency lists to avoid revisiting blocked edges.
+            let mut adj_iters = (0..self.graph.num_v())
+                .map(|u| self.graph.adj_list(u).peekable())
+                .collect::<Vec<_>>();
+            max_flow += self.dinic_augment(s, t, INF, &dist, &mut adj_iters, &mut flow);
         }
         max_flow
     }
 
-    // Pushes a blocking flow that increases the residual's s-t distance.
-    pub fn dinic_augment(&self, s: usize, t: usize, flow: &mut [i64]) -> Option<i64> {
+    // Compute BFS distances to restrict attention to shortest path edges.
+    fn dinic_search(&self, s: usize, flow: &[i64]) -> Vec<i64> {
         let mut dist = vec![INF; self.graph.num_v()];
         let mut q = ::std::collections::VecDeque::new();
         dist[s] = 0;
@@ -55,34 +63,27 @@ impl FlowGraph {
                 }
             }
         }
-        if dist[t] == INF {
-            return None;
-        }
-
-        let mut adj_iters = (0..self.graph.num_v())
-            .map(|u| self.graph.adj_list(u))
-            .collect::<Vec<_>>();
-        let df = self.dinic_dfs(s, t, INF, &dist, &mut adj_iters, flow);
-        Some(df)
+        dist
     }
 
-    fn dinic_dfs(&self,
-                 u: usize,
-                 t: usize,
-                 f: i64,
-                 dist: &[i64],
-                 adj: &mut [AdjListIterator],
-                 flow: &mut [i64])
-                 -> i64 {
+    // Pushes a blocking flow that increases the residual's s-t distance.
+    fn dinic_augment(&self,
+                     u: usize,
+                     t: usize,
+                     f: i64,
+                     dist: &[i64],
+                     adj: &mut [::std::iter::Peekable<AdjListIterator>],
+                     flow: &mut [i64])
+                     -> i64 {
         if u == t {
             return f;
         }
         let mut df = 0;
 
-        while let Some((e, v)) = adj[u].next() {
+        while let Some(&(e, v)) = adj[u].peek() {
             let rem_cap = min(self.cap[e] - flow[e], f - df);
             if rem_cap > 0 && dist[v] == dist[u] + 1 {
-                let cf = self.dinic_dfs(v, t, rem_cap, dist, adj, flow);
+                let cf = self.dinic_augment(v, t, rem_cap, dist, adj, flow);
                 flow[e] += cf;
                 flow[e ^ 1] -= cf;
                 df += cf;
@@ -90,6 +91,8 @@ impl FlowGraph {
                     break;
                 }
             }
+            // The current edge is either saturated or blocked.
+            adj[u].next();
         }
         return df;
     }
@@ -109,7 +112,7 @@ impl FlowGraph {
     pub fn mcf(&self, s: usize, t: usize) -> (i64, i64) {
         let mut pot = vec![0; self.graph.num_v()];
 
-        // Bellman-Ford needed here to deal with negative-cost edges.
+        // Bellman-Ford deals with negative-cost edges at initialization.
         for _ in 1..self.graph.num_v() {
             for e in 0..self.graph.num_e() {
                 if self.cap[e] > 0 {
@@ -122,43 +125,43 @@ impl FlowGraph {
 
         let mut flow = vec![0; self.graph.num_e()];
         let (mut min_cost, mut max_flow) = (0, 0);
-        while let Some((dc, df)) = self.mcf_augment(s, t, &mut pot, &mut flow) {
+        loop {
+            let par = self.mcf_search(s, &flow, &mut pot);
+            if par[t] == None {
+                break;
+            }
+            let (dc, df) = self.mcf_augment(t, &par, &mut flow);
             min_cost += dc;
             max_flow += df;
         }
         (min_cost, max_flow)
     }
 
-    // Pushes along an augmenting path of minimum cost, while maintaining the
-    // vertex potentials so that no negative-weight residual edges appear.
-    pub fn mcf_augment(&self,
-                       s: usize,
-                       t: usize,
-                       pot: &mut [i64],
-                       flow: &mut [i64])
-                       -> Option<(i64, i64)> {
+    // Maintains Johnson's potentials to prevent negative-weight residual edges.
+    // This enables running Dijkstra instead of the slower Bellman-Ford.
+    fn mcf_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>> {
         let mut vis = vec![false; self.graph.num_v()];
         let mut dist = vec![INF; self.graph.num_v()];
         let mut par = vec![None; self.graph.num_v()];
 
-        // Potential-reweighted graph has no negative edges, so run Dijkstra.
         dist[s] = 0;
         while let Some(u) = (0..self.graph.num_v())
-                  .filter(|&u| !vis[u])
-                  .min_by_key(|&u| dist[u]) {
+                  .filter(|&u| !vis[u] && dist[u] < INF)
+                  .min_by_key(|&u| dist[u] - pot[u]) {
             vis[u] = true;
+            pot[u] = dist[u];
             for (e, v) in self.graph.adj_list(u) {
-                let d = dist[u] + pot[u] - pot[v] + self.cost[e];
-                if dist[v] > d && flow[e] < self.cap[e] {
-                    dist[v] = d;
+                if dist[v] > dist[u] + self.cost[e] && flow[e] < self.cap[e] {
+                    dist[v] = dist[u] + self.cost[e];
                     par[v] = Some(e);
                 }
             }
         }
-        if dist[t] == INF {
-            return None;
-        }
+        par
+    }
 
+    // Pushes flow along an augmenting path of minimum cost.
+    fn mcf_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64) {
         let (mut dc, mut df) = (0, INF);
         let mut u = t;
         while let Some(e) = par[u] {
@@ -172,10 +175,7 @@ impl FlowGraph {
             dc += df * self.cost[e];
             u = self.graph.endp[e ^ 1];
         }
-        for u in 0..self.graph.num_v() {
-            pot[u] = min(INF, pot[u] + dist[u]);
-        }
-        Some((dc, df))
+        (dc, df)
     }
 }
 
