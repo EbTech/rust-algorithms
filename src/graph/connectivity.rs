@@ -37,25 +37,29 @@ impl<'a> ConnectivityGraph<'a> {
                 if is_directed {
                     connect.scc(u, &mut t, &mut vis, &mut low, &mut v_stack);
                 } else {
-                    connect.bcc(u,
-                                graph.num_e() + 1,
-                                &mut t,
-                                &mut vis,
-                                &mut low,
-                                &mut v_stack,
-                                &mut e_stack);
+                    connect.bcc(
+                        u,
+                        graph.num_e() + 1,
+                        &mut t,
+                        &mut vis,
+                        &mut low,
+                        &mut v_stack,
+                        &mut e_stack,
+                    );
                 }
             }
         }
         connect
     }
 
-    fn scc(&mut self,
-           u: usize,
-           t: &mut usize,
-           vis: &mut [usize],
-           low: &mut [usize],
-           v_stack: &mut Vec<usize>) {
+    fn scc(
+        &mut self,
+        u: usize,
+        t: &mut usize,
+        vis: &mut [usize],
+        low: &mut [usize],
+        v_stack: &mut Vec<usize>,
+    ) {
         *t += 1;
         vis[u] = *t;
         low[u] = *t;
@@ -102,14 +106,16 @@ impl<'a> ConnectivityGraph<'a> {
         vertices
     }
 
-    fn bcc(&mut self,
-           u: usize,
-           par: usize,
-           t: &mut usize,
-           vis: &mut [usize],
-           low: &mut [usize],
-           v_stack: &mut Vec<usize>,
-           e_stack: &mut Vec<usize>) {
+    fn bcc(
+        &mut self,
+        u: usize,
+        par: usize,
+        t: &mut usize,
+        vis: &mut [usize],
+        low: &mut [usize],
+        v_stack: &mut Vec<usize>,
+        e_stack: &mut Vec<usize>,
+    ) {
         *t += 1;
         vis[u] = *t;
         low[u] = *t;
@@ -155,9 +161,9 @@ impl<'a> ConnectivityGraph<'a> {
     // In an undirected graph, determines whether u is an articulation vertex.
     pub fn is_cut_vertex(&self, u: usize) -> bool {
         if let Some(first_e) = self.graph.first[u] {
-            self.graph
-                .adj_list(u)
-                .any(|(e, _)| self.vcc[first_e] != self.vcc[e])
+            self.graph.adj_list(u).any(|(e, _)| {
+                self.vcc[first_e] != self.vcc[e]
+            })
         } else {
             false
         }
@@ -183,8 +189,10 @@ mod test {
         graph.add_edge(3, 1);
         graph.add_edge(1, 0);
 
-        assert_eq!(ConnectivityGraph::new(&graph, true).topological_sort(),
-                   vec![3, 1, 0, 2]);
+        assert_eq!(
+            ConnectivityGraph::new(&graph, true).topological_sort(),
+            vec![3, 1, 0, 2]
+        );
     }
 
     #[test]
@@ -195,8 +203,10 @@ mod test {
         graph.add_two_sat_clause(x, z);
         graph.add_two_sat_clause(y ^ 1, z ^ 1);
         graph.add_two_sat_clause(y, y);
-        assert_eq!(ConnectivityGraph::new(&graph, true).two_sat_assign(),
-                   Some(vec![true, true, false]));
+        assert_eq!(
+            ConnectivityGraph::new(&graph, true).two_sat_assign(),
+            Some(vec![true, true, false])
+        );
 
         graph.add_two_sat_clause(z, z);
         assert_eq!(ConnectivityGraph::new(&graph, true).two_sat_assign(), None);

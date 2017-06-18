@@ -121,7 +121,9 @@ impl Graph {
         let mut components = DisjointSets::new(self.num_v());
         edges
             .into_iter()
-            .filter(|&e| components.merge(self.endp[2 * e], self.endp[2 * e + 1]))
+            .filter(|&e| {
+                components.merge(self.endp[2 * e], self.endp[2 * e + 1])
+            })
             .collect()
     }
 }
@@ -138,10 +140,10 @@ impl<'a> Iterator for AdjListIterator<'a> {
     // Produces an outgoing edge and vertex.
     fn next(&mut self) -> Option<Self::Item> {
         self.next_e.map(|e| {
-                            let v = self.graph.endp[e];
-                            self.next_e = self.graph.next[e];
-                            (e, v)
-                        })
+            let v = self.graph.endp[e];
+            self.next_e = self.graph.next[e];
+            (e, v)
+        })
     }
 }
 

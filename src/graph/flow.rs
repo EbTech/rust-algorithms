@@ -67,14 +67,15 @@ impl FlowGraph {
     }
 
     // Pushes a blocking flow that increases the residual's s-t distance.
-    fn dinic_augment(&self,
-                     u: usize,
-                     t: usize,
-                     f: i64,
-                     dist: &[i64],
-                     adj: &mut [::std::iter::Peekable<AdjListIterator>],
-                     flow: &mut [i64])
-                     -> i64 {
+    fn dinic_augment(
+        &self,
+        u: usize,
+        t: usize,
+        f: i64,
+        dist: &[i64],
+        adj: &mut [::std::iter::Peekable<AdjListIterator>],
+        flow: &mut [i64],
+    ) -> i64 {
         if u == t {
             return f;
         }
@@ -101,10 +102,10 @@ impl FlowGraph {
     pub fn min_cut(&self, dist: &[i64]) -> Vec<usize> {
         (0..self.graph.num_e())
             .filter(|&e| {
-                        let u = self.graph.endp[e ^ 1];
-                        let v = self.graph.endp[e];
-                        dist[u] < INF && dist[v] == INF
-                    })
+                let u = self.graph.endp[e ^ 1];
+                let v = self.graph.endp[e];
+                dist[u] < INF && dist[v] == INF
+            })
             .collect()
     }
 
@@ -146,8 +147,9 @@ impl FlowGraph {
 
         dist[s] = 0;
         while let Some(u) = (0..self.graph.num_v())
-                  .filter(|&u| !vis[u] && dist[u] < INF)
-                  .min_by_key(|&u| dist[u] - pot[u]) {
+            .filter(|&u| !vis[u] && dist[u] < INF)
+            .min_by_key(|&u| dist[u] - pot[u])
+        {
             vis[u] = true;
             pot[u] = dist[u];
             for (e, v) in self.graph.adj_list(u) {

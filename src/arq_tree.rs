@@ -108,11 +108,11 @@ mod test {
 
     #[test]
     fn test_arq_tree() {
-        let mut tree = ArqTree::new(10);
+        let mut arq = ArqTree::new(10);
 
-        tree.modify(1, 3, 10);
-        tree.modify(3, 5, 1);
+        arq.modify(1, 3, 10);
+        arq.modify(3, 5, 1);
 
-        assert_eq!(tree.query(0, 9), 23);
+        assert_eq!(arq.query(0, 9), 23);
     }
 }

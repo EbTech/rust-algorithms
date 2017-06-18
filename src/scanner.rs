@@ -17,15 +17,14 @@ impl<B: io::BufRead> Scanner<B> {
 
     // Use "turbofish" syntax next::<T>() to select data type of next token.
     pub fn next<T: ::std::str::FromStr>(&mut self) -> T
-        where T::Err: ::std::fmt::Debug
+    where
+        T::Err: ::std::fmt::Debug,
     {
         if let Some(front) = self.buffer.pop() {
             front.parse::<T>().expect(&front)
         } else {
             let mut input = String::new();
-            self.reader
-                .read_line(&mut input)
-                .expect("Couldn't read line");
+            self.reader.read_line(&mut input).expect("Line not read");
             self.buffer = input.split_whitespace().rev().map(String::from).collect();
             self.next()
         }
