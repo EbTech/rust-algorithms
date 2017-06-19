@@ -1,3 +1,4 @@
+//! Algorithms Cookbook in Rust.
 pub mod arq_tree;
 pub mod graph;
 pub mod math;

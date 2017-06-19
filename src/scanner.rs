@@ -1,21 +1,22 @@
-// Generic utility for reading data from standard input, based on
-// http://codeforces.com/contest/702/submission/19589375
+//! Generic utility for reading data from standard input, based on [voxl's
+//! stdin wrapper](http://codeforces.com/contest/702/submission/19589375).
 use std::io;
 
+/// Reads white-space separated tokens one at a time.
 pub struct Scanner<B> {
-    buffer: Vec<String>,
     reader: B,
+    buffer: Vec<String>,
 }
 
 impl<B: io::BufRead> Scanner<B> {
     pub fn new(reader: B) -> Self {
         Self {
-            buffer: Vec::new(),
             reader: reader,
+            buffer: Vec::new(),
         }
     }
 
-    // Use "turbofish" syntax next::<T>() to select data type of next token.
+    /// Use "turbofish" syntax next::<T>() to select data type of next token.
     pub fn next<T: ::std::str::FromStr>(&mut self) -> T
     where
         T::Err: ::std::fmt::Debug,

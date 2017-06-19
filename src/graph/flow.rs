@@ -1,8 +1,9 @@
+//! Maximum flows and minimum cuts.
 use graph::{Graph, AdjListIterator};
 use std::cmp::min;
 const INF: i64 = 0x3f3f3f3f;
 
-// Representation of a network flow problem with (optional) costs.
+/// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
     pub graph: Graph, // Owned graph, controlled by this FlowGraph object.
     pub cap: Vec<i64>,
@@ -10,7 +11,7 @@ pub struct FlowGraph {
 }
 
 impl FlowGraph {
-    // Initializes an flow network with vmax vertices and no edges.
+    /// Initializes an flow network with vmax vertices and no edges.
     pub fn new(vmax: usize, emax: usize) -> Self {
         Self {
             graph: Graph::new(vmax, 2 * emax),
@@ -19,8 +20,8 @@ impl FlowGraph {
         }
     }
 
-    // Adds an edge with specified capacity and cost. The reverse edge is also
-    // added for residual graph computation, but has zero capacity.
+    /// Adds an edge with specified capacity and cost. The reverse edge is also
+    /// added for residual graph computation, but has zero capacity.
     pub fn add_edge(&mut self, u: usize, v: usize, cap: i64, cost: i64) {
         self.cap.push(cap);
         self.cap.push(0);
@@ -29,9 +30,9 @@ impl FlowGraph {
         self.graph.add_undirected_edge(u, v);
     }
 
-    // Dinic's maximum flow / Hopcroft-Karp maximum bipartite matching:
-    // V^2E in general, min(V^(2/3),sqrt(E))E when all edges are unit capacity,
-    // sqrt(V)E when all vertices are unit capacity as in bipartite graphs.
+    /// Dinic's maximum flow / Hopcroft-Karp maximum bipartite matching:
+    /// V^2E in general, min(V^(2/3),sqrt(E))E when all edges are unit capacity,
+    /// sqrt(V)E when all vertices are unit capacity as in bipartite graphs.
     pub fn dinic(&self, s: usize, t: usize) -> i64 {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
@@ -98,7 +99,7 @@ impl FlowGraph {
         return df;
     }
 
-    // After running maximum flow, use this to recover the dual minimum cut.
+    /// After running maximum flow, use this to recover the dual minimum cut.
     pub fn min_cut(&self, dist: &[i64]) -> Vec<usize> {
         (0..self.graph.num_e())
             .filter(|&e| {
@@ -109,7 +110,7 @@ impl FlowGraph {
             .collect()
     }
 
-    // Minimum cost maximum flow, assuming no negative-cost cycles.
+    /// Minimum cost maximum flow, assuming no negative-cost cycles.
     pub fn mcf(&self, s: usize, t: usize) -> (i64, i64) {
         let mut pot = vec![0; self.graph.num_v()];
 

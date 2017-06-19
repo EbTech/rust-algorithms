@@ -1,15 +1,18 @@
-// Associative Range Query Tree based on http://codeforces.com/blog/entry/18051
-// Colloquially known as a "segtree" in the sport programming literature, it
-// represents a sequence of elements a_i (0 <= i < size) from a monoid (M, +) on
-// which we want to support fast range operations:
-// - modify(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for a homomorphism f
-// - query(l, r) returns the aggregate a_l + a_{l+1} + ... + a_r
-//
-// To customize, simply change the commented lines.
-// In this example, we chose to support range sum queries and range constant
-// assignments. Since constant assignment f_c(a) = c is not a homomorphism over
-// integers, we have to augment the monoid type, using the 2D vector (a_i, 1)
-// instead of a_i. You may check that f_c((a, s)) = (c*s, s) is a homomorphism.
+//! Associative Range Query Tree based on [Al.Cash's compact representation]
+//! (http://codeforces.com/blog/entry/18051).
+
+/// Colloquially known as a "segtree" in the sport programming literature, it
+/// represents a sequence of elements a_i (0 <= i < size) from a monoid (M, +) on
+/// which we want to support fast range operations:
+///
+/// - modify(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for a homomorphism f
+/// - query(l, r) returns the aggregate a_l + a_{l+1} + ... + a_r
+///
+/// To customize, simply change the commented lines.
+/// In this example, we chose to support range sum queries and range constant
+/// assignments. Since constant assignment f_c(a) = c is not a homomorphism over
+/// integers, we have to augment the monoid type, using the 2D vector (a_i, 1)
+/// instead of a_i. You may check that f_c((a, s)) = (c*s, s) is a homomorphism.
 pub struct ArqTree {
     d: Vec<Option<i64>>,
     t: Vec<i64>,
@@ -17,6 +20,7 @@ pub struct ArqTree {
 }
 
 impl ArqTree {
+    /// Initializes a sequence of identity elements.
     pub fn new(size: usize) -> Self {
         let mut s = vec![1; 2 * size];
         for i in (0..size).rev() {
@@ -56,7 +60,7 @@ impl ArqTree {
         }
     }
 
-    // Performs the homomorphism f on all entries from l to r, inclusive.
+    /// Performs the homomorphism f on all entries from l to r, inclusive.
     pub fn modify(&mut self, mut l: usize, mut r: usize, f: i64) {
         l += self.d.len();
         r += self.d.len();
@@ -79,7 +83,7 @@ impl ArqTree {
         self.pull(r0);
     }
 
-    // Returns the aggregate range query on all entries from l to r, inclusive.
+    /// Returns the aggregate range query on all entries from l to r, inclusive.
     pub fn query(&mut self, mut l: usize, mut r: usize) -> i64 {
         l += self.d.len();
         r += self.d.len();

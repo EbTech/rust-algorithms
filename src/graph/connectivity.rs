@@ -1,12 +1,15 @@
+//! Graph connectivity structures.
 use graph::Graph;
 use std::cmp::min;
 
-// Represents the decomposition of a graph into any of its:
-// - Connected components (CC),
-// - Strongly connected components (SCC),
-// - 2-edge-connected components (2ECC),
-// - 2-vertex-connected components (2VCC)
-// Multiple-edges and self-loops should be correctly handled.
+/// Represents the decomposition of a graph into any of its constituent parts:
+///
+/// - Connected components (CC),
+/// - Strongly connected components (SCC),
+/// - 2-edge-connected components (2ECC),
+/// - 2-vertex-connected components (2VCC)
+///
+/// Multiple-edges and self-loops should be correctly handled.
 pub struct ConnectivityGraph<'a> {
     pub graph: &'a Graph, // Immutable graph, frozen for lifetime of this obj.
     pub cc: Vec<usize>, // Stores id of a vertex's CC, SCC or 2ECC.
@@ -16,9 +19,9 @@ pub struct ConnectivityGraph<'a> {
 }
 
 impl<'a> ConnectivityGraph<'a> {
-    // Computes the SCCs of a directed graph in reverse topological order, or
-    // the 2ECCs/2VCCS of an undirected graph. Can also get CCs by passing an
-    // undirected graph with is_directed == true.
+    /// Computes the SCCs of a directed graph in reverse topological order, or
+    /// the 2ECCs/2VCCS of an undirected graph. Can also get CCs by passing an
+    /// undirected graph using `is_directed == true`.
     pub fn new(graph: &'a Graph, is_directed: bool) -> Self {
         let mut connect = Self {
             graph: graph,
@@ -83,8 +86,8 @@ impl<'a> ConnectivityGraph<'a> {
         }
     }
 
-    // From the directed implication graph corresponding to a 2-SAT clause,
-    // finds a satisfying assignment if it exists or returns None otherwise.
+    /// From the directed implication graph corresponding to a 2-SAT clause,
+    /// finds a satisfying assignment if it exists or returns None otherwise.
     pub fn two_sat_assign(&self) -> Option<Vec<bool>> {
         (0..self.graph.num_v() / 2)
             .map(|i| {
@@ -99,7 +102,7 @@ impl<'a> ConnectivityGraph<'a> {
             .collect()
     }
 
-    // Gets the vertices of a directed acyclic graph (DAG) in topological order.
+    /// Gets the vertices of a directed acyclic graph (DAG) in topological order.
     pub fn topological_sort(&self) -> Vec<usize> {
         let mut vertices = (0..self.graph.num_v()).collect::<Vec<_>>();
         vertices.sort_by_key(|&u| self.num_cc - self.cc[u]);
@@ -158,7 +161,7 @@ impl<'a> ConnectivityGraph<'a> {
         }
     }
 
-    // In an undirected graph, determines whether u is an articulation vertex.
+    /// In an undirected graph, determines whether u is an articulation vertex.
     pub fn is_cut_vertex(&self, u: usize) -> bool {
         if let Some(first_e) = self.graph.first[u] {
             self.graph.adj_list(u).any(|(e, _)| {
@@ -169,7 +172,7 @@ impl<'a> ConnectivityGraph<'a> {
         }
     }
 
-    // In an undirected graph, determines whether v is a bridge
+    /// In an undirected graph, determines whether e is a bridge
     pub fn is_cut_edge(&self, e: usize) -> bool {
         let u = self.graph.endp[e ^ 1];
         let v = self.graph.endp[e];

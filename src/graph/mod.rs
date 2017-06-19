@@ -1,20 +1,21 @@
+//! Basic graph library without explicit support for deletion.
 pub mod flow;
 pub mod connectivity;
 
-// Represents a union of disjoint sets. Each set's elements are arranged in a
-// tree, whose root is the set's representative.
+/// Represents a union of disjoint sets. Each set's elements are arranged in a
+/// tree, whose root is the set's representative.
 pub struct DisjointSets {
     parent: Vec<usize>,
 }
 
 impl DisjointSets {
-    // Initializes disjoint sets containing one element each.
+    /// Initializes disjoint sets containing one element each.
     pub fn new(size: usize) -> Self {
         Self { parent: (0..size).collect() }
     }
 
-    // Finds the set's representative. Do path compression along the way to make
-    // future queries faster.
+    /// Finds the set's representative. Do path compression along the way to make
+    /// future queries faster.
     pub fn find(&mut self, u: usize) -> usize {
         let pu = self.parent[u];
         if pu != u {
@@ -23,8 +24,8 @@ impl DisjointSets {
         self.parent[u]
     }
 
-    // Merges the sets containing u and v into a single set containing their
-    // union. Returns true if u and v were previously in different sets.
+    /// Merges the sets containing u and v into a single set containing their
+    /// union. Returns true if u and v were previously in different sets.
     pub fn merge(&mut self, u: usize, v: usize) -> bool {
         let (pu, pv) = (self.find(u), self.find(v));
         self.parent[pu] = pv;
@@ -32,7 +33,7 @@ impl DisjointSets {
     }
 }
 
-// A compact graph representation.
+/// A compact graph representation.
 pub struct Graph {
     pub first: Vec<Option<usize>>,
     pub next: Vec<Option<usize>>,
@@ -40,8 +41,8 @@ pub struct Graph {
 }
 
 impl Graph {
-    // Initializes a graph with vmax vertices and no edges. For best efficiency,
-    // emax should be a tight upper bound on the number of edges to insert.
+    /// Initializes a graph with vmax vertices and no edges. For best efficiency,
+    /// emax should be a tight upper bound on the number of edges to insert.
     pub fn new(vmax: usize, emax: usize) -> Self {
         Self {
             first: vec![None; vmax],
@@ -50,39 +51,39 @@ impl Graph {
         }
     }
 
-    // Returns the number of vertices.
+    /// Returns the number of vertices.
     pub fn num_v(&self) -> usize {
         self.first.len()
     }
 
-    // Returns the number of edges, double-counting undirected edges.
+    /// Returns the number of edges, double-counting undirected edges.
     pub fn num_e(&self) -> usize {
         self.endp.len()
     }
 
-    // Adds a directed edge from u to v.
+    /// Adds a directed edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize) {
         self.next.push(self.first[u]);
         self.first[u] = Some(self.num_e());
         self.endp.push(v);
     }
 
-    // An undirected edge is two directed edges. If edges are added only via
-    // this funcion, the reverse of any edge e can be found at e^1.
+    /// An undirected edge is two directed edges. If edges are added only via
+    /// this funcion, the reverse of any edge e can be found at e^1.
     pub fn add_undirected_edge(&mut self, u: usize, v: usize) {
         self.add_edge(u, v);
         self.add_edge(v, u);
     }
 
-    // If we think of each even-numbered vertex as a variable, and its successor
-    // as its negation, then we can build the implication graph corresponding
-    // to any 2-CNF formula. Note that u||v == !u -> v == !v -> u.
+    /// If we think of each even-numbered vertex as a variable, and its successor
+    /// as its negation, then we can build the implication graph corresponding
+    /// to any 2-CNF formula. Note that u||v == !u -> v == !v -> u.
     pub fn add_two_sat_clause(&mut self, u: usize, v: usize) {
         self.add_edge(u ^ 1, v);
         self.add_edge(v ^ 1, u);
     }
 
-    // Gets vertex u's adjacency list.
+    /// Gets vertex u's adjacency list.
     pub fn adj_list(&self, u: usize) -> AdjListIterator {
         AdjListIterator {
             graph: self,
@@ -90,9 +91,9 @@ impl Graph {
         }
     }
 
-    // Finds the sequence of edges in an Euler path starting from u, assuming it
-    // exists and that the graph is directed. To extend this to undirected
-    // graphs, keep track of a visited array to skip the reverse edge.
+    /// Finds the sequence of edges in an Euler path starting from u, assuming it
+    /// exists and that the graph is directed. To extend this to undirected
+    /// graphs, keep track of a visited array to skip the reverse edge.
     pub fn euler_path(&self, u: usize) -> Vec<usize> {
         let mut adj_iters = (0..self.num_v())
             .map(|u| self.adj_list(u))
@@ -112,7 +113,7 @@ impl Graph {
         }
     }
 
-    // Kruskal's minimum spanning tree algorithm on an undirected graph.
+    /// Kruskal's minimum spanning tree algorithm on an undirected graph.
     pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
         assert_eq!(self.num_e(), 2 * weights.len());
         let mut edges = (0..weights.len()).collect::<Vec<_>>();
@@ -128,7 +129,7 @@ impl Graph {
     }
 }
 
-// An iterator for convenient adjacency list traversal.
+/// An iterator for convenient adjacency list traversal.
 pub struct AdjListIterator<'a> {
     graph: &'a Graph,
     next_e: Option<usize>,
@@ -137,7 +138,7 @@ pub struct AdjListIterator<'a> {
 impl<'a> Iterator for AdjListIterator<'a> {
     type Item = (usize, usize);
 
-    // Produces an outgoing edge and vertex.
+    /// Produces an outgoing edge and vertex.
     fn next(&mut self) -> Option<Self::Item> {
         self.next_e.map(|e| {
             let v = self.graph.endp[e];
