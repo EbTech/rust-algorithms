@@ -1,4 +1,4 @@
-# Algorithms Cookbook in Rust
+# Algorithm Cookbook in Rust
 
 A collection of classic data structures and algorithms, emphasizing beauty and clarity over full generality. As such, this should not be viewed as a blackbox *library*, but as a whitebox *cookbook* demonstrating the translation of abstract concepts into executable code. I hope it will be useful to students and educators, as well as competition programmers.
 
@@ -18,7 +18,7 @@ Most competitive programmers use C/C++ because it allows for fast coding as well
 
 ## Programming Language Advocacy
 
-My other goal is to show developers that C++ and Java kinda suck, and that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in](https://www.rust-lang.org)!
+My other goal is to appeal to developers who feel, as I once did, trapped between the lesser of headaches (e.g., C++ and Java), to raise awareness that *it doesn't have to be this way*. Rather than trying to persuade you with words, this repository aims to show by example and ease the learning curve a bit. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in](https://www.rust-lang.org)!
 
 ## Contents
 
