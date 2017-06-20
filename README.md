@@ -1,5 +1,7 @@
 # Algorithm Cookbook in Rust
 
+[![Build Status](https://travis-ci.org/EbTech/rust-algorithms.svg?branch=master)](https://travis-ci.org/EbTech/rust-algorithms)
+
 A collection of classic data structures and algorithms, emphasizing beauty and clarity over full generality. As such, this should not be viewed as a blackbox *library*, but as a whitebox *cookbook* demonstrating the translation of abstract concepts into executable code. I hope it will be useful to students and educators, as well as competition programmers.
 
 This repository is distributed under the [MIT License](LICENSE). The license text need not be included in contest submissions, though I would appreciate linking back to this repo for others to find. Enjoy!
