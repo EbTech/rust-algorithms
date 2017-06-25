@@ -31,7 +31,7 @@ where
     }
 
     fn apply(&mut self, p: usize, f: &T::H) {
-        self.t[p] = T::apply(f, &self.t[p]); // hom application
+        self.t[p] = T::apply(f, &self.t[p]);
         if p < self.d.len() {
             let h = if let Some(ref g) = self.d[p] {
                 T::compose(f, g)
@@ -56,7 +56,7 @@ where
         while p > 1 {
             p >>= 1;
             if self.d[p].is_none() {
-                self.t[p] = T::op(&self.t[p << 1], &self.t[p << 1 | 1]); // monoid op
+                self.t[p] = T::op(&self.t[p << 1], &self.t[p << 1 | 1]);
             }
         }
     }
@@ -90,20 +90,20 @@ where
         r += self.d.len();
         self.push(l);
         self.push(r);
-        let mut res = T::identity(); // monoid identity
+        let (mut l_agg, mut r_agg) = (T::identity(), T::identity());
         while l <= r {
             if l & 1 == 1 {
-                res = T::op(&res, &self.t[l]); // monoid op
+                l_agg = T::op(&l_agg, &self.t[l]);
                 l += 1;
             }
             if r & 1 == 0 {
-                res = T::op(&self.t[r], &res); // monoid op
+                r_agg = T::op(&self.t[r], &r_agg);
                 r -= 1;
             }
             l >>= 1;
             r >>= 1;
         }
-        res
+        T::op(&l_agg, &r_agg)
     }
 }
 
