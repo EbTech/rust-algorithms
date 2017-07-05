@@ -56,7 +56,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "File not found")]
     fn test_file() {
         let file = ::std::fs::File::open("asdf.txt").expect("File not found");
         let mut scan = Scanner::new(io::BufReader::new(file));

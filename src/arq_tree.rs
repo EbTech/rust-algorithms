@@ -2,19 +2,19 @@
 //! (http://codeforces.com/blog/entry/18051).
 
 /// Colloquially known as a "segtree" in the sport programming literature, it
-/// represents a sequence of elements a_i (0 <= i < size) from a monoid (M, +) on
-/// which we want to support fast range operations:
+/// represents a sequence of elements a_i (0 <= i < size) from a monoid (M, +)
+/// on which we want to support fast range operations:
 ///
-/// - modify(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for a homomorphism f
+/// - modify(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for an endomorphism f
 /// - query(l, r) returns the aggregate a_l + a_{l+1} + ... + a_r
 pub struct ArqTree<T: ArqSpec> {
-    d: Vec<Option<T::H>>,
+    d: Vec<Option<T::F>>,
     t: Vec<T::M>,
 }
 
 impl<T: ArqSpec> ArqTree<T>
 where
-    T::H: Clone,
+    T::F: Clone,
 {
     /// Initializes a static balanced tree on top of the given sequence.
     pub fn new(mut init: Vec<T::M>) -> Self {
@@ -25,18 +25,17 @@ where
             t[i] = T::op(&t[i << 1], &t[i << 1 | 1]);
         }
         Self {
-            d: (0..size).map(|_| None).collect(),
+            d: vec![None; size],
             t: t,
         }
     }
 
-    fn apply(&mut self, p: usize, f: &T::H) {
+    fn apply(&mut self, p: usize, f: &T::F) {
         self.t[p] = T::apply(f, &self.t[p]);
         if p < self.d.len() {
-            let h = if let Some(ref g) = self.d[p] {
-                T::compose(f, g)
-            } else {
-                f.clone()
+            let h = match self.d[p] {
+                Some(ref g) => T::compose(f, g),
+                None => f.clone(),
             };
             self.d[p] = Some(h);
         }
@@ -61,8 +60,8 @@ where
         }
     }
 
-    /// Performs the homomorphism f on all entries from l to r, inclusive.
-    pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::H) {
+    /// Performs the endomorphism f on all entries from l to r, inclusive.
+    pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F) {
         l += self.d.len();
         r += self.d.len();
         let (l0, r0) = (l, r);
@@ -108,27 +107,36 @@ where
 }
 
 pub trait ArqSpec {
-    type H;
+    type F;
     type M;
-    fn compose(f: &Self::H, g: &Self::H) -> Self::H;
-    fn apply(f: &Self::H, a: &Self::M) -> Self::M;
+    /// Require for all f,g,a: apply(compose(f, g), a) = apply(f, apply(g, a))
+    fn compose(f: &Self::F, g: &Self::F) -> Self::F;
+    /// Require for all f,a,b: apply(f, op(a, b)) = op(apply(f, a), apply(f, b))
+    fn apply(f: &Self::F, a: &Self::M) -> Self::M;
+    /// Require for alla,b,c: op(a, op(b, c)) = op(op(a, b), c)
     fn op(a: &Self::M, b: &Self::M) -> Self::M;
+    /// Require all a: op(a, identity()) = op(identity(), a) = a
     fn identity() -> Self::M;
 }
 
-/// In this example, we chose to support range sum queries and range constant
-/// assignments. Since constant assignment f_c(a) = c is not a homomorphism over
-/// integers, we have to augment the monoid type, using the 2D vector (a_i, 1)
-/// instead of a_i. You may check that f_c((a, s)) = (c*s, s) is a homomorphism.
+/// In this example, we want to support range sum queries and range constant
+/// assignments. Note that constant assignment f_c(a) = c is not a endomorphism
+/// on integers because f_c(a+b) = c != 2*c = f_c(a) + f_c(b). In intuitive
+/// terms, the problem is that the internal nodes of the tree should really be
+/// set to a multiple of c, corresponding to the subtree size. So let's augment
+/// the monoid type with size information, using the 2D vector (a_i,1) instead
+/// of a_i. Now check that f_c((a, s)) = (c*s, s) is indeed an endomorphism:
+/// f_c((a,s)+(b,t)) = f_c((a+b,s+t)) = (c*(s+t),s+t) = (c*s,s)+(c*t,t) =
+/// f_c((a,s)) + f_c((b,t)).
 pub struct AssignAdd;
 
 impl ArqSpec for AssignAdd {
-    type H = i64;
+    type F = i64;
     type M = (i64, i64);
-    fn compose(f: &Self::H, _: &Self::H) -> Self::H {
+    fn compose(f: &Self::F, _: &Self::F) -> Self::F {
         *f
     }
-    fn apply(f: &Self::H, a: &Self::M) -> Self::M {
+    fn apply(f: &Self::F, a: &Self::M) -> Self::M {
         (f * a.1, a.1)
     }
     fn op(a: &Self::M, b: &Self::M) -> Self::M {

@@ -12,11 +12,11 @@ pub struct FlowGraph {
 
 impl FlowGraph {
     /// Initializes an flow network with vmax vertices and no edges.
-    pub fn new(vmax: usize, emax: usize) -> Self {
+    pub fn new(vmax: usize, emax_hint: usize) -> Self {
         Self {
-            graph: Graph::new(vmax, 2 * emax),
-            cap: Vec::with_capacity(2 * emax),
-            cost: Vec::with_capacity(2 * emax),
+            graph: Graph::new(vmax, 2 * emax_hint),
+            cap: Vec::with_capacity(2 * emax_hint),
+            cost: Vec::with_capacity(2 * emax_hint),
         }
     }
 

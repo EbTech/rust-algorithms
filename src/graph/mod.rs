@@ -33,21 +33,22 @@ impl DisjointSets {
     }
 }
 
-/// A compact graph representation.
+/// A compact graph representation. Edges are numbered in order of insertion.
 pub struct Graph {
-    pub first: Vec<Option<usize>>,
-    pub next: Vec<Option<usize>>,
-    pub endp: Vec<usize>,
+    first: Vec<Option<usize>>,
+    next: Vec<Option<usize>>,
+    endp: Vec<usize>,
 }
 
 impl Graph {
-    /// Initializes a graph with vmax vertices and no edges. For best efficiency,
-    /// emax should be a tight upper bound on the number of edges to insert.
-    pub fn new(vmax: usize, emax: usize) -> Self {
+    /// Initializes a graph with vmax vertices and no edges. To reduce
+    /// unnecessary allocations, emax_hint should be close to the number of
+    /// edges that will be inserted.
+    pub fn new(vmax: usize, emax_hint: usize) -> Self {
         Self {
             first: vec![None; vmax],
-            next: Vec::with_capacity(emax),
-            endp: Vec::with_capacity(emax),
+            next: Vec::with_capacity(emax_hint),
+            endp: Vec::with_capacity(emax_hint),
         }
     }
 
