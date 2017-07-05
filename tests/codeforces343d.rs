@@ -85,8 +85,7 @@ fn main1() {
         let c = scan.next::<usize>();
         let v = scan.next::<usize>() - 1;
         let (p, l, r) = (p[v], l[v], r[v]);
-        let len = (1 + r - l) as i64;
-        let full = arq.query(l, r).0 == len;
+        let full = arq.query(l, r).0 == arq.query(l, r).1;
         if c == 1 {
             if !full {
                 arq.modify(p, p, &0);
