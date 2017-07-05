@@ -3,8 +3,6 @@
 //! module's contents directly here instead of the use statements.
 //! Also, replace io::Cursor with io::stdin as shown in scanner.rs.
 extern crate algorithms;
-use std::fmt::Write as FmtWrite;
-use std::io::Cursor;
 use algorithms::arq_tree::{ArqTree, AssignAdd};
 use algorithms::graph::Graph;
 use algorithms::scanner::Scanner;
@@ -62,7 +60,7 @@ fn dfs(
 }
 
 fn main1() {
-    let cursor = Cursor::new(SAMPLE_INPUT);
+    let cursor = std::io::Cursor::new(SAMPLE_INPUT);
     let mut scan = Scanner::new(cursor);
     let mut out = String::new();
 
@@ -84,17 +82,17 @@ fn main1() {
     for _ in 0..q {
         let c = scan.next::<usize>();
         let v = scan.next::<usize>() - 1;
-        let (p, l, r) = (p[v], l[v], r[v]);
-        let full = arq.query(l, r).0 == arq.query(l, r).1;
+        let (sum, len) = arq.query(l[v], r[v]);
         if c == 1 {
-            if !full {
-                arq.modify(p, p, &0);
-                arq.modify(l, r, &1);
+            if sum != len {
+                arq.modify(p[v], p[v], &0);
+                arq.modify(l[v], r[v], &1);
             }
         } else if c == 2 {
-            arq.modify(l, l, &0);
+            arq.modify(l[v], l[v], &0);
         } else {
-            writeln!(&mut out, "{}", if full { 1 } else { 0 }).unwrap();
+            use std::fmt::Write;
+            writeln!(&mut out, "{}", if sum == len { 1 } else { 0 }).unwrap();
         }
     }
 

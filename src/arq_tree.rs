@@ -147,7 +147,6 @@ impl ArqSpec for AssignAdd {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
