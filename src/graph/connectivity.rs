@@ -9,19 +9,25 @@ use std::cmp::min;
 /// - 2-edge-connected components (2ECC),
 /// - 2-vertex-connected components (2VCC)
 ///
-/// Multiple-edges and self-loops should be correctly handled.
+/// Multiple-edges and self-loops are correctly handled.
 pub struct ConnectivityGraph<'a> {
-    pub graph: &'a Graph, // Immutable graph, frozen for lifetime of this obj.
-    pub cc: Vec<usize>, // Stores id of a vertex's CC, SCC or 2ECC.
-    pub vcc: Vec<usize>, // Stores id of an edge's 2VCC.
+    // Immutable graph, frozen for the lifetime of the ConnectivityGraph object.
+    pub graph: &'a Graph,
+    /// ID of a vertex's CC, SCC or 2ECC (new() documents when each applies).
+    pub cc: Vec<usize>,
+    /// ID of an edge's 2VCC, where applicable.
+    pub vcc: Vec<usize>,
+    /// Total number of CCs, SCCs or 2ECCs, whichever applies.
     pub num_cc: usize,
+    /// Total number of 2VCCs, where applicable.
     pub num_vcc: usize,
 }
 
 impl<'a> ConnectivityGraph<'a> {
     /// Computes the SCCs of a directed graph in reverse topological order, or
     /// the 2ECCs/2VCCS of an undirected graph. Can also get CCs by passing an
-    /// undirected graph using `is_directed == true`.
+    /// undirected graph using `is_directed == true`. Undefined behavior if
+    /// passing a directed graph using `is_directed == false`.
     pub fn new(graph: &'a Graph, is_directed: bool) -> Self {
         let mut connect = Self {
             graph: graph,
@@ -102,7 +108,8 @@ impl<'a> ConnectivityGraph<'a> {
             .collect()
     }
 
-    /// Gets the vertices of a directed acyclic graph (DAG) in topological order.
+    /// Gets the vertices of a directed acyclic graph (DAG) in topological
+    /// order. Undefined behavior if the graph is not a DAG.
     pub fn topological_sort(&self) -> Vec<usize> {
         let mut vertices = (0..self.graph.num_v()).collect::<Vec<_>>();
         vertices.sort_by_key(|&u| self.num_cc - self.cc[u]);

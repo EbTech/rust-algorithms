@@ -8,6 +8,10 @@ pub struct Matcher<'a> {
 
 impl<'a> Matcher<'a> {
     /// Sets fail[i] = length of longest proper prefix-suffix of pattern[0...i].
+    ///
+    /// # Panics
+    ///
+    /// Panics if pattern is empty.
     pub fn new(pattern: &'a [u8]) -> Self {
         let mut fail = Vec::with_capacity(pattern.len());
         fail.push(0);
@@ -51,6 +55,10 @@ impl<'a> Matcher<'a> {
 /// Manacher's algorithm for computing palindrome substrings in linear time.
 /// len[2*i] = odd length of palindrome centred at text[i].
 /// len[2*i+1] = even length of palindrome centred at text[i+0.5].
+///
+/// # Panics
+///
+/// Panics if text is empty.
 pub fn palindromes(text: &[u8]) -> Vec<usize> {
     let mut len = Vec::with_capacity(2 * text.len() - 1);
     len.push(1);

@@ -60,7 +60,7 @@ where
         }
     }
 
-    /// Performs the endomorphism f on all entries from l to r, inclusive.
+    /// Applies the endomorphism f to all entries from l to r, inclusive.
     pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F) {
         l += self.d.len();
         r += self.d.len();
@@ -113,9 +113,9 @@ pub trait ArqSpec {
     fn compose(f: &Self::F, g: &Self::F) -> Self::F;
     /// Require for all f,a,b: apply(f, op(a, b)) = op(apply(f, a), apply(f, b))
     fn apply(f: &Self::F, a: &Self::M) -> Self::M;
-    /// Require for alla,b,c: op(a, op(b, c)) = op(op(a, b), c)
+    /// Require for all a,b,c: op(a, op(b, c)) = op(op(a, b), c)
     fn op(a: &Self::M, b: &Self::M) -> Self::M;
-    /// Require all a: op(a, identity()) = op(identity(), a) = a
+    /// Require for all a: op(a, identity()) = op(identity(), a) = a
     fn identity() -> Self::M;
 }
 
@@ -128,6 +128,10 @@ pub trait ArqSpec {
 /// of a_i. Now check that f_c((a, s)) = (c*s, s) is indeed an endomorphism:
 /// f_c((a,s)+(b,t)) = f_c((a+b,s+t)) = (c*(s+t),s+t) = (c*s,s)+(c*t,t) =
 /// f_c((a,s)) + f_c((b,t)).
+///
+/// # Panics
+///
+/// Associated functions will panic on overflow.
 pub struct AssignAdd;
 
 impl ArqSpec for AssignAdd {

@@ -1,12 +1,15 @@
-//! Maximum flows and minimum cuts.
+//! Maximum flows, matchings, and minimum cuts.
 use graph::{Graph, AdjListIterator};
 use std::cmp::min;
 const INF: i64 = 0x3f3f3f3f;
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
-    pub graph: Graph, // Owned graph, controlled by this FlowGraph object.
+    /// Owned graph, managed by this FlowGraph object.
+    pub graph: Graph,
+    /// Edge capacities.
     pub cap: Vec<i64>,
+    /// Edge cost per unit flow.
     pub cost: Vec<i64>,
 }
 
@@ -30,9 +33,14 @@ impl FlowGraph {
         self.graph.add_undirected_edge(u, v);
     }
 
-    /// Dinic's maximum flow / Hopcroft-Karp maximum bipartite matching:
+    /// Dinic's algorithm to find the maximum flow from s to t where s != t.
+    /// Generalizes the Hopcroft-Karp maximum bipartite matching algorithm.
     /// V^2E in general, min(V^(2/3),sqrt(E))E when all edges are unit capacity,
     /// sqrt(V)E when all vertices are unit capacity as in bipartite graphs.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the maximum flow is 2^63 or larger.
     pub fn dinic(&self, s: usize, t: usize) -> i64 {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
@@ -110,7 +118,12 @@ impl FlowGraph {
             .collect()
     }
 
-    /// Minimum cost maximum flow, assuming no negative-cost cycles.
+    /// Among all s-t maximum flows, finds one with minimum cost, assuming
+    /// s != t and no negative-cost cycles.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the flow or cost overflow a 64-bit signed integer.
     pub fn mcf(&self, s: usize, t: usize) -> (i64, i64) {
         let mut pot = vec![0; self.graph.num_v()];
 
@@ -139,8 +152,8 @@ impl FlowGraph {
         (min_cost, max_flow)
     }
 
-    // Maintains Johnson's potentials to prevent negative-weight residual edges.
-    // This enables running Dijkstra instead of the slower Bellman-Ford.
+    // Maintains Johnson's potentials to prevent negative-cost residual edges.
+    // This allows running Dijkstra instead of the slower Bellman-Ford.
     fn mcf_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>> {
         let mut vis = vec![false; self.graph.num_v()];
         let mut dist = vec![INF; self.graph.num_v()];

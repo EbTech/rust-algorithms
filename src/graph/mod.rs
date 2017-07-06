@@ -1,4 +1,8 @@
-//! Basic graph library without explicit support for deletion.
+//! Basic graph module without explicit support for deletion.
+//!
+//! # Panics
+//!
+//! All methods will panic if given an out-of-bounds element index.
 pub mod flow;
 pub mod connectivity;
 
@@ -76,9 +80,10 @@ impl Graph {
         self.add_edge(v, u);
     }
 
-    /// If we think of each even-numbered vertex as a variable, and its successor
-    /// as its negation, then we can build the implication graph corresponding
-    /// to any 2-CNF formula. Note that u||v == !u -> v == !v -> u.
+    /// If we think of each even-numbered vertex as a variable, and its
+    /// odd-numbered successor as its negation, then we can build the
+    /// implication graph corresponding to any 2-CNF formula.
+    /// Note that u||v == !u -> v == !v -> u.
     pub fn add_two_sat_clause(&mut self, u: usize, v: usize) {
         self.add_edge(u ^ 1, v);
         self.add_edge(v ^ 1, u);
@@ -92,9 +97,10 @@ impl Graph {
         }
     }
 
-    /// Finds the sequence of edges in an Euler path starting from u, assuming it
-    /// exists and that the graph is directed. To extend this to undirected
-    /// graphs, keep track of a visited array to skip the reverse edge.
+    /// Finds the sequence of edges in an Euler path starting from u, assuming
+    /// it exists and that the graph is directed. Undefined behavior if this
+    /// precondition is violated. To extend this to undirected graphs, maintain
+    /// a visited array to skip the reverse edge.
     pub fn euler_path(&self, u: usize) -> Vec<usize> {
         let mut adj_iters = (0..self.num_v())
             .map(|u| self.adj_list(u))
@@ -105,8 +111,8 @@ impl Graph {
         edges
     }
 
-    // Helper function used by euler_path. Note that we can't consume the
-    // adjacency list in a for loop because recursive calls may need it.
+    // Helper function used by euler_path. Note that we can't use a for-loop
+    // that would consume the adjacency list as recursive calls may need it.
     fn euler_recurse(&self, u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
         while let Some((e, v)) = adj[u].next() {
             self.euler_recurse(v, adj, edges);

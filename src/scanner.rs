@@ -17,6 +17,10 @@ impl<B: io::BufRead> Scanner<B> {
     }
 
     /// Use "turbofish" syntax next::<T>() to select data type of next token.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there's an I/O error or if the token cannot be parsed as T.
     pub fn next<T: ::std::str::FromStr>(&mut self) -> T
     where
         T::Err: ::std::fmt::Debug,
