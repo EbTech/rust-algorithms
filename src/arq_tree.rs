@@ -115,7 +115,12 @@ where
 }
 
 pub trait ArqSpec {
+    /// Type of data representing an endomorphism.
+    // Note that while a Fn(M) -> M may seem like a more natural representation
+    // for an endomorphism, compositions would then have to delegate to each of
+    // their parts. This representation is more efficient.
     type F;
+    /// Type of monoid elements.
     type M;
     /// Require for all f,g,a: apply(compose(f, g), a) = apply(f, apply(g, a))
     fn compose(f: &Self::F, g: &Self::F) -> Self::F;
@@ -129,13 +134,13 @@ pub trait ArqSpec {
 
 /// In this example, we want to support range sum queries and range constant
 /// assignments. Note that constant assignment f_c(a) = c is not a endomorphism
-/// on integers because f_c(a+b) = c != 2*c = f_c(a) + f_c(b). In intuitive
+/// on (i64, +) because f_c(a+b) = c != 2*c = f_c(a) + f_c(b). In intuitive
 /// terms, the problem is that the internal nodes of the tree should really be
 /// set to a multiple of c, corresponding to the subtree size. So let's augment
 /// the monoid type with size information, using the 2D vector (a_i,1) instead
-/// of a_i. Now check that f_c((a, s)) = (c*s, s) is indeed an endomorphism:
-/// f_c((a,s)+(b,t)) = f_c((a+b,s+t)) = (c*(s+t),s+t) = (c*s,s)+(c*t,t) =
-/// f_c((a,s)) + f_c((b,t)).
+/// of a_i. Now check that f_c((a, s)) = (c*s, s) is indeed an endomorphism on
+/// vector addition: f_c((a,s)+(b,t)) = f_c((a+b,s+t)) = (c*(s+t),s+t)
+///                 = (c*s,s)+(c*t,t) = f_c((a,s)) + f_c((b,t)).
 ///
 /// # Panics
 ///
@@ -186,7 +191,7 @@ impl ArqSpec for AssignMin {
 #[cfg(test)]
 mod test {
     use super::*;
-    
+
     #[test]
     fn test_range_sum() {
         let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); 10]);
@@ -202,7 +207,7 @@ mod test {
     #[test]
     fn test_rmq() {
         let mut arq = ArqTree::<AssignMin>::new(vec![0; 10]);
-        
+
         assert_eq!(arq.query(0, 9), 0);
 
         arq.modify(2, 4, &-5);

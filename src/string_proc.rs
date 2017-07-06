@@ -53,37 +53,37 @@ impl<'a> Matcher<'a> {
 }
 
 /// Manacher's algorithm for computing palindrome substrings in linear time.
-/// len[2*i] = odd length of palindrome centred at text[i].
-/// len[2*i+1] = even length of palindrome centred at text[i+0.5].
+/// pal[2*i] = odd length of palindrome centred at text[i].
+/// pal[2*i+1] = even length of palindrome centred at text[i+0.5].
 ///
 /// # Panics
 ///
 /// Panics if text is empty.
 pub fn palindromes(text: &[u8]) -> Vec<usize> {
-    let mut len = Vec::with_capacity(2 * text.len() - 1);
-    len.push(1);
-    while len.len() < len.capacity() {
-        let i = len.len() - 1;
-        let max_len = ::std::cmp::min(i + 1, len.capacity() - i);
-        while len[i] < max_len && text[(i - len[i] - 1) / 2] == text[(i + len[i] + 1) / 2] {
-            len[i] += 2;
+    let mut pal = Vec::with_capacity(2 * text.len() - 1); // only mutable var!
+    pal.push(1);
+    while pal.len() < pal.capacity() {
+        let i = pal.len() - 1;
+        let max_len = ::std::cmp::min(i + 1, pal.capacity() - i);
+        while pal[i] < max_len && text[(i - pal[i] - 1) / 2] == text[(i + pal[i] + 1) / 2] {
+            pal[i] += 2;
         }
-        if len[i] < 2 {
-            let a = 1 - len[i];
-            len.push(a);
+        if pal[i] < 2 {
+            let a = 1 - pal[i];
+            pal.push(a);
         } else {
             for d in 1.. {
-                let (a, b) = (len[i - d], len[i] - d);
+                let (a, b) = (pal[i - d], pal[i] - d);
                 if a < b {
-                    len.push(a);
+                    pal.push(a);
                 } else {
-                    len.push(b);
+                    pal.push(b);
                     break;
                 }
             }
         }
     }
-    len
+    pal
 }
 
 #[cfg(test)]
