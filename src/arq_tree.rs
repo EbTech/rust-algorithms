@@ -61,6 +61,10 @@ where
     }
 
     /// Applies the endomorphism f to all entries from l to r, inclusive.
+    ///
+    /// # Panics
+    ///
+    /// Panics if l or r is out of range.
     pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F) {
         l += self.d.len();
         r += self.d.len();
@@ -84,6 +88,10 @@ where
     }
 
     /// Returns the aggregate range query on all entries from l to r, inclusive.
+    ///
+    /// # Panics
+    ///
+    /// Panics if l or r is out of range.
     pub fn query(&mut self, mut l: usize, mut r: usize) -> T::M {
         l += self.d.len();
         r += self.d.len();
