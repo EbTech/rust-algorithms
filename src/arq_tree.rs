@@ -140,9 +140,9 @@ pub trait ArqSpec {
 /// # Panics
 ///
 /// Associated functions will panic on overflow.
-pub struct AssignAdd;
+pub struct AssignSum;
 
-impl ArqSpec for AssignAdd {
+impl ArqSpec for AssignSum {
     type F = i64;
     type M = (i64, i64);
     fn compose(f: &Self::F, _: &Self::F) -> Self::F {
@@ -159,13 +159,37 @@ impl ArqSpec for AssignAdd {
     }
 }
 
+/// Range Minimum Query, a classic form of associative range query.
+// Exercises: try augmenting this struct to find the index of a minimum element
+// in a range query, as well as the number of elements that match the minimum.
+// Then instead of assigning to a range, try to support the operation of
+// incrementing each element in a range by a given offset!
+pub struct AssignMin;
+
+impl ArqSpec for AssignMin {
+    type F = i64;
+    type M = i64;
+    fn compose(f: &Self::F, _: &Self::F) -> Self::F {
+        *f
+    }
+    fn apply(f: &Self::F, _: &Self::M) -> Self::M {
+        *f
+    }
+    fn op(a: &Self::M, b: &Self::M) -> Self::M {
+        ::std::cmp::min(*a, *b)
+    }
+    fn identity() -> Self::M {
+        Self::M::max_value()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
-
+    
     #[test]
-    fn test_arq_tree() {
-        let mut arq = ArqTree::<AssignAdd>::new(vec![(0, 1); 10]);
+    fn test_range_sum() {
+        let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); 10]);
 
         assert_eq!(arq.query(0, 9), (0, 10));
 
@@ -173,5 +197,18 @@ mod test {
         arq.modify(3, 5, &1);
 
         assert_eq!(arq.query(0, 9), (23, 10));
+    }
+
+    #[test]
+    fn test_rmq() {
+        let mut arq = ArqTree::<AssignMin>::new(vec![0; 10]);
+        
+        assert_eq!(arq.query(0, 9), 0);
+
+        arq.modify(2, 4, &-5);
+        arq.modify(5, 7, &-3);
+        arq.modify(1, 6, &1);
+
+        assert_eq!(arq.query(0, 9), -3);
     }
 }

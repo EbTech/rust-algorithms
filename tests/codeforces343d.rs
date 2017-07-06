@@ -3,7 +3,7 @@
 //! module's contents directly here instead of the use statements.
 //! Also, replace io::Cursor with io::stdin as shown in scanner.rs.
 extern crate algorithms;
-use algorithms::arq_tree::{ArqTree, AssignAdd};
+use algorithms::arq_tree::{ArqTree, AssignSum};
 use algorithms::graph::Graph;
 use algorithms::scanner::Scanner;
 
@@ -77,7 +77,7 @@ fn main1() {
     let mut p = vec![0; n];
     dfs(&tree, 0, &mut l, &mut r, &mut p, &mut 0);
 
-    let mut arq = ArqTree::<AssignAdd>::new(vec![(0, 1); n + 1]);
+    let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); n + 1]);
     let q = scan.next::<usize>();
     for _ in 0..q {
         let c = scan.next::<usize>();
