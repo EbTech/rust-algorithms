@@ -38,9 +38,13 @@ impl DisjointSets {
 }
 
 /// A compact graph representation. Edges are numbered in order of insertion.
+/// Each adjacency list consists of all edges pointing out from a given vertex.
 pub struct Graph {
+    /// Maps a vertex id to the first edge in its adjacency list.
     first: Vec<Option<usize>>,
+    /// Maps an edge id to the next edge in the same adjacency list.
     next: Vec<Option<usize>>,
+    /// Maps an edge id to the vertex that it points to.
     endp: Vec<usize>,
 }
 

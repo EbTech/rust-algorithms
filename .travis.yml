@@ -3,6 +3,7 @@ rust:
   - stable
   - beta
   - nightly
+  - 1.19.0 # Current version supported by Codeforces
 matrix:
   allow_failures:
     - rust: nightly

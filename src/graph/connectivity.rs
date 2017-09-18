@@ -30,7 +30,7 @@ impl<'a> ConnectivityGraph<'a> {
     /// passing a directed graph using `is_directed == false`.
     pub fn new(graph: &'a Graph, is_directed: bool) -> Self {
         let mut connect = Self {
-            graph: graph,
+            graph,
             cc: vec![0; graph.num_v()],
             vcc: vec![0; graph.num_e()],
             num_cc: 0,

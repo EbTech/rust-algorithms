@@ -25,10 +25,7 @@ impl<'a> Matcher<'a> {
             }
             fail.push(len);
         }
-        Self {
-            pattern: pattern,
-            fail: fail,
-        }
+        Self { pattern, fail }
     }
 
     /// KMP algorithm, sets matches[i] = length of longest prefix of pattern

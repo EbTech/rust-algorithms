@@ -26,7 +26,7 @@ where
         }
         Self {
             d: vec![None; size],
-            t: t,
+            t,
         }
     }
 

@@ -11,7 +11,7 @@ pub struct Scanner<B> {
 impl<B: io::BufRead> Scanner<B> {
     pub fn new(reader: B) -> Self {
         Self {
-            reader: reader,
+            reader,
             buffer: Vec::new(),
         }
     }
