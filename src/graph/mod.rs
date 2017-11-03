@@ -128,7 +128,7 @@ impl Graph {
     pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
         assert_eq!(self.num_e(), 2 * weights.len());
         let mut edges = (0..weights.len()).collect::<Vec<_>>();
-        edges.sort_by_key(|&e| weights[e]);
+        edges.sort_unstable_by_key(|&e| weights[e]);
 
         let mut components = DisjointSets::new(self.num_v());
         edges

@@ -61,7 +61,7 @@ pub fn palindromes(text: &[u8]) -> Vec<usize> {
     pal.push(1);
     while pal.len() < pal.capacity() {
         let i = pal.len() - 1;
-        let max_len = ::std::cmp::min(i + 1, pal.capacity() - i);
+        let max_len = (i + 1).min(pal.capacity() - i);
         while pal[i] < max_len && text[(i - pal[i] - 1) / 2] == text[(i + pal[i] + 1) / 2] {
             pal[i] += 2;
         }

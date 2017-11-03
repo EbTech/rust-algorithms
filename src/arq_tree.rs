@@ -132,13 +132,38 @@ pub trait ArqSpec {
     fn identity() -> Self::M;
 }
 
-/// In this example, we want to support range sum queries and range constant
-/// assignments. Note that constant assignment f_c(a) = c is not a endomorphism
-/// on (i64, +) because f_c(a+b) = c != 2*c = f_c(a) + f_c(b). In intuitive
-/// terms, the problem is that the internal nodes of the tree should really be
-/// set to a multiple of c, corresponding to the subtree size. So let's augment
-/// the monoid type with size information, using the 2D vector (a_i,1) instead
-/// of a_i. Now check that f_c((a, s)) = (c*s, s) is indeed an endomorphism on
+/// Range Minimum Query, a classic application of associative range query.
+// Exercises: try augmenting this struct to find the index of a minimum element
+// in a range query, as well as the number of elements that match the minimum.
+// Then instead of assigning to a range, try to support the operation of
+// incrementing each element in a range by a given offset!
+pub struct AssignMin;
+
+impl ArqSpec for AssignMin {
+    type F = i64;
+    type M = i64;
+    fn compose(f: &Self::F, _: &Self::F) -> Self::F {
+        *f
+    }
+    fn apply(f: &Self::F, _: &Self::M) -> Self::M {
+        *f
+    }
+    fn op(a: &Self::M, b: &Self::M) -> Self::M {
+        (*a).min(*b)
+    }
+    fn identity() -> Self::M {
+        Self::M::max_value()
+    }
+}
+
+/// A slightly more advanced application, where we aim to support range sum
+/// queries and range constant assignments.
+/// Note that constant assignment f_c(a) = c is not a endomorphism on (i64, +)
+/// because f_c(a+b) = c != 2*c = f_c(a) + f_c(b). In intuitive terms, the
+/// problem is that the internal nodes of the tree should not simply be set to
+/// c, but rather, to c multiplied by the subtree size. So let's augment the
+/// monoid type with size information, using the 2D vector (a_i,1) instead of
+/// a_i. Now check that f_c((a, s)) = (c*s, s) is indeed an endomorphism on
 /// vector addition: f_c((a,s)+(b,t)) = f_c((a+b,s+t)) = (c*(s+t),s+t)
 ///                 = (c*s,s)+(c*t,t) = f_c((a,s)) + f_c((b,t)).
 ///
@@ -161,30 +186,6 @@ impl ArqSpec for AssignSum {
     }
     fn identity() -> Self::M {
         (0, 0)
-    }
-}
-
-/// Range Minimum Query, a classic form of associative range query.
-// Exercises: try augmenting this struct to find the index of a minimum element
-// in a range query, as well as the number of elements that match the minimum.
-// Then instead of assigning to a range, try to support the operation of
-// incrementing each element in a range by a given offset!
-pub struct AssignMin;
-
-impl ArqSpec for AssignMin {
-    type F = i64;
-    type M = i64;
-    fn compose(f: &Self::F, _: &Self::F) -> Self::F {
-        *f
-    }
-    fn apply(f: &Self::F, _: &Self::M) -> Self::M {
-        *f
-    }
-    fn op(a: &Self::M, b: &Self::M) -> Self::M {
-        ::std::cmp::min(*a, *b)
-    }
-    fn identity() -> Self::M {
-        Self::M::max_value()
     }
 }
 

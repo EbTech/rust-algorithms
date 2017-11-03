@@ -1,7 +1,6 @@
 //! Maximum flows, matchings, and minimum cuts.
 use graph::{Graph, AdjListIterator};
-use std::cmp::min;
-const INF: i64 = 0x3f3f3f3f;
+const INF: i64 = 0x3f3f3f3f3f3f3f3f;
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
@@ -91,7 +90,7 @@ impl FlowGraph {
         let mut df = 0;
 
         while let Some(&(e, v)) = adj[u].peek() {
-            let rem_cap = min(self.cap[e] - flow[e], f - df);
+            let rem_cap = (self.cap[e] - flow[e]).min(f - df);
             if rem_cap > 0 && dist[v] == dist[u] + 1 {
                 let cf = self.dinic_augment(v, t, rem_cap, dist, adj, flow);
                 flow[e] += cf;
@@ -133,7 +132,7 @@ impl FlowGraph {
                 if self.cap[e] > 0 {
                     let u = self.graph.endp[e ^ 1];
                     let v = self.graph.endp[e];
-                    pot[v] = min(pot[v], pot[u] + self.cost[e]);
+                    pot[v] = pot[v].min(pot[u] + self.cost[e]);
                 }
             }
         }
@@ -181,7 +180,7 @@ impl FlowGraph {
         let (mut dc, mut df) = (0, INF);
         let mut u = t;
         while let Some(e) = par[u] {
-            df = min(df, self.cap[e] - flow[e]);
+            df = df.min(self.cap[e] - flow[e]);
             u = self.graph.endp[e ^ 1];
         }
         u = t;

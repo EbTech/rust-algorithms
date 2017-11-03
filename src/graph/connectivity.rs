@@ -1,6 +1,5 @@
 //! Graph connectivity structures.
 use graph::Graph;
-use std::cmp::min;
 
 /// Represents the decomposition of a graph into any of its constituent parts:
 ///
@@ -78,7 +77,7 @@ impl<'a> ConnectivityGraph<'a> {
                 self.scc(v, t, vis, low, v_stack);
             }
             if self.cc[v] == 0 {
-                low[u] = min(low[u], low[v]);
+                low[u] = low[u].min(low[v]);
             }
         }
         if vis[u] == low[u] {
@@ -112,7 +111,7 @@ impl<'a> ConnectivityGraph<'a> {
     /// order. Undefined behavior if the graph is not a DAG.
     pub fn topological_sort(&self) -> Vec<usize> {
         let mut vertices = (0..self.graph.num_v()).collect::<Vec<_>>();
-        vertices.sort_by_key(|&u| self.num_cc - self.cc[u]);
+        vertices.sort_unstable_by_key(|&u| self.num_cc - self.cc[u]);
         vertices
     }
 
@@ -134,7 +133,7 @@ impl<'a> ConnectivityGraph<'a> {
             if vis[v] == 0 {
                 e_stack.push(e);
                 self.bcc(v, e, t, vis, low, v_stack, e_stack);
-                low[u] = min(low[u], low[v]);
+                low[u] = low[u].min(low[v]);
                 if vis[u] <= low[v] {
                     // u is a cut vertex unless it's a one-child root
                     self.num_vcc += 1;
@@ -147,7 +146,7 @@ impl<'a> ConnectivityGraph<'a> {
                     }
                 }
             } else if vis[v] < vis[u] && e ^ par != 1 {
-                low[u] = min(low[u], vis[v]);
+                low[u] = low[u].min(vis[v]);
                 e_stack.push(e);
             } else if v == u {
                 // e is a self-loop
