@@ -14,15 +14,17 @@ In addition, the Rust language has outstanding pedagogical attributes. Its compi
 
 ## For Programming Contests
 
-The original intent of this project was to build a reference for use in programming contests such as [Codeforces](http://codeforces.com) and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify under time pressure.
+The original intent of this project was to build a reference for use in programming contests such as [Codeforces](http://codeforces.com), [Hackerrank](https://www.hackerrank.com/), and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify under time pressure.
 
 Most competition programmers rely on C++ for its fast execution time. However, it's notoriously unsafe, diverting a considerable share of the contestant's time and attention on mistake prevention and debugging. Java is the next most popular choice, offering a little safety at some expense to speed of coding and execution.
 
-To my delight, I found that Rust provides even more safety without the visual clutter, and it's *fast*. A proficient Rust programmer stands to gain a competitive advantage as well as a more pleasant experience!
+To my delight, I found that Rust provides even more bug-safety without the visual clutter, and it's *fast*. A proficient Rust programmer might stand to gain a competitive advantage as well as a more pleasant experience!
+
+Note that the online judges [SPOJ](http://www.spoj.com/) and [Timus](http://acm.timus.ru/) also support submissions in Rust. As of this writing, they use older compilers which might reject certain features used in this cookbook.
 
 ## Programming Language Advocacy
 
-My other goal is to appeal to developers who feel, as I once did, trapped between the lesser of headaches among old mainstream languages (e.g., C++/Java), to raise awareness that *it doesn't have to be this way*.
+My other goal is to appeal to developers who feel limited by older mainstream languages, to raise awareness that *it doesn't have to be this way*.
 
 Rather than try to persuade you with words, this repository aims to show by example while easing the learning curve. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/second-edition/)
 
@@ -34,4 +36,4 @@ Rather than try to persuade you with words, this repository aims to show by exam
 - [Associative range query](src/arq_tree.rs): known colloquially as *segtrees*
 - [Math](src/math.rs): Euclid's GCD algorithm, Bezout's identity
 - [Scanner](src/scanner.rs): utility for reading input data
-- [String processing](src/string_proc.rs): Knuth-Morris-Pratt string matching, Manacher's palindrome search
+- [String processing](src/string_proc.rs): Knuth-Morris-Pratt string matching, suffix arrays, Manacher's palindrome search
