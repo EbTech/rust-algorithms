@@ -1,6 +1,5 @@
 //! Maximum flows, matchings, and minimum cuts.
-use graph::{Graph, AdjListIterator};
-const INF: i64 = 0x3f3f3f3f3f3f3f3f;
+use super::{AdjListIterator, Graph};
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
@@ -13,6 +12,9 @@ pub struct FlowGraph {
 }
 
 impl FlowGraph {
+    /// An upper limit to the flow.
+    const INF: i64 = 0x3f3f_3f3f_3f3f_3f3f;
+
     /// Initializes an flow network with vmax vertices and no edges.
     pub fn new(vmax: usize, emax_hint: usize) -> Self {
         Self {
@@ -45,27 +47,27 @@ impl FlowGraph {
         let mut max_flow = 0;
         loop {
             let dist = self.dinic_search(s, &flow);
-            if dist[t] == INF {
+            if dist[t] == Self::INF {
                 break;
             }
             // Keep track of adjacency lists to avoid revisiting blocked edges.
             let mut adj_iters = (0..self.graph.num_v())
                 .map(|u| self.graph.adj_list(u).peekable())
                 .collect::<Vec<_>>();
-            max_flow += self.dinic_augment(s, t, INF, &dist, &mut adj_iters, &mut flow);
+            max_flow += self.dinic_augment(s, t, Self::INF, &dist, &mut adj_iters, &mut flow);
         }
         max_flow
     }
 
     // Compute BFS distances to restrict attention to shortest path edges.
     fn dinic_search(&self, s: usize, flow: &[i64]) -> Vec<i64> {
-        let mut dist = vec![INF; self.graph.num_v()];
+        let mut dist = vec![Self::INF; self.graph.num_v()];
         let mut q = ::std::collections::VecDeque::new();
         dist[s] = 0;
         q.push_back(s);
         while let Some(u) = q.pop_front() {
             for (e, v) in self.graph.adj_list(u) {
-                if dist[v] == INF && flow[e] < self.cap[e] {
+                if dist[v] == Self::INF && flow[e] < self.cap[e] {
                     dist[v] = dist[u] + 1;
                     q.push_back(v);
                 }
@@ -103,7 +105,7 @@ impl FlowGraph {
             // The current edge is either saturated or blocked.
             adj[u].next();
         }
-        return df;
+        df
     }
 
     /// After running maximum flow, use this to recover the dual minimum cut.
@@ -112,9 +114,8 @@ impl FlowGraph {
             .filter(|&e| {
                 let u = self.graph.endp[e ^ 1];
                 let v = self.graph.endp[e];
-                dist[u] < INF && dist[v] == INF
-            })
-            .collect()
+                dist[u] < Self::INF && dist[v] == Self::INF
+            }).collect()
     }
 
     /// Among all s-t maximum flows, finds one with minimum cost, assuming
@@ -155,12 +156,12 @@ impl FlowGraph {
     // This allows running Dijkstra instead of the slower Bellman-Ford.
     fn mcf_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>> {
         let mut vis = vec![false; self.graph.num_v()];
-        let mut dist = vec![INF; self.graph.num_v()];
+        let mut dist = vec![Self::INF; self.graph.num_v()];
         let mut par = vec![None; self.graph.num_v()];
 
         dist[s] = 0;
         while let Some(u) = (0..self.graph.num_v())
-            .filter(|&u| !vis[u] && dist[u] < INF)
+            .filter(|&u| !vis[u] && dist[u] < Self::INF)
             .min_by_key(|&u| dist[u] - pot[u])
         {
             vis[u] = true;
@@ -177,7 +178,7 @@ impl FlowGraph {
 
     // Pushes flow along an augmenting path of minimum cost.
     fn mcf_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64) {
-        let (mut dc, mut df) = (0, INF);
+        let (mut dc, mut df) = (0, Self::INF);
         let mut u = t;
         while let Some(e) = par[u] {
             df = df.min(self.cap[e] - flow[e]);

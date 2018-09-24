@@ -16,12 +16,12 @@ impl<B: io::BufRead> Scanner<B> {
         }
     }
 
-    /// Use "turbofish" syntax next::<T>() to select data type of next token.
+    /// Use "turbofish" syntax read::<T>() to select data type of next token.
     ///
     /// # Panics
     ///
     /// Panics if there's an I/O error or if the token cannot be parsed as T.
-    pub fn next<T: ::std::str::FromStr>(&mut self) -> T
+    pub fn read<T: ::std::str::FromStr>(&mut self) -> T
     where
         T::Err: ::std::fmt::Debug,
     {
@@ -31,11 +31,10 @@ impl<B: io::BufRead> Scanner<B> {
             let mut input = String::new();
             self.reader.read_line(&mut input).expect("Line not read");
             self.buffer = input.split_whitespace().rev().map(String::from).collect();
-            self.next()
+            self.read()
         }
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -45,8 +44,8 @@ mod test {
     fn test_fake_input() {
         let cursor = io::Cursor::new("44 2");
         let mut scan = Scanner::new(cursor);
-        let x = scan.next::<i32>();
-        let y = scan.next::<i32>();
+        let x = scan.read::<i32>();
+        let y = scan.read::<i32>();
         assert_eq!(x - y, 42);
     }
 
@@ -55,7 +54,7 @@ mod test {
         let stdin = io::stdin();
         let mut scan = Scanner::new(stdin.lock());
         if false {
-            let _ = scan.next::<i32>();
+            let _ = scan.read::<i32>();
         }
     }
 
@@ -64,6 +63,6 @@ mod test {
     fn test_file() {
         let file = ::std::fs::File::open("asdf.txt").expect("File not found");
         let mut scan = Scanner::new(io::BufReader::new(file));
-        let _ = scan.next::<i32>();
+        let _ = scan.read::<i32>();
     }
 }

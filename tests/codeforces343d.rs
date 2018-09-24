@@ -64,11 +64,11 @@ fn main1() {
     let mut scan = Scanner::new(cursor);
     let mut out = String::new();
 
-    let n = scan.next::<usize>();
+    let n = scan.read::<usize>();
     let mut tree = Graph::new(n, 2 * (n - 1));
     for _ in 1..n {
-        let u = scan.next::<usize>() - 1;
-        let v = scan.next::<usize>() - 1;
+        let u = scan.read::<usize>() - 1;
+        let v = scan.read::<usize>() - 1;
         tree.add_undirected_edge(u, v);
     }
 
@@ -78,10 +78,10 @@ fn main1() {
     dfs(&tree, 0, &mut l, &mut r, &mut p, &mut 0);
 
     let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); n + 1]);
-    let q = scan.next::<usize>();
+    let q = scan.read::<usize>();
     for _ in 0..q {
-        let c = scan.next::<usize>();
-        let v = scan.next::<usize>() - 1;
+        let c = scan.read::<usize>();
+        let v = scan.read::<usize>() - 1;
         let (sum, len) = arq.query(l[v], r[v]);
         if c == 1 {
             if sum != len {

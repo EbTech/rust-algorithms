@@ -5,8 +5,7 @@
 /// # Panics
 ///
 /// Panics if m == 0. May panic on overflow if m * m > 2^63.
-pub fn mod_pow(mut base: i64, mut exp: u32, m: u32) -> i64 {
-    let m = m as i64;
+pub fn mod_pow(mut base: u64, mut exp: u64, m: u64) -> u64 {
     let mut result = 1 % m;
     while exp > 0 {
         if exp % 2 == 1 {
@@ -55,7 +54,7 @@ mod test {
         let base = 31;
 
         let base_inv = mod_pow(base, p - 2, p);
-        let identity = (base * base_inv) % p as i64;
+        let identity = (base * base_inv) % p;
 
         assert_eq!(identity, 1);
     }

@@ -1,5 +1,40 @@
 //! Graph connectivity structures.
-use graph::Graph;
+use super::Graph;
+
+/// Helper struct that carries data needed for the depth-first searches in
+/// ConnectivityGraph's constructor.
+struct ConnectivityData {
+    time: usize,
+    vis: Vec<usize>,
+    low: Vec<usize>,
+    v_stack: Vec<usize>,
+    e_stack: Vec<usize>,
+}
+
+impl ConnectivityData {
+    fn new(num_v: usize) -> Self {
+        Self {
+            time: 0,
+            vis: vec![0; num_v],
+            low: vec![0; num_v],
+            v_stack: Vec::new(),
+            e_stack: Vec::new(),
+        }
+    }
+
+    fn visit(&mut self, u: usize) {
+        self.time += 1;
+        self.vis[u] = self.time;
+        self.low[u] = self.time;
+        self.v_stack.push(u);
+    }
+
+    fn lower(&mut self, u: usize, val: usize) {
+        if self.low[u] > val {
+            self.low[u] = val
+        }
+    }
+}
 
 /// Represents the decomposition of a graph into any of its constituent parts:
 ///
@@ -12,7 +47,7 @@ use graph::Graph;
 pub struct ConnectivityGraph<'a> {
     // Immutable graph, frozen for the lifetime of the ConnectivityGraph object.
     pub graph: &'a Graph,
-    /// ID of a vertex's CC, SCC or 2ECC (new() documents when each applies).
+    /// ID of a vertex's CC, SCC or 2ECC, whichever applies.
     pub cc: Vec<usize>,
     /// ID of an edge's 2VCC, where applicable.
     pub vcc: Vec<usize>,
@@ -23,10 +58,13 @@ pub struct ConnectivityGraph<'a> {
 }
 
 impl<'a> ConnectivityGraph<'a> {
-    /// Computes the SCCs of a directed graph in reverse topological order, or
-    /// the 2ECCs/2VCCS of an undirected graph. Can also get CCs by passing an
-    /// undirected graph using `is_directed == true`. Undefined behavior if
-    /// passing a directed graph using `is_directed == false`.
+    /// Computes CCs (connected components), SCCs (strongly connected
+    /// components), 2ECCs (2-edge-connected components), and/or 2VCCs
+    /// (2-vertex-connected components), depending on the parameter and graph:
+    /// - is_directed == true on directed graph: SCCs in rev-topological order
+    /// - is_directed == true on undirected graph: CCs
+    /// - is_directed == false on undirected graph: 2ECCs and 2VCCs
+    /// - is_directed == false on directed graph: undefined behavior
     pub fn new(graph: &'a Graph, is_directed: bool) -> Self {
         let mut connect = Self {
             graph,
@@ -35,54 +73,32 @@ impl<'a> ConnectivityGraph<'a> {
             num_cc: 0,
             num_vcc: 0,
         };
-        let mut t = 0;
-        let mut vis = vec![0; graph.num_v()];
-        let mut low = vec![0; graph.num_v()];
-        let mut v_stack = Vec::new();
-        let mut e_stack = Vec::new();
+        let mut data = ConnectivityData::new(graph.num_v());
         for u in 0..graph.num_v() {
-            if vis[u] == 0 {
+            if data.vis[u] == 0 {
                 if is_directed {
-                    connect.scc(u, &mut t, &mut vis, &mut low, &mut v_stack);
+                    connect.scc(u, &mut data);
                 } else {
-                    connect.bcc(
-                        u,
-                        graph.num_e() + 1,
-                        &mut t,
-                        &mut vis,
-                        &mut low,
-                        &mut v_stack,
-                        &mut e_stack,
-                    );
+                    connect.bcc(u, graph.num_e() + 1, &mut data);
                 }
             }
         }
         connect
     }
 
-    fn scc(
-        &mut self,
-        u: usize,
-        t: &mut usize,
-        vis: &mut [usize],
-        low: &mut [usize],
-        v_stack: &mut Vec<usize>,
-    ) {
-        *t += 1;
-        vis[u] = *t;
-        low[u] = *t;
-        v_stack.push(u);
+    fn scc(&mut self, u: usize, data: &mut ConnectivityData) {
+        data.visit(u);
         for (_, v) in self.graph.adj_list(u) {
-            if vis[v] == 0 {
-                self.scc(v, t, vis, low, v_stack);
+            if data.vis[v] == 0 {
+                self.scc(v, data);
             }
             if self.cc[v] == 0 {
-                low[u] = low[u].min(low[v]);
+                data.lower(u, data.low[v]);
             }
         }
-        if vis[u] == low[u] {
+        if data.vis[u] == data.low[u] {
             self.num_cc += 1;
-            while let Some(v) = v_stack.pop() {
+            while let Some(v) = data.v_stack.pop() {
                 self.cc[v] = self.num_cc;
                 if v == u {
                     break;
@@ -103,8 +119,7 @@ impl<'a> ConnectivityGraph<'a> {
                 } else {
                     Some(scc_true < scc_false)
                 }
-            })
-            .collect()
+            }).collect()
     }
 
     /// Gets the vertices of a directed acyclic graph (DAG) in topological
@@ -115,29 +130,17 @@ impl<'a> ConnectivityGraph<'a> {
         vertices
     }
 
-    fn bcc(
-        &mut self,
-        u: usize,
-        par: usize,
-        t: &mut usize,
-        vis: &mut [usize],
-        low: &mut [usize],
-        v_stack: &mut Vec<usize>,
-        e_stack: &mut Vec<usize>,
-    ) {
-        *t += 1;
-        vis[u] = *t;
-        low[u] = *t;
-        v_stack.push(u);
+    fn bcc(&mut self, u: usize, par: usize, data: &mut ConnectivityData) {
+        data.visit(u);
         for (e, v) in self.graph.adj_list(u) {
-            if vis[v] == 0 {
-                e_stack.push(e);
-                self.bcc(v, e, t, vis, low, v_stack, e_stack);
-                low[u] = low[u].min(low[v]);
-                if vis[u] <= low[v] {
+            if data.vis[v] == 0 {
+                data.e_stack.push(e);
+                self.bcc(v, e, data);
+                data.lower(u, data.low[v]);
+                if data.vis[u] <= data.low[v] {
                     // u is a cut vertex unless it's a one-child root
                     self.num_vcc += 1;
-                    while let Some(top_e) = e_stack.pop() {
+                    while let Some(top_e) = data.e_stack.pop() {
                         self.vcc[top_e] = self.num_vcc;
                         self.vcc[top_e ^ 1] = self.num_vcc;
                         if e ^ top_e <= 1 {
@@ -145,9 +148,9 @@ impl<'a> ConnectivityGraph<'a> {
                         }
                     }
                 }
-            } else if vis[v] < vis[u] && e ^ par != 1 {
-                low[u] = low[u].min(vis[v]);
-                e_stack.push(e);
+            } else if data.vis[v] < data.vis[u] && e ^ par != 1 {
+                data.lower(u, data.vis[v]);
+                data.e_stack.push(e);
             } else if v == u {
                 // e is a self-loop
                 self.num_vcc += 1;
@@ -155,10 +158,10 @@ impl<'a> ConnectivityGraph<'a> {
                 self.vcc[e ^ 1] = self.num_vcc;
             }
         }
-        if vis[u] == low[u] {
+        if data.vis[u] == data.low[u] {
             // par is a cut edge unless par==-1
             self.num_cc += 1;
-            while let Some(v) = v_stack.pop() {
+            while let Some(v) = data.v_stack.pop() {
                 self.cc[v] = self.num_cc;
                 if v == u {
                     break;
@@ -170,9 +173,9 @@ impl<'a> ConnectivityGraph<'a> {
     /// In an undirected graph, determines whether u is an articulation vertex.
     pub fn is_cut_vertex(&self, u: usize) -> bool {
         if let Some(first_e) = self.graph.first[u] {
-            self.graph.adj_list(u).any(|(e, _)| {
-                self.vcc[first_e] != self.vcc[e]
-            })
+            self.graph
+                .adj_list(u)
+                .any(|(e, _)| self.vcc[first_e] != self.vcc[e])
         } else {
             false
         }

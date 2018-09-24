@@ -3,8 +3,8 @@
 //! # Panics
 //!
 //! All methods will panic if given an out-of-bounds element index.
-pub mod flow;
 pub mod connectivity;
+pub mod flow;
 
 /// Represents a union of disjoint sets. Each set's elements are arranged in a
 /// tree, whose root is the set's representative.
@@ -15,7 +15,9 @@ pub struct DisjointSets {
 impl DisjointSets {
     /// Initializes disjoint sets containing one element each.
     pub fn new(size: usize) -> Self {
-        Self { parent: (0..size).collect() }
+        Self {
+            parent: (0..size).collect(),
+        }
     }
 
     /// Finds the set's representative. Do path compression along the way to make
@@ -133,9 +135,7 @@ impl Graph {
         let mut components = DisjointSets::new(self.num_v());
         edges
             .into_iter()
-            .filter(|&e| {
-                components.merge(self.endp[2 * e], self.endp[2 * e + 1])
-            })
+            .filter(|&e| components.merge(self.endp[2 * e], self.endp[2 * e + 1]))
             .collect()
     }
 }

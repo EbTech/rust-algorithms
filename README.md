@@ -14,19 +14,21 @@ In addition, the Rust language has outstanding pedagogical attributes. Its compi
 
 ## For Programming Contests
 
-The original intent of this project was to build a reference for use in programming contests such as [Codeforces](http://codeforces.com), [Hackerrank](https://www.hackerrank.com/), and the [Google Code Jam](https://code.google.com/codejam). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify under time pressure.
+The original intent of this project was to build a reference for use in programming contests ranging from [Codeforces](http://codeforces.com) to [Hackerrank](https://www.hackerrank.com/). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify under time pressure.
 
 Most competition programmers rely on C++ for its fast execution time. However, it's notoriously unsafe, diverting a considerable share of the contestant's time and attention on mistake prevention and debugging. Java is the next most popular choice, offering a little safety at some expense to speed of coding and execution.
 
 To my delight, I found that Rust provides even more bug-safety without the visual clutter, and it's *fast*. A proficient Rust programmer might stand to gain a competitive advantage as well as a more pleasant experience!
 
-Note that the online judges [SPOJ](http://www.spoj.com/) and [Timus](http://acm.timus.ru/) also support submissions in Rust. As of this writing, they use older compilers which might reject certain features used in this cookbook.
+Other online judges that support Rust:
+- [Timus](http://acm.timus.ru/help.aspx?topic=rust)
+- [SPOJ](http://www.spoj.com/)
 
 ## Programming Language Advocacy
 
-My other goal is to appeal to developers who feel limited by older mainstream languages, to raise awareness that *it doesn't have to be this way*.
+My other goal is to appeal to developers who feel limited by mainstream, arguably outdated, programming languages. Perhaps we have a better way.
 
-Rather than try to persuade you with words, this repository aims to show by example while easing the learning curve. See [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/second-edition/)
+Rather than try to persuade you with words, this repository aims to show by example. If you're new to Rust, see [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/2018-edition)
 
 ## Contents
 
