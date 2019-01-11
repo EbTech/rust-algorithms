@@ -43,6 +43,10 @@ impl FlowGraph {
     ///
     /// Panics if the maximum flow is 2^63 or larger.
     pub fn dinic(&self, s: usize, t: usize) -> i64 {
+        self.dinic_flow(s,t).0
+    }
+
+    pub fn dinic_flow(&self, s: usize, t: usize) -> (i64, Vec<i64>) {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
         loop {
@@ -56,7 +60,7 @@ impl FlowGraph {
                 .collect::<Vec<_>>();
             max_flow += self.dinic_augment(s, t, Self::INF, &dist, &mut adj_iters, &mut flow);
         }
-        max_flow
+        (max_flow, flow)
     }
 
     // Compute BFS distances to restrict attention to shortest path edges.
@@ -220,5 +224,54 @@ mod test {
         let (cost, flow) = graph.mcf(0, 3);
         assert_eq!(cost, 18);
         assert_eq!(flow, 10);
+    }
+
+    #[test]
+    fn test_max_matching()
+    {
+        let mut graph = FlowGraph::new(14, 4);
+
+        let source = 0;
+        let sink = 13;
+
+        let a_start = 1;
+        let b_start = 7;
+        //6 nodes in A
+
+        for a in a_start..a_start + 6 {
+            graph.add_edge(source, a, 1, 1);
+        }
+
+        //6 nodes in B
+        for b in b_start..b_start + 6 {
+            graph.add_edge(b, sink, 1, 1);
+        }
+
+        graph.add_edge(a_start + 0, b_start + 1, 1, 1);
+        graph.add_edge(a_start + 0, b_start + 2, 1, 1);
+        graph.add_edge(a_start + 2, b_start + 0, 1, 1);
+        graph.add_edge(a_start + 2, b_start + 3, 1, 1);
+        graph.add_edge(a_start + 3, b_start + 2, 1, 1);
+        graph.add_edge(a_start + 4, b_start + 2, 1, 1);
+        graph.add_edge(a_start + 4, b_start + 3, 1, 1);
+        graph.add_edge(a_start + 5, b_start + 5, 1, 1);
+
+        let (flow_amt, flow) = graph.dinic_flow(source, sink);
+        assert_eq!(flow_amt, 5);
+
+        //U->V edges in maximum matching
+        assert_eq!(
+            flow
+                .iter()
+                .enumerate()
+                .filter(|&(_e, f)| *f > 0)
+                //map to u->v
+                .map(|(e, _f)| (graph.graph.endp[e ^ 1], graph.graph.endp[e]))
+                //leave out source and sink nodes
+                .filter(|&(u, v)| u != source && v != sink)
+                .collect::<Vec<_>>(),
+
+            vec![(1, 8), (3, 7), (4, 9), (5, 10), (6, 12)]
+        );
     }
 }
