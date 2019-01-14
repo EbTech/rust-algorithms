@@ -5,8 +5,8 @@ use super::Graph;
 /// ConnectivityGraph's constructor.
 struct ConnectivityData {
     time: usize,
-    vis: Vec<usize>,
-    low: Vec<usize>,
+    vis: Box<[usize]>,
+    low: Box<[usize]>,
     v_stack: Vec<usize>,
     e_stack: Vec<usize>,
 }
@@ -15,8 +15,8 @@ impl ConnectivityData {
     fn new(num_v: usize) -> Self {
         Self {
             time: 0,
-            vis: vec![0; num_v],
-            low: vec![0; num_v],
+            vis: vec![0; num_v].into_boxed_slice(),
+            low: vec![0; num_v].into_boxed_slice(),
             v_stack: Vec::new(),
             e_stack: Vec::new(),
         }
@@ -77,20 +77,20 @@ impl<'a> ConnectivityGraph<'a> {
         for u in 0..graph.num_v() {
             if data.vis[u] == 0 {
                 if is_directed {
-                    connect.scc(u, &mut data);
+                    connect.scc(&mut data, u);
                 } else {
-                    connect.bcc(u, graph.num_e() + 1, &mut data);
+                    connect.bcc(&mut data, u, graph.num_e() + 1);
                 }
             }
         }
         connect
     }
 
-    fn scc(&mut self, u: usize, data: &mut ConnectivityData) {
+    fn scc(&mut self, data: &mut ConnectivityData, u: usize) {
         data.visit(u);
         for (_, v) in self.graph.adj_list(u) {
             if data.vis[v] == 0 {
-                self.scc(v, data);
+                self.scc(data, v);
             }
             if self.cc[v] == 0 {
                 data.lower(u, data.low[v]);
@@ -122,20 +122,20 @@ impl<'a> ConnectivityGraph<'a> {
             }).collect()
     }
 
-    /// Gets the vertices of a directed acyclic graph (DAG) in topological
-    /// order. Undefined behavior if the graph is not a DAG.
+    /// Gets the vertices of a graph according to a topological order of the
+    /// strongly connected components. Most often used on DAGs.
     pub fn topological_sort(&self) -> Vec<usize> {
         let mut vertices = (0..self.graph.num_v()).collect::<Vec<_>>();
         vertices.sort_unstable_by_key(|&u| self.num_cc - self.cc[u]);
         vertices
     }
 
-    fn bcc(&mut self, u: usize, par: usize, data: &mut ConnectivityData) {
+    fn bcc(&mut self, data: &mut ConnectivityData, u: usize, par: usize) {
         data.visit(u);
         for (e, v) in self.graph.adj_list(u) {
             if data.vis[v] == 0 {
                 data.e_stack.push(e);
-                self.bcc(v, e, data);
+                self.bcc(data, v, e);
                 data.lower(u, data.low[v]);
                 if data.vis[u] <= data.low[v] {
                     // u is a cut vertex unless it's a one-child root

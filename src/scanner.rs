@@ -25,13 +25,13 @@ impl<B: io::BufRead> Scanner<B> {
     where
         T::Err: ::std::fmt::Debug,
     {
-        if let Some(front) = self.buffer.pop() {
-            front.parse::<T>().expect(&front)
-        } else {
+        loop {
+            if let Some(front) = self.buffer.pop() {
+                return front.parse::<T>().expect(&front);
+            }
             let mut input = String::new();
             self.reader.read_line(&mut input).expect("Line not read");
             self.buffer = input.split_whitespace().rev().map(String::from).collect();
-            self.read()
         }
     }
 }
