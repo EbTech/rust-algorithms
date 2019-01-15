@@ -3,7 +3,7 @@ use bit_vec::BitVec;
 
 impl Graph
 {
-    fn dfs(&self, v: usize) -> DfsIterator
+    pub fn dfs(&self, v: usize) -> DfsIterator
     {
         // Create a stack for DFS
         let mut stack: Vec<usize> = Vec::new();
@@ -36,10 +36,10 @@ impl<'a> Iterator for DfsIterator<'a>
     {
         let mut r = None;
 
-        //Code translated/adapted from https://www.geeksforgeeks.org/iterative-depth-first-traversal/
-        while !self.stack.is_empty() {
-            // Pop a vertex from stack and print it
-            let s = self.stack.pop().unwrap();
+        //Sources:
+        // https://www.geeksforgeeks.org/iterative-depth-first-traversal/
+        // https://en.wikipedia.org/wiki/Depth-first_search
+        while let Some(s) = self.stack.pop() {
 
             // Stack may contain same vertex twice. So
             // we need to print the popped item only
@@ -47,13 +47,11 @@ impl<'a> Iterator for DfsIterator<'a>
             if !self.visited[s] {
                 self.visited.set(s, true);
                 r = Some(s);
-            }
 
-            // Get all adjacent vertices of the popped vertex s
-            // If a adjacent has not been visited, then puah it
-            // to the stack.
-            for (_e, u) in self.graph.adj_list(s) {
-                if !self.visited[u] {
+                // Get all adjacent vertices of the popped vertex s
+                // If a adjacent has not been visited, then puah it
+                // to the stack.
+                for (_e, u) in self.graph.adj_list(s) {
                     self.stack.push(u);
                 }
             }
@@ -63,7 +61,7 @@ impl<'a> Iterator for DfsIterator<'a>
             }
         }
 
-        return None;
+        None
     }
 }
 
