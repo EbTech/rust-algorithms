@@ -1,10 +1,8 @@
 use super::Graph;
 use bit_vec::BitVec;
 
-impl Graph
-{
-    pub fn dfs(&self, v: usize) -> DfsIterator
-    {
+impl Graph {
+    pub fn dfs(&self, v: usize) -> DfsIterator {
         // Create a stack for DFS
         let mut stack: Vec<usize> = Vec::new();
 
@@ -18,8 +16,7 @@ impl Graph
         }
     }
 }
-pub struct DfsIterator<'a>
-{
+pub struct DfsIterator<'a> {
     graph: &'a Graph,
     //is vertex visited
     visited: BitVec,
@@ -27,20 +24,17 @@ pub struct DfsIterator<'a>
     stack: Vec<usize>,
 }
 
-impl<'a> Iterator for DfsIterator<'a>
-{
+impl<'a> Iterator for DfsIterator<'a> {
     type Item = usize;
 
     /// Returns next vertex in the DFS
-    fn next(&mut self) -> Option<Self::Item>
-    {
+    fn next(&mut self) -> Option<Self::Item> {
         let mut r = None;
 
         //Sources:
         // https://www.geeksforgeeks.org/iterative-depth-first-traversal/
         // https://en.wikipedia.org/wiki/Depth-first_search
         while let Some(s) = self.stack.pop() {
-
             // Stack may contain same vertex twice. So
             // we need to print the popped item only
             // if it is not visited.
@@ -66,13 +60,11 @@ impl<'a> Iterator for DfsIterator<'a>
 }
 
 #[cfg(test)]
-mod test
-{
+mod test {
     use super::*;
 
     #[test]
-    fn test_dfs()
-    {
+    fn test_dfs() {
         let mut graph = Graph::new(4, 8);
         graph.add_edge(0, 2);
         graph.add_edge(2, 0);
@@ -86,8 +78,7 @@ mod test
     }
 
     #[test]
-    fn test_dfs2()
-    {
+    fn test_dfs2() {
         let mut graph = Graph::new(5, 8);
         graph.add_edge(0, 2);
         graph.add_edge(2, 1);

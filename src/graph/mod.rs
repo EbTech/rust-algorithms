@@ -4,8 +4,8 @@
 //!
 //! All methods will panic if given an out-of-bounds element index.
 pub mod connectivity;
-pub mod flow;
 mod dfs;
+pub mod flow;
 
 /// Represents a union of disjoint sets. Each set's elements are arranged in a
 /// tree, whose root is the set's representative.

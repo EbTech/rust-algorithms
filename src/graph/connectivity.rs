@@ -119,7 +119,8 @@ impl<'a> ConnectivityGraph<'a> {
                 } else {
                     Some(scc_true < scc_false)
                 }
-            }).collect()
+            })
+            .collect()
     }
 
     /// Gets the vertices of a directed acyclic graph (DAG) in topological

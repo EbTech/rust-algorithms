@@ -115,7 +115,8 @@ impl FlowGraph {
                 let u = self.graph.endp[e ^ 1];
                 let v = self.graph.endp[e];
                 dist[u] < Self::INF && dist[v] == Self::INF
-            }).collect()
+            })
+            .collect()
     }
 
     /// Among all s-t maximum flows, finds one with minimum cost, assuming
@@ -223,8 +224,7 @@ mod test {
     }
 
     #[test]
-    fn test_max_matching()
-    {
+    fn test_max_matching() {
         let mut graph = FlowGraph::new(14, 4);
 
         let source = 0;
@@ -256,19 +256,17 @@ mod test {
         let (flow_amt, flow) = graph.dinic(source, sink);
         assert_eq!(flow_amt, 5);
 
-        //U->V edges in maximum matching
-        assert_eq!(
-            flow
-                .iter()
-                .enumerate()
-                .filter(|&(_e, f)| *f > 0)
-                //map to u->v
-                .map(|(e, _f)| (graph.graph.endp[e ^ 1], graph.graph.endp[e]))
-                //leave out source and sink nodes
-                .filter(|&(u, v)| u != source && v != sink)
-                .collect::<Vec<_>>(),
+        //L->R edges in maximum matching
+        let left_right_edges = flow
+            .into_iter()
+            .enumerate()
+            .filter(|&(_e, f)| f > 0)
+            //map to u->v
+            .map(|(e, _f)| (graph.graph.endp[e ^ 1], graph.graph.endp[e]))
+            //leave out source and sink nodes
+            .filter(|&(u, v)| u != source && v != sink)
+            .collect::<Vec<_>>();
 
-            vec![(1, 8), (3, 7), (4, 9), (5, 10), (6, 12)]
-        );
+        assert_eq!(left_right_edges, vec![(1, 8), (3, 7), (4, 9), (5, 10), (6, 12)]);
     }
 }
