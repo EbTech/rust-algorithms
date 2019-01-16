@@ -52,7 +52,7 @@ impl<'a> Iterator for DfsIterator<'a> {
             }
 
             // Stack may contain same vertex twice. So
-            // we need to print the popped item only
+            // we return the popped item only
             // if it is not visited.
             if !self.visited[s] {
                 self.visited.set(s, true);
