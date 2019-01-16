@@ -1,7 +1,6 @@
 use super::Graph;
 use crate::graph::AdjListIterator;
 use bit_vec::BitVec;
-use std::iter::Peekable;
 
 impl Graph {
     pub fn dfs(&self, v: usize) -> DfsIterator {
@@ -9,7 +8,7 @@ impl Graph {
         let mut stack: Vec<usize> = Vec::new();
 
         let adj_iters = (0..self.num_v())
-            .map(|u| self.adj_list(u).peekable())
+            .map(|u| self.adj_list(u))
             .collect::<Vec<_>>();
 
         // Push the current source node.
@@ -27,7 +26,7 @@ pub struct DfsIterator<'a> {
     visited: BitVec,
     //stack of vertices
     stack: Vec<usize>,
-    adj_iters: Vec<Peekable<AdjListIterator<'a>>>,
+    adj_iters: Vec<AdjListIterator<'a>>,
 }
 
 impl<'a> Iterator for DfsIterator<'a> {
@@ -108,7 +107,7 @@ mod test {
 
         let mut dfs_search = graph.dfs(7);
         let mut dfs_check = vec![];
-        for i in 0..20 {
+        for _ in 0..20 {
             dfs_check.push(dfs_search.next().unwrap());
             assert!(dfs_search.stack.len() <= 21);
         }
