@@ -40,15 +40,6 @@ impl<'a> Iterator for DfsIterator<'a> {
         // https://en.wikipedia.org/wiki/Depth-first_search
         while let Some(s) = self.stack.last() {
             let s = *s;
-            let mut r = None;
-
-            // Stack may contain same vertex twice. So
-            // we need to print the popped item only
-            // if it is not visited.
-            if !self.visited[s] {
-                self.visited.set(s, true);
-                r = Some(s);
-            }
 
             //Does s still have neighbors we need to process?
             if let Some(s_nbr) = self.adj_iters[s].next() {
@@ -60,8 +51,12 @@ impl<'a> Iterator for DfsIterator<'a> {
                 self.stack.pop();
             }
 
-            if r.is_some() {
-                return r;
+            // Stack may contain same vertex twice. So
+            // we need to print the popped item only
+            // if it is not visited.
+            if !self.visited[s] {
+                self.visited.set(s, true);
+                return Some(s);
             }
         }
 
@@ -115,7 +110,7 @@ mod test {
         let mut dfs_check = vec![];
         for i in 0..20 {
             dfs_check.push(dfs_search.next().unwrap());
-            assert!(dfs_search.stack.len() <= 20);
+            assert!(dfs_search.stack.len() <= 21);
         }
 
         dfs_check.sort();
