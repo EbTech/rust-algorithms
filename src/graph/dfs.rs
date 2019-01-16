@@ -47,7 +47,7 @@ impl<'a> Iterator for DfsIterator<'a> {
                     self.stack.push(s_nbr.1);
                 }
             } else {
-                //s is visited & has no neighbors, we are done
+                //s has no more neighbors, we can pop it off the stack
                 self.stack.pop();
             }
 
