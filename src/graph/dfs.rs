@@ -115,7 +115,6 @@ mod test {
         let mut dfs_check = vec![];
         for i in 0..20 {
             dfs_check.push(dfs_search.next().unwrap());
-            println!("Iteration {}, stack is {:?}", i, dfs_search.stack);
             assert!(dfs_search.stack.len() <= 20);
         }
 
