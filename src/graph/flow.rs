@@ -267,6 +267,9 @@ mod test {
             .filter(|&(u, v)| u != source && v != sink)
             .collect::<Vec<_>>();
 
-        assert_eq!(left_right_edges, vec![(1, 8), (3, 7), (4, 9), (5, 10), (6, 12)]);
+        assert_eq!(
+            left_right_edges,
+            vec![(1, 8), (3, 7), (4, 9), (5, 10), (6, 12)]
+        );
     }
 }
