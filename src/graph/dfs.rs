@@ -37,13 +37,12 @@ impl<'a> Iterator for DfsIterator<'a> {
         //Sources:
         // https://www.geeksforgeeks.org/iterative-depth-first-traversal/
         // https://en.wikipedia.org/wiki/Depth-first_search
-        while let Some(s) = self.stack.last() {
-            let s = *s;
+        while let Some(&s) = self.stack.last() {
 
             //Does s still have neighbors we need to process?
-            if let Some(s_nbr) = self.adj_iters[s].next() {
-                if !self.visited[s_nbr.1] {
-                    self.stack.push(s_nbr.1);
+            if let Some((_,s_nbr)) = self.adj_iters[s].next() {
+                if !self.visited[s_nbr] {
+                    self.stack.push(s_nbr);
                 }
             } else {
                 //s has no more neighbors, we can pop it off the stack
@@ -98,24 +97,25 @@ mod test {
 
     #[test]
     fn test_dfs_space_complexity() {
-        let mut graph = Graph::new(20, 0);
-        for i in 0..20 {
-            for j in 0..20 {
+        let num_v = 20;
+        let mut graph = Graph::new(num_v, 0);
+        for i in 0..num_v {
+            for j in 0..num_v {
                 graph.add_undirected_edge(i, j);
             }
         }
 
         let mut dfs_search = graph.dfs(7);
         let mut dfs_check = vec![];
-        for _ in 0..20 {
+        for _ in 0..num_v {
             dfs_check.push(dfs_search.next().unwrap());
-            assert!(dfs_search.stack.len() <= 21);
+            assert!(dfs_search.stack.len() <= num_v+1);
         }
 
         dfs_check.sort();
         dfs_check.dedup();
         assert_eq!(0, dfs_check[0]);
-        assert_eq!(20, dfs_check.len());
-        assert_eq!(19, dfs_check[19]);
+        assert_eq!(num_v, dfs_check.len());
+        assert_eq!(num_v-1, dfs_check[num_v-1]);
     }
 }
