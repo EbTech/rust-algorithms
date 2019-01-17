@@ -5,3 +5,4 @@ authors = ["Aram Ebtekar <aram.eb@mythic-ai.com>"]
 edition = "2018"
 
 [dependencies]
+bit-vec = "*"

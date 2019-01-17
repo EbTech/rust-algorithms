@@ -42,7 +42,7 @@ impl FlowGraph {
     /// # Panics
     ///
     /// Panics if the maximum flow is 2^63 or larger.
-    pub fn dinic(&self, s: usize, t: usize) -> i64 {
+    pub fn dinic(&self, s: usize, t: usize) -> (i64, Vec<i64>) {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
         loop {
@@ -56,7 +56,7 @@ impl FlowGraph {
                 .collect::<Vec<_>>();
             max_flow += self.dinic_augment(s, t, Self::INF, &dist, &mut adj_iters, &mut flow);
         }
-        max_flow
+        (max_flow, flow)
     }
 
     // Compute BFS distances to restrict attention to shortest path edges.
@@ -115,7 +115,8 @@ impl FlowGraph {
                 let u = self.graph.endp[e ^ 1];
                 let v = self.graph.endp[e];
                 dist[u] < Self::INF && dist[v] == Self::INF
-            }).collect()
+            })
+            .collect()
     }
 
     /// Among all s-t maximum flows, finds one with minimum cost, assuming
@@ -124,7 +125,7 @@ impl FlowGraph {
     /// # Panics
     ///
     /// Panics if the flow or cost overflow a 64-bit signed integer.
-    pub fn mcf(&self, s: usize, t: usize) -> (i64, i64) {
+    pub fn mcf(&self, s: usize, t: usize) -> (i64, i64, Vec<i64>) {
         let mut pot = vec![0; self.graph.num_v()];
 
         // Bellman-Ford deals with negative-cost edges at initialization.
@@ -149,7 +150,7 @@ impl FlowGraph {
             min_cost += dc;
             max_flow += df;
         }
-        (min_cost, max_flow)
+        (min_cost, max_flow, flow)
     }
 
     // Maintains Johnson's potentials to prevent negative-cost residual edges.
@@ -205,7 +206,7 @@ mod test {
         graph.add_edge(0, 1, 4, 1);
         graph.add_edge(1, 2, 3, 1);
 
-        let flow = graph.dinic(0, 2);
+        let flow = graph.dinic(0, 2).0;
         assert_eq!(flow, 3);
     }
 
@@ -217,8 +218,58 @@ mod test {
         graph.add_edge(2, 3, 7, 8);
         graph.add_edge(1, 3, 7, 10);
 
-        let (cost, flow) = graph.mcf(0, 3);
+        let (cost, flow, _) = graph.mcf(0, 3);
         assert_eq!(cost, 18);
         assert_eq!(flow, 10);
+    }
+
+    #[test]
+    fn test_max_matching() {
+        let mut graph = FlowGraph::new(14, 4);
+
+        let source = 0;
+        let sink = 13;
+
+        //Vertex indices of "left hand side" of bipartite graph go from [left_start, right_start)
+        let left_start = 1;
+        //Vertex indices of "right hand side" of bipartite graph go from [right_start, sink)
+        let right_start = 7;
+
+        //Initialize source / sink connections; both left & right have 6 nodes
+        for lhs_vertex in left_start..left_start + 6 {
+            graph.add_edge(source, lhs_vertex, 1, 1);
+        }
+
+        for rhs_vertex in right_start..right_start + 6 {
+            graph.add_edge(rhs_vertex, sink, 1, 1);
+        }
+
+        graph.add_edge(left_start + 0, right_start + 1, 1, 1);
+        graph.add_edge(left_start + 0, right_start + 2, 1, 1);
+        graph.add_edge(left_start + 2, right_start + 0, 1, 1);
+        graph.add_edge(left_start + 2, right_start + 3, 1, 1);
+        graph.add_edge(left_start + 3, right_start + 2, 1, 1);
+        graph.add_edge(left_start + 4, right_start + 2, 1, 1);
+        graph.add_edge(left_start + 4, right_start + 3, 1, 1);
+        graph.add_edge(left_start + 5, right_start + 5, 1, 1);
+
+        let (flow_amt, flow) = graph.dinic(source, sink);
+        assert_eq!(flow_amt, 5);
+
+        //L->R edges in maximum matching
+        let left_right_edges = flow
+            .into_iter()
+            .enumerate()
+            .filter(|&(_e, f)| f > 0)
+            //map to u->v
+            .map(|(e, _f)| (graph.graph.endp[e ^ 1], graph.graph.endp[e]))
+            //leave out source and sink nodes
+            .filter(|&(u, v)| u != source && v != sink)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            left_right_edges,
+            vec![(1, 8), (3, 7), (4, 9), (5, 10), (6, 12)]
+        );
     }
 }
