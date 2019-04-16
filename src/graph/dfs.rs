@@ -38,9 +38,8 @@ impl<'a> Iterator for DfsIterator<'a> {
         // https://www.geeksforgeeks.org/iterative-depth-first-traversal/
         // https://en.wikipedia.org/wiki/Depth-first_search
         while let Some(&s) = self.stack.last() {
-
             //Does s still have neighbors we need to process?
-            if let Some((_,s_nbr)) = self.adj_iters[s].next() {
+            if let Some((_, s_nbr)) = self.adj_iters[s].next() {
                 if !self.visited[s_nbr] {
                     self.stack.push(s_nbr);
                 }
@@ -109,13 +108,13 @@ mod test {
         let mut dfs_check = vec![];
         for _ in 0..num_v {
             dfs_check.push(dfs_search.next().unwrap());
-            assert!(dfs_search.stack.len() <= num_v+1);
+            assert!(dfs_search.stack.len() <= num_v + 1);
         }
 
         dfs_check.sort();
         dfs_check.dedup();
         assert_eq!(0, dfs_check[0]);
         assert_eq!(num_v, dfs_check.len());
-        assert_eq!(num_v-1, dfs_check[num_v-1]);
+        assert_eq!(num_v - 1, dfs_check[num_v - 1]);
     }
 }

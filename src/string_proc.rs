@@ -90,7 +90,7 @@ impl SuffixArray {
     /// Suffix array construction in O(n log n) time.
     pub fn new(text: &[u8]) -> Self {
         let n = text.len();
-        let init_rank = text.into_iter().map(|&ch| ch as usize).collect::<Vec<_>>();
+        let init_rank = text.iter().map(|&ch| ch as usize).collect::<Vec<_>>();
         let mut sfx = Self::counting_sort(0..n, &init_rank, 256);
         let mut rank = vec![init_rank];
         // Invariant at the start of every loop iteration:
@@ -134,6 +134,39 @@ impl SuffixArray {
             }
         }
         len
+    }
+}
+
+/// Prefix trie
+#[derive(Default)]
+pub struct Trie<K: std::hash::Hash + Eq> {
+    count: usize,
+    branches: std::collections::HashMap<K, Trie<K>>,
+}
+
+impl<K: std::hash::Hash + Eq + Default> Trie<K> {
+    /// Inserts a word into the trie.
+    pub fn insert(&mut self, word: impl IntoIterator<Item = K>) {
+        let mut node = self;
+        node.count += 1;
+
+        for ch in word {
+            node = { node }.branches.entry(ch).or_insert_with(Default::default);
+            node.count += 1;
+        }
+    }
+
+    /// Computes the number of inserted words that start with the given prefix.
+    pub fn get(&self, prefix: impl IntoIterator<Item = K>) -> usize {
+        let mut node = self;
+
+        for ch in prefix {
+            match node.branches.get(&ch) {
+                Some(sub) => node = sub,
+                None => return 0,
+            }
+        }
+        node.count
     }
 }
 
@@ -206,6 +239,24 @@ mod test {
         for (p, &r) in sfx2.rank.last().unwrap().iter().enumerate() {
             assert_eq!(sfx2.sfx[r], p);
         }
+    }
+
+    #[test]
+    fn test_trie() {
+        let dict = vec!["banana", "benefit", "banapple", "ban"];
+
+        let trie = dict.into_iter().fold(Trie::default(), |mut trie, word| {
+            Trie::insert(&mut trie, word.bytes());
+            trie
+        });
+
+        assert_eq!(trie.get("".bytes()), 4);
+        assert_eq!(trie.get("b".bytes()), 4);
+        assert_eq!(trie.get("ba".bytes()), 3);
+        assert_eq!(trie.get("ban".bytes()), 3);
+        assert_eq!(trie.get("bana".bytes()), 2);
+        assert_eq!(trie.get("banan".bytes()), 1);
+        assert_eq!(trie.get("bane".bytes()), 0);
     }
 
     #[test]
