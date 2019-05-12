@@ -27,6 +27,31 @@ pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
     }
 }
 
+pub fn extended_gcd_by_iter(a: i64, b: i64) -> (i64, i64, i64) {
+    if b == 0 {
+        (a.abs(), a.signum(), 0)
+    } else {
+        let mut c;
+        let mut temp;
+        let (mut d, mut q, mut t) = (b, a / b, a % b);
+        let (mut x0, mut y0, mut x1, mut y1) = (1_i64, 0_i64, 0_i64, 1_i64);
+
+        while t != 0 {
+            temp = x0;
+            x0 = x1;
+            x1 = temp - q * x1;
+            temp = y0;
+            y0 = y1;
+            y1 = temp - q * y1;
+            c = d;
+            d = t;
+            q = c / d;
+            t = c % d;
+        }
+        (d, x1, y1)
+    }
+}
+
 /// Assuming a != 0, finds smallest coef_b >= 0 such that a * coef_a + b * coef_b = c.
 ///
 /// # Panics
@@ -64,6 +89,13 @@ mod test {
         let (a, b) = (14, 35);
 
         let (d, x, y) = extended_gcd(a, b);
+        assert_eq!(d, 7);
+        assert_eq!(a * x + b * y, d);
+
+        assert_eq!(canon_egcd(a, b, d), Some((d, -2, 1)));
+        assert_eq!(canon_egcd(b, a, d), Some((d, -1, 3)));
+
+        let (d, x, y) = extended_gcd_by_iter(a, b);
         assert_eq!(d, 7);
         assert_eq!(a * x + b * y, d);
 
