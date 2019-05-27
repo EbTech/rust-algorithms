@@ -17,10 +17,10 @@ where
     T::F: Clone,
 {
     /// Initializes a static balanced tree on top of the given sequence.
-    pub fn new(mut init: Vec<T::M>) -> Self {
+    pub fn new(init: Vec<T::M>) -> Self {
         let size = init.len();
         let mut t = (0..size).map(|_| T::identity()).collect::<Vec<_>>();
-        t.append(&mut init);
+        t.append(&mut { init });
         for i in (0..size).rev() {
             t[i] = T::op(&t[i << 1], &t[i << 1 | 1]);
         }

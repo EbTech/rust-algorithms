@@ -47,9 +47,9 @@ impl ConnectivityData {
 pub struct ConnectivityGraph<'a> {
     // Immutable graph, frozen for the lifetime of the ConnectivityGraph object.
     pub graph: &'a Graph,
-    /// ID of a vertex's CC, SCC or 2ECC, whichever applies.
+    /// ID of a vertex's CC, SCC or 2ECC, whichever applies. Range 1 to num_cc.
     pub cc: Vec<usize>,
-    /// ID of an edge's 2VCC, where applicable.
+    /// ID of an edge's 2VCC, where applicable. Ranges from 1 to num_vcc.
     pub vcc: Vec<usize>,
     /// Total number of CCs, SCCs or 2ECCs, whichever applies.
     pub num_cc: usize,

@@ -21,18 +21,22 @@ impl<B: io::BufRead> Scanner<B> {
     /// # Panics
     ///
     /// Panics if there's an I/O error or if the token cannot be parsed as T.
-    pub fn read<T: ::std::str::FromStr>(&mut self) -> T
-    where
-        T::Err: ::std::fmt::Debug,
-    {
+    pub fn read<T: std::str::FromStr>(&mut self) -> T {
         loop {
-            if let Some(front) = self.buffer.pop() {
-                return front.parse::<T>().expect(&front);
+            if let Some(token) = self.buffer.pop() {
+                return token.parse().ok().expect("Failed parse");
             }
             let mut input = String::new();
-            self.reader.read_line(&mut input).expect("Line not read");
+            self.reader.read_line(&mut input).expect("Failed read");
             self.buffer = input.split_whitespace().rev().map(String::from).collect();
         }
+    }
+}
+
+impl Scanner<io::BufReader<std::fs::File>> {
+    pub fn from_file(filename: &str) -> Self {
+        let file = std::fs::File::open(filename).expect("File not found");
+        Self::new(io::BufReader::new(file))
     }
 }
 
@@ -61,8 +65,7 @@ mod test {
     #[test]
     #[should_panic(expected = "File not found")]
     fn test_file() {
-        let file = ::std::fs::File::open("asdf.txt").expect("File not found");
-        let mut scan = Scanner::new(io::BufReader::new(file));
+        let mut scan = Scanner::from_file("asdf.txt");
         let _ = scan.read::<i32>();
     }
 }

@@ -14,11 +14,11 @@ In addition, the Rust language has outstanding pedagogical attributes. Its compi
 
 ## For Programming Contests
 
-The original intent of this project was to build a reference for use in programming contests ranging from [Codeforces](http://codeforces.com) to [Hackerrank](https://www.hackerrank.com/). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on making the code concise and easy to modify under time pressure.
+The original intent of this project was to build a reference for use in programming contests ranging from [Codeforces](http://codeforces.com) to [Hackerrank](https://www.hackerrank.com/) to [Google's Kick Start and Code Jam](https://codingcompetitions.withgoogle.com/). As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on code that is concise and easy to modify under time pressure.
 
 Most competition programmers rely on C++ for its fast execution time. However, it's notoriously unsafe, diverting a considerable share of the contestant's time and attention on mistake prevention and debugging. Java is the next most popular choice, offering a little safety at some expense to speed of coding and execution.
 
-To my delight, I found that Rust provides even more bug-safety without the visual clutter, and it's *fast*. A proficient Rust programmer might stand to gain a competitive advantage as well as a more pleasant experience!
+To my delight, I found that Rust eliminates entire classes of bugs, while reducing visual clutter to make the rest easier to spot. And, it's *fast*. There's a learning curve, to be sure. However, a proficient Rust programmer stands to gain a competitive advantage as well as a more pleasant experience!
 
 Other online judges that support Rust:
 - [Timus](http://acm.timus.ru/help.aspx?topic=rust)
