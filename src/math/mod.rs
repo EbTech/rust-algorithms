@@ -1,4 +1,6 @@
 //! Number-theoretic utilities for contest problems.
+pub mod fft;
+pub mod num;
 
 /// Modular exponentiation by repeated squaring: returns base^exp % m.
 ///

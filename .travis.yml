@@ -4,6 +4,11 @@ rust:
   - stable
   - beta
   - nightly
+before_script:
+  - rustup component add clippy
+script:
+  - cargo test --verbose
+  - cargo clippy -- -D warnings
 matrix:
   allow_failures:
     - rust: nightly
