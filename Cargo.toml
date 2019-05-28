@@ -1,8 +1,18 @@
 [package]
-name = "algorithms"
-version = "0.1.0"
-authors = ["Aram Ebtekar <aram.eb@mythic-ai.com>"]
+name = "contest-algorithms"
+version = "0.1.1"
+authors = ["Aram Ebtekar"]
 edition = "2018"
 
+description = "Common algorithms and data structures for programming contests"
+repository = "https://github.com/EbTech/rust-algorithms"
+readme = "README.md"
+keywords = ["competitive", "programming", "codeforces"]
+categories = ["algorithms", "data-structures"]
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "EbTech/rust-algorithms", branch = "master" }
+
 [dependencies]
-bit-vec = "*"
+bit-vec = "0.6.*"
