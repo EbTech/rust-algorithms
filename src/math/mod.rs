@@ -2,30 +2,13 @@
 pub mod fft;
 pub mod num;
 
-/// Modular exponentiation by repeated squaring: returns base^exp % m.
-///
-/// # Panics
-///
-/// Panics if m == 0. May panic on overflow if m * m > 2^63.
-pub fn mod_pow(mut base: u64, mut exp: u64, m: u64) -> u64 {
-    let mut result = 1 % m;
-    while exp > 0 {
-        if exp % 2 == 1 {
-            result = (result * base) % m;
-        }
-        base = (base * base) % m;
-        exp /= 2;
-    }
-    result
-}
-
 /// Finds (d, coef_a, coef_b) such that d = gcd(a, b) = a * coef_a + b * coef_b.
 pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
     if b == 0 {
         (a.abs(), a.signum(), 0)
     } else {
-        let (d, coef_a, coef_b) = extended_gcd(b, a % b);
-        (d, coef_b, coef_a - coef_b * (a / b))
+        let (d, coef_b, coef_a) = extended_gcd(b, a % b);
+        (d, coef_a, coef_b - coef_a * (a / b))
     }
 }
 
@@ -49,17 +32,6 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn test_mod_inverse() {
-        let p = 1_000_000_007;
-        let base = 31;
-
-        let base_inv = mod_pow(base, p - 2, p);
-        let identity = (base * base_inv) % p;
-
-        assert_eq!(identity, 1);
-    }
 
     #[test]
     fn test_egcd() {

@@ -1,9 +1,17 @@
-//! Rational and Complex numbers, minimally viable for contests.
-//! For more optimized and full-featured versions, check out the num crate.
-// TODO: Once Rust gets const generics, consider implementing a Mod<p> struct
-use super::extended_gcd;
+//! Safe modular arithmetic as well as Rational and Complex numbers,
+//! implemented minimally for contest use.
+//! If you need more features, you might be interested in crates.io/crates/num
 pub use std::f64::consts::PI;
 use std::ops::{Add, Div, Mul, Neg, Sub};
+
+/// Fast iterative version of Euclid's GCD algorithm
+pub fn fast_gcd(mut a: i64, mut b: i64) -> i64 {
+    while b != 0 {
+        a %= b;
+        std::mem::swap(&mut a, &mut b);
+    }
+    a.abs()
+}
 
 /// Represents a fraction reduced to lowest terms
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -12,17 +20,24 @@ pub struct Rational {
     pub den: i64,
 }
 impl Rational {
-    pub fn new(a: i64, b: i64) -> Self {
-        let g = extended_gcd(a, b).0 * b.signum();
+    pub fn new(num: i64, den: i64) -> Self {
+        let g = fast_gcd(num, den) * den.signum();
         Self {
-            num: a / g,
-            den: b / g,
+            num: num / g,
+            den: den / g,
         }
     }
     pub fn abs(self) -> Self {
         Self {
             num: self.num.abs(),
             den: self.den,
+        }
+    }
+    pub fn recip(self) -> Self {
+        let g = self.num.signum();
+        Self {
+            num: self.den / g,
+            den: self.num / g,
         }
     }
 }
@@ -70,7 +85,7 @@ impl Mul for Rational {
 impl Div for Rational {
     type Output = Self;
     fn div(self, other: Self) -> Self {
-        Self::new(self.num * other.den, self.den * other.num)
+        self * other.recip()
     }
 }
 impl Ord for Rational {
@@ -91,20 +106,24 @@ pub struct Complex {
     pub imag: f64,
 }
 impl Complex {
-    pub fn new(a: f64, b: f64) -> Self {
-        Self { real: a, imag: b }
+    pub fn new(real: f64, imag: f64) -> Self {
+        Self { real, imag }
     }
     pub fn from_polar(r: f64, th: f64) -> Self {
         Self::new(r * th.cos(), r * th.sin())
-    }
-    pub fn conjugate(self) -> Self {
-        Self::new(self.real, -self.imag)
     }
     pub fn abs_square(self) -> f64 {
         self.real * self.real + self.imag * self.imag
     }
     pub fn argument(self) -> f64 {
         self.imag.atan2(self.real)
+    }
+    pub fn conjugate(self) -> Self {
+        Self::new(self.real, -self.imag)
+    }
+    fn recip(self) -> Self {
+        let denom = self.abs_square();
+        Self::new(self.real / denom, -self.imag / denom)
     }
 }
 impl From<f64> for Complex {
@@ -138,13 +157,81 @@ impl Mul for Complex {
         Self::new(real, imag)
     }
 }
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl Div for Complex {
     type Output = Self;
     fn div(self, other: Self) -> Self {
-        let real = self.real * other.real + self.imag * other.imag;
-        let imag = self.imag * other.real - self.real * other.imag;
-        let denom = other.abs_square();
-        Self::new(real / denom, imag / denom)
+        self * other.recip()
+    }
+}
+
+/// Represents an element of the finite (Galois) field of prime order, given by
+/// MOD. Until Rust gets const generics, MOD must be hardcoded, but any prime
+/// in [1, 2^32] will work. If MOD is not prime, ring operations are still valid
+/// but recip() and division are not. Note that the latter operations are also
+/// the slowest, so precompute any inverses that you intend to use frequently.
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub struct Field {
+    pub val: u64,
+}
+impl Field {
+    pub const MOD: u64 = 998_244_353; // 2^23 * 7 * 17 + 1
+
+    pub fn pow(mut self, mut exp: u64) -> Self {
+        let mut result = Self::from_small(1);
+        while exp > 0 {
+            if exp % 2 == 1 {
+                result = result * self;
+            }
+            self = self * self;
+            exp /= 2;
+        }
+        result
+    }
+    pub fn recip(self) -> Self {
+        self.pow(Self::MOD - 2)
+    }
+    fn from_small(s: u64) -> Self {
+        let val = if s < Self::MOD { s } else { s - Self::MOD };
+        Self { val }
+    }
+}
+impl From<u64> for Field {
+    fn from(val: u64) -> Self {
+        Self {
+            val: val % Self::MOD,
+        }
+    }
+}
+impl Neg for Field {
+    type Output = Self;
+    fn neg(self) -> Self {
+        Self::from_small(Self::MOD - self.val)
+    }
+}
+impl Add for Field {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Self::from_small(self.val + other.val)
+    }
+}
+impl Sub for Field {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        Self::from_small(self.val + Self::MOD - other.val)
+    }
+}
+impl Mul for Field {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        Self::from(self.val * other.val)
+    }
+}
+#[allow(clippy::suspicious_arithmetic_impl)]
+impl Div for Field {
+    type Output = Self;
+    fn div(self, other: Self) -> Self {
+        self * other.recip()
     }
 }
 
@@ -188,5 +275,16 @@ mod test {
         assert_eq!((-two_i).argument(), -PI / 2.0);
         assert_eq!(four.argument(), 0.0);
         assert_eq!(two_i.argument(), PI / 2.0);
+    }
+
+    #[test]
+    fn test_field() {
+        let base = Field::from(1234);
+        let zero = base - base;
+        let one = base.recip() * base;
+
+        assert_eq!(zero.val, 0);
+        assert_eq!(one.val, 1);
+        assert_eq!(one / base * (base * base) - base / one, zero);
     }
 }

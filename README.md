@@ -21,13 +21,15 @@ Most competition programmers rely on C++ for its fast execution time. However, i
 
 To my delight, I found that Rust eliminates entire classes of bugs, while reducing visual clutter to make the rest easier to spot. And, it's *fast*. There's a learning curve, to be sure. However, a proficient Rust programmer stands to gain a competitive advantage as well as a more pleasant experience!
 
+For help in getting started, you may check out [some of my past submissions](https://codeforces.com/contest/1168/submission/54859899).
+
 Other online judges that support Rust:
 - [Timus](http://acm.timus.ru/help.aspx?topic=rust)
 - [SPOJ](http://www.spoj.com/)
 
 ## Programming Language Advocacy
 
-My other goal is to appeal to developers who feel limited by mainstream, arguably outdated, programming languages. Perhaps we have a better way.
+My other goal is to appeal to developers who feel limited by mainstream, arguably outdated, programming languages. Perhaps we have a better option.
 
 Rather than try to persuade you with words, this repository aims to show by example. If you're new to Rust, see [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/2018-edition)
 
@@ -37,6 +39,8 @@ Rather than try to persuade you with words, this repository aims to show by exam
 - [Network flows](src/graph/flow.rs): Dinic's blocking flow, Hopcroft-Karp bipartite matching, min cost max flow
 - [Connected components](src/graph/connectivity.rs): 2-edge-, 2-vertex- and strongly connected components, bridges, articulation points, topological sort, 2-SAT
 - [Associative range query](src/arq_tree.rs): known colloquially as *segtrees*
-- [Math](src/math/): Euclid's GCD algorithm, Bezout's identity, rational and complex numbers, fast Fourier transform
+- [GCD Math](src/math/mod.rs): canonical solution to Bezout's identity
+- [Arithmetic](src/math/num.rs): rational and complex numbers, safe modular arithmetic
+- [FFT](src/math/fft.rs): fast Fourier transform, number theoretic transform, convolution
 - [Scanner](src/scanner.rs): utility for reading input data
 - [String processing](src/string_proc.rs): Knuth-Morris-Pratt string matching, suffix arrays, Manacher's palindrome search
