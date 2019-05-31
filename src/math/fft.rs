@@ -30,6 +30,7 @@ impl Iterator for BitRevIterator {
 }
 
 // Integer FFT notes: see problem 30-6 in CLRS for details, noting that
+//  15311432 and  469870224 are inverses and 2^23rd roots of 1 mod p=(119<<23)+1
 // 440564289 and 1713844692 are inverses and 2^27th roots of 1 mod p=(15<<27)+1
 //       125 and 2267742733 are inverses and 2^30th roots of 1 mod p=(3<<30)+1
 
@@ -76,9 +77,9 @@ pub fn dft_from_reals(v: &[f64], desired_len: usize) -> Vec<Complex> {
 }
 
 /// The inverse of dft_from_reals()
-pub fn idft_to_reals(fft_v: &[Complex], desired_len: usize) -> Vec<f64> {
-    assert!(fft_v.len() >= desired_len);
-    let complex_v = fft(fft_v, true);
+pub fn idft_to_reals(dft_v: &[Complex], desired_len: usize) -> Vec<f64> {
+    assert!(dft_v.len() >= desired_len);
+    let complex_v = fft(dft_v, true);
     complex_v
         .into_iter()
         .take(desired_len)
@@ -90,13 +91,9 @@ pub fn idft_to_reals(fft_v: &[Complex], desired_len: usize) -> Vec<f64> {
 /// computes their product (convolution) c[k] = sum_(i+j=k) a[i]*b[j]
 pub fn convolution(a: &[f64], b: &[f64]) -> Vec<f64> {
     let len_c = a.len() + b.len() - 1;
-    let dft_a = dft_from_reals(a, len_c);
-    let dft_b = dft_from_reals(b, len_c);
-    let dft_c = dft_a
-        .into_iter()
-        .zip(dft_b.into_iter())
-        .map(|(a, b)| a * b)
-        .collect::<Vec<_>>();
+    let dft_a = dft_from_reals(a, len_c).into_iter();
+    let dft_b = dft_from_reals(b, len_c).into_iter();
+    let dft_c = dft_a.zip(dft_b).map(|(a, b)| a * b).collect::<Vec<_>>();
     idft_to_reals(&dft_c, len_c)
 }
 

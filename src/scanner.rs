@@ -54,11 +54,15 @@ mod test {
     }
 
     #[test]
-    fn test_stdin() {
+    fn test_compile_stdinout() {
         let stdin = io::stdin();
         let mut scan = Scanner::new(stdin.lock());
+        use io::Write;
+        let out = &mut io::BufWriter::new(io::stdout());
+
         if false {
             let _ = scan.read::<i32>();
+            writeln!(out, "Test").ok();
         }
     }
 
