@@ -59,10 +59,18 @@ fn dfs(
     r[u] = *time;
 }
 
-fn main1() {
+#[test]
+fn main() {
+    use std::fmt::Write;
     let cursor = std::io::Cursor::new(SAMPLE_INPUT);
     let mut scan = Scanner::new(cursor);
-    let mut out = String::new();
+    let out = &mut String::new();
+    /* To read/write with stdin/stdout instead:
+        use std::io::{BufWriter, stdin, stdout, Write};
+        let stdin = stdin();
+        let mut scan = Scanner::new(stdin.lock());
+        let out = &mut BufWriter::new(stdout());
+    */
 
     let n = scan.read::<usize>();
     let mut tree = Graph::new(n, 2 * (n - 1));
@@ -91,22 +99,10 @@ fn main1() {
         } else if c == 2 {
             arq.modify(l[v], l[v], &0);
         } else {
-            use std::fmt::Write;
-            writeln!(&mut out, "{}", if sum == len { 1 } else { 0 }).unwrap();
+            let ans = if sum == len { 1 } else { 0 };
+            writeln!(out, "{}", ans).ok();
         }
     }
 
     assert_eq!(out, SAMPLE_OUTPUT);
-}
-
-#[test]
-fn main() {
-    // If your contest solution requires a lot of stack space, make sure to
-    // run it in a custom thread like this.
-    std::thread::Builder::new()
-        .stack_size(50_000_000)
-        .spawn(main1)
-        .unwrap()
-        .join()
-        .unwrap();
 }

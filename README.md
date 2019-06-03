@@ -40,7 +40,7 @@ Rather than try to persuade you with words, this repository aims to show by exam
 - [Connected components](src/graph/connectivity.rs): 2-edge-, 2-vertex- and strongly connected components, bridges, articulation points, topological sort, 2-SAT
 - [Associative range query](src/arq_tree.rs): known colloquially as *segtrees*
 - [GCD Math](src/math/mod.rs): canonical solution to Bezout's identity
-- [Arithmetic](src/math/num.rs): rational and complex numbers, safe modular arithmetic
+- [Arithmetic](src/math/num.rs): rational and complex numbers, linear algebra, safe modular arithmetic
 - [FFT](src/math/fft.rs): fast Fourier transform, number theoretic transform, convolution
 - [Scanner](src/scanner.rs): utility for reading input data
 - [String processing](src/string_proc.rs): Knuth-Morris-Pratt string matching, suffix arrays, Manacher's palindrome search
