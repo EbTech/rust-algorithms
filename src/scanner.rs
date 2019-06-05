@@ -16,12 +16,12 @@ impl<B: io::BufRead> Scanner<B> {
         }
     }
 
-    /// Use "turbofish" syntax read::<T>() to select data type of next token.
+    /// Use "turbofish" syntax token::<T>() to select data type of next token.
     ///
     /// # Panics
     ///
     /// Panics if there's an I/O error or if the token cannot be parsed as T.
-    pub fn read<T: std::str::FromStr>(&mut self) -> T {
+    pub fn token<T: std::str::FromStr>(&mut self) -> T {
         loop {
             if let Some(token) = self.buffer.pop() {
                 return token.parse().ok().expect("Failed parse");
@@ -33,11 +33,14 @@ impl<B: io::BufRead> Scanner<B> {
     }
 }
 
-impl Scanner<io::BufReader<std::fs::File>> {
-    pub fn from_file(filename: &str) -> Self {
-        let file = std::fs::File::open(filename).expect("File not found");
-        Self::new(io::BufReader::new(file))
-    }
+pub fn scanner_from_file(filename: &str) -> Scanner<io::BufReader<std::fs::File>> {
+    let file = std::fs::File::open(filename).expect("Input file not found");
+    Scanner::new(io::BufReader::new(file))
+}
+
+pub fn writer_to_file(filename: &str) -> io::BufWriter<std::fs::File> {
+    let file = std::fs::File::open(filename).expect("Output file not found");
+    io::BufWriter::new(file)
 }
 
 #[cfg(test)]
@@ -45,31 +48,42 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_fake_input() {
-        let cursor = io::Cursor::new("44 2");
+    fn test_in_memory_io() {
+        let cursor = io::Cursor::new("50 8");
         let mut scan = Scanner::new(cursor);
-        let x = scan.read::<i32>();
-        let y = scan.read::<i32>();
-        assert_eq!(x - y, 42);
+        let mut out = String::new();
+        use std::fmt::Write; // needed for writeln!()
+
+        let x = scan.token::<i32>();
+        let y = scan.token::<i32>();
+        writeln!(out, "Test {}", x - y).ok();
+
+        assert_eq!(out, "Test 42\n");
     }
 
     #[test]
-    fn test_compile_stdinout() {
-        let stdin = io::stdin();
+    fn test_compile_stdio() {
+        let (stdin, stdout) = (io::stdin(), io::stdout());
         let mut scan = Scanner::new(stdin.lock());
-        use io::Write;
-        let out = &mut io::BufWriter::new(io::stdout());
+        let mut out = io::BufWriter::new(stdout.lock());
+        use io::Write; // needed for writeln!()
 
         if false {
-            let _ = scan.read::<i32>();
-            writeln!(out, "Test").ok();
+            let x = scan.token::<i32>();
+            let y = scan.token::<i32>();
+            writeln!(out, "Test {}", x - y).ok();
         }
     }
 
     #[test]
-    #[should_panic(expected = "File not found")]
-    fn test_file() {
-        let mut scan = Scanner::from_file("asdf.txt");
-        let _ = scan.read::<i32>();
+    #[should_panic(expected = "Input file not found")]
+    fn test_panic_file() {
+        let mut scan = scanner_from_file("input_file.txt");
+        let mut out = writer_to_file("output_file.txt");
+        use io::Write; // needed for writeln!()
+
+        let x = scan.token::<i32>();
+        let y = scan.token::<i32>();
+        writeln!(out, "Test {}", x - y).ok();
     }
 }

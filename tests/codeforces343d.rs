@@ -64,19 +64,19 @@ fn main() {
     use std::fmt::Write;
     let cursor = std::io::Cursor::new(SAMPLE_INPUT);
     let mut scan = Scanner::new(cursor);
-    let out = &mut String::new();
+    let mut out = String::new();
     /* To read/write with stdin/stdout instead:
-        use std::io::{BufWriter, stdin, stdout, Write};
-        let stdin = stdin();
+        use std::io::{self, Write};
+        let (stdin, stdout) = (io::stdin(), io::stdout());
         let mut scan = Scanner::new(stdin.lock());
-        let out = &mut BufWriter::new(stdout());
+        let mut out = io::BufWriter::new(stdout.lock());
     */
 
-    let n = scan.read::<usize>();
+    let n = scan.token::<usize>();
     let mut tree = Graph::new(n, 2 * (n - 1));
     for _ in 1..n {
-        let u = scan.read::<usize>() - 1;
-        let v = scan.read::<usize>() - 1;
+        let u = scan.token::<usize>() - 1;
+        let v = scan.token::<usize>() - 1;
         tree.add_undirected_edge(u, v);
     }
 
@@ -86,10 +86,10 @@ fn main() {
     dfs(&tree, 0, &mut l, &mut r, &mut p, &mut 0);
 
     let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); n + 1]);
-    let q = scan.read::<usize>();
+    let q = scan.token::<usize>();
     for _ in 0..q {
-        let c = scan.read::<usize>();
-        let v = scan.read::<usize>() - 1;
+        let c = scan.token::<usize>();
+        let v = scan.token::<usize>() - 1;
         let (sum, len) = arq.query(l[v], r[v]);
         if c == 1 {
             if sum != len {

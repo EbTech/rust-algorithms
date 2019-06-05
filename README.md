@@ -31,7 +31,7 @@ Other online judges that support Rust:
 
 My other goal is to appeal to developers who feel limited by mainstream, arguably outdated, programming languages. Perhaps we have a better option.
 
-Rather than try to persuade you with words, this repository aims to show by example. If you're new to Rust, see [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/2018-edition)
+Rather than try to persuade you with words, this repository aims to show by example. If you're new to Rust, see [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/)
 
 ## Contents
 
