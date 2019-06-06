@@ -1,4 +1,4 @@
-//! The Fast Fourier Transform (FFT)
+//! The Fast Fourier Transform (FFT) and Number Theoretic Transform (NTT)
 use super::num::{Complex, Field, PI};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
