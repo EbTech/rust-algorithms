@@ -121,7 +121,7 @@ impl Complex {
     pub fn conjugate(self) -> Self {
         Self::new(self.real, -self.imag)
     }
-    fn recip(self) -> Self {
+    pub fn recip(self) -> Self {
         let denom = self.abs_square();
         Self::new(self.real / denom, -self.imag / denom)
     }
@@ -166,16 +166,16 @@ impl Div for Complex {
 }
 
 /// Represents an element of the finite (Galois) field of prime order, given by
-/// MOD. Until Rust gets const generics, MOD must be hardcoded, but any prime
-/// in [1, 2^32] will work. If MOD is not prime, ring operations are still valid
+/// MOD. Until Rust gets const generics, MOD must be hardcoded, but any prime in
+/// [1, 2^31.5] will work. If MOD is not prime, ring operations are still valid
 /// but recip() and division are not. Note that the latter operations are also
 /// the slowest, so precompute any inverses that you intend to use frequently.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub struct Field {
-    pub val: u64,
+    pub val: i64,
 }
 impl Field {
-    pub const MOD: u64 = 998_244_353; // 2^23 * 7 * 17 + 1
+    pub const MOD: i64 = 998_244_353; // 2^23 * 7 * 17 + 1
 
     pub fn pow(mut self, mut exp: u64) -> Self {
         let mut result = Self::from_small(1);
@@ -189,36 +189,35 @@ impl Field {
         result
     }
     pub fn recip(self) -> Self {
-        self.pow(Self::MOD - 2)
+        self.pow(Self::MOD as u64 - 2)
     }
-    fn from_small(s: u64) -> Self {
-        let val = if s < Self::MOD { s } else { s - Self::MOD };
+    fn from_small(s: i64) -> Self {
+        let val = if s < 0 { s + Self::MOD } else { s };
         Self { val }
     }
 }
-impl From<u64> for Field {
-    fn from(val: u64) -> Self {
-        Self {
-            val: val % Self::MOD,
-        }
+impl From<i64> for Field {
+    fn from(val: i64) -> Self {
+        // Self { val: val.rem_euclid(Self::MOD) }
+        Self::from_small(val % Self::MOD)
     }
 }
 impl Neg for Field {
     type Output = Self;
     fn neg(self) -> Self {
-        Self::from_small(Self::MOD - self.val)
+        Self::from_small(-self.val)
     }
 }
 impl Add for Field {
     type Output = Self;
     fn add(self, other: Self) -> Self {
-        Self::from_small(self.val + other.val)
+        Self::from_small(self.val + other.val - Self::MOD)
     }
 }
 impl Sub for Field {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
-        Self::from_small(self.val + Self::MOD - other.val)
+        Self::from_small(self.val - other.val)
     }
 }
 impl Mul for Field {
@@ -409,9 +408,11 @@ mod test {
         let base = Field::from(1234);
         let zero = base - base;
         let one = base.recip() * base;
+        let two = Field::from(2 - 5 * Field::MOD);
 
         assert_eq!(zero.val, 0);
         assert_eq!(one.val, 1);
+        assert_eq!(one + one, two);
         assert_eq!(one / base * (base * base) - base / one, zero);
     }
 

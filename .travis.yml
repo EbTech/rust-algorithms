@@ -1,6 +1,6 @@
 language: rust
 rust:
-  - 1.35.0 # Clippy fails on 1.34.2
+  - 1.35.0 # Version currently supported by Codeforces
   - stable
   - beta
   - nightly

@@ -72,13 +72,14 @@ impl FFT for f64 {
 }
 
 // NTT notes: see problem 30-6 in CLRS for details, keeping in mind that
+//      2187 and  410692747 are inverses and 2^26th roots of 1 mod (7<<26)+1
 //  15311432 and  469870224 are inverses and 2^23rd roots of 1 mod (119<<23)+1
 // 440564289 and 1713844692 are inverses and 2^27th roots of 1 mod (15<<27)+1
 //       125 and 2267742733 are inverses and 2^30th roots of 1 mod (3<<30)+1
-impl FFT for u64 {
+impl FFT for i64 {
     type F = Field;
 
-    const ZERO: u64 = 0;
+    const ZERO: Self = 0;
 
     fn get_roots(n: usize, inverse: bool) -> Vec<Self::F> {
         assert!(n <= 1 << 23);
@@ -100,10 +101,10 @@ impl FFT for u64 {
     }
 
     fn get_factor(n: usize, inverse: bool) -> Self::F {
-        Self::F::from(if inverse { n as u64 } else { 1 }).recip()
+        Self::F::from(if inverse { n as Self } else { 1 }).recip()
     }
 
-    fn extract(f: Self::F) -> u64 {
+    fn extract(f: Self::F) -> Self {
         f.val
     }
 }
@@ -134,7 +135,7 @@ pub fn fft<T: FFT>(v: &[T::F], inverse: bool) -> Vec<T::F> {
     dft
 }
 
-/// From a slice of reals (f64 or u64), computes DFT of size at least desired_len
+/// From a slice of reals (f64 or i64), computes DFT of size at least desired_len
 pub fn dft_from_reals<T: FFT>(v: &[T], desired_len: usize) -> Vec<T::F> {
     assert!(v.len() <= desired_len);
 
@@ -162,7 +163,7 @@ pub fn idft_to_reals<T: FFT>(dft_v: &[T::F], desired_len: usize) -> Vec<T> {
 
 /// Given two polynomials (vectors) sum_i a[i] x^i and sum_i b[i] x^i,
 /// computes their product (convolution) c[k] = sum_(i+j=k) a[i]*b[j].
-/// Uses complex FFT if inputs are f64, or modular NTT if inputs are u64.
+/// Uses complex FFT if inputs are f64, or modular NTT if inputs are i64.
 pub fn convolution<T: FFT>(a: &[T], b: &[T]) -> Vec<T> {
     let len_c = a.len() + b.len() - 1;
     let dft_a = dft_from_reals(a, len_c).into_iter();
@@ -194,7 +195,7 @@ mod test {
     fn test_modular_dft() {
         let v = vec![7, 1, 1];
         let dft_v = dft_from_reals(&v, v.len());
-        let new_v: Vec<u64> = idft_to_reals(&dft_v, v.len());
+        let new_v: Vec<i64> = idft_to_reals(&dft_v, v.len());
 
         let seven = Field::from(7);
         let one = Field::from(1);
