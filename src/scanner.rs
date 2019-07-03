@@ -76,7 +76,7 @@ pub fn scanner_from_file(filename: &str) -> Scanner<io::BufReader<std::fs::File>
 }
 
 pub fn writer_to_file(filename: &str) -> io::BufWriter<std::fs::File> {
-    let file = std::fs::File::open(filename).expect("Output file not found");
+    let file = std::fs::File::create(filename).expect("Output file not found");
     io::BufWriter::new(file)
 }
 

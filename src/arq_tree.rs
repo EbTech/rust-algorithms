@@ -289,7 +289,7 @@ mod test {
         assert_eq!(pos, 2);
         assert_eq!(pos_zeros, -1);
     }
-    
+
     #[test]
     fn test_range_sum() {
         let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); 10]);
@@ -301,11 +301,11 @@ mod test {
 
         assert_eq!(arq.query(0, 9), (23, 10));
     }
-    
+
     #[test]
     fn test_supply_demand() {
         let mut arq = ArqTree::<SupplyDemand>::new(vec![(0, 0, 0); 10]);
-        
+
         arq.modify(1, 1, &(25, 100));
         arq.modify(3, 3, &(100, 30));
         arq.modify(9, 9, &(0, 20));

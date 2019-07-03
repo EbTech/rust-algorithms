@@ -1,6 +1,6 @@
 [package]
 name = "contest-algorithms"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Aram Ebtekar"]
 edition = "2018"
 

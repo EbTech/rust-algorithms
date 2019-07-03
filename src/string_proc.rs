@@ -1,29 +1,46 @@
 //! String processing algorithms.
 
 /// Data structure for Knuth-Morris-Pratt string matching against a pattern.
-pub struct Matcher<'a> {
+pub struct Matcher<'a, T> {
     /// The string pattern to search for.
-    pub pattern: &'a [u8],
+    pub pattern: &'a [T],
     /// KMP match failure automaton. fail[i] is the length of the longest
     /// proper prefix-suffix of pattern[0...i].
     pub fail: Vec<usize>,
 }
 
-impl<'a> Matcher<'a> {
+impl<'a, T: Eq> Matcher<'a, T> {
     /// Precomputes the automaton that allows linear-time string matching.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use contest_algorithms::string_proc::Matcher;
+    /// let utf8_string = "hello";
+    ///
+    /// let match_from_byte_literal = Matcher::new(b"hello");
+    ///
+    /// let match_from_bytes = Matcher::new(utf8_string.as_bytes());
+    ///
+    /// let vec_char: Vec<char> = utf8_string.chars().collect();
+    /// let match_from_chars = Matcher::new(&vec_char);
+    ///
+    /// let vec_int = vec![4, -3, 1];
+    /// let match_from_ints = Matcher::new(&vec_int);
+    /// ```
     ///
     /// # Panics
     ///
     /// Panics if pattern is empty.
-    pub fn new(pattern: &'a [u8]) -> Self {
+    pub fn new(pattern: &'a [T]) -> Self {
         let mut fail = Vec::with_capacity(pattern.len());
         fail.push(0);
         let mut len = 0;
-        for &ch in &pattern[1..] {
-            while len > 0 && pattern[len] != ch {
+        for ch in &pattern[1..] {
+            while len > 0 && pattern[len] != *ch {
                 len = fail[len - 1];
             }
-            if pattern[len] == ch {
+            if pattern[len] == *ch {
                 len += 1;
             }
             fail.push(len);
@@ -33,17 +50,17 @@ impl<'a> Matcher<'a> {
 
     /// KMP algorithm, sets matches[i] = length of longest prefix of pattern
     /// matching a suffix of text[0...i].
-    pub fn kmp_match(&self, text: &[u8]) -> Vec<usize> {
+    pub fn kmp_match(&self, text: &[T]) -> Vec<usize> {
         let mut matches = Vec::with_capacity(text.len());
         let mut len = 0;
-        for &ch in text {
+        for ch in text {
             if len == self.pattern.len() {
                 len = self.fail[len - 1];
             }
-            while len > 0 && self.pattern[len] != ch {
+            while len > 0 && self.pattern[len] != *ch {
                 len = self.fail[len - 1];
             }
-            if self.pattern[len] == ch {
+            if self.pattern[len] == *ch {
                 len += 1;
             }
             matches.push(len);
@@ -151,7 +168,7 @@ impl<K: std::hash::Hash + Eq + Default> Trie<K> {
         node.count += 1;
 
         for ch in word {
-            node = { node }.branches.entry(ch).or_insert_with(Default::default);
+            node = { node }.branches.entry(ch).or_default();
             node.count += 1;
         }
     }
@@ -177,7 +194,7 @@ impl<K: std::hash::Hash + Eq + Default> Trie<K> {
 /// # Panics
 ///
 /// Panics if text is empty.
-pub fn palindromes(text: &[u8]) -> Vec<usize> {
+pub fn palindromes<T: Eq>(text: &[T]) -> Vec<usize> {
     let mut pal = Vec::with_capacity(2 * text.len() - 1); // only mutable var!
     pal.push(1);
     while pal.len() < pal.capacity() {
@@ -210,8 +227,8 @@ mod test {
 
     #[test]
     fn test_kmp() {
-        let text = "banana".as_bytes();
-        let pattern = "ana".as_bytes();
+        let text = b"banana";
+        let pattern = b"ana";
 
         let matches = Matcher::new(pattern).kmp_match(text);
 
@@ -220,8 +237,8 @@ mod test {
 
     #[test]
     fn test_suffix_array() {
-        let text1 = "bobocel".as_bytes();
-        let text2 = "banana".as_bytes();
+        let text1 = b"bobocel";
+        let text2 = b"banana";
 
         let sfx1 = SuffixArray::new(text1);
         let sfx2 = SuffixArray::new(text2);
@@ -261,7 +278,7 @@ mod test {
 
     #[test]
     fn test_palindrome() {
-        let text = "banana".as_bytes();
+        let text = b"banana";
 
         let pal_len = palindromes(text);
 

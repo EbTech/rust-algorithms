@@ -14,7 +14,7 @@ pub fn fast_gcd(mut a: i64, mut b: i64) -> i64 {
 }
 
 /// Represents a fraction reduced to lowest terms
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash)]
 pub struct Rational {
     pub num: i64,
     pub den: i64,
@@ -170,7 +170,7 @@ impl Div for Complex {
 /// [1, 2^31.5] will work. If MOD is not prime, ring operations are still valid
 /// but recip() and division are not. Note that the latter operations are also
 /// the slowest, so precompute any inverses that you intend to use frequently.
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Hash)]
 pub struct Field {
     pub val: i64,
 }
