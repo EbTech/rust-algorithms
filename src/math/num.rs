@@ -177,6 +177,7 @@ pub struct Field {
 impl Field {
     pub const MOD: i64 = 998_244_353; // 2^23 * 7 * 17 + 1
 
+    /// Computes self^exp in O(log(exp)) time
     pub fn pow(mut self, mut exp: u64) -> Self {
         let mut result = Self::from_small(1);
         while exp > 0 {
@@ -188,9 +189,20 @@ impl Field {
         }
         result
     }
+    /// Computes inverses of 1 to n in O(n) time
+    pub fn vec_of_recips(n: i64) -> Vec<Self> {
+        let mut recips = vec![Self::from(0), Self::from(1)];
+        for i in 2..=n {
+            let (md, dv) = (Self::MOD % i, Self::MOD / i);
+            recips.push(recips[md as usize] * Self::from_small(-dv));
+        }
+        recips
+    }
+    /// Computes self^-1 in O(log(Self::MOD)) time
     pub fn recip(self) -> Self {
         self.pow(Self::MOD as u64 - 2)
     }
+    /// Avoids the % operation but requires -Self::MOD <= x < Self::MOD
     fn from_small(s: i64) -> Self {
         let val = if s < 0 { s + Self::MOD } else { s };
         Self { val }
@@ -414,6 +426,16 @@ mod test {
         assert_eq!(one.val, 1);
         assert_eq!(one + one, two);
         assert_eq!(one / base * (base * base) - base / one, zero);
+    }
+
+    #[test]
+    fn test_vec_of_recips() {
+        let recips = Field::vec_of_recips(20);
+
+        assert_eq!(recips.len(), 21);
+        for i in 1..recips.len() {
+            assert_eq!(recips[i], Field::from(i as i64).recip());
+        }
     }
 
     #[test]

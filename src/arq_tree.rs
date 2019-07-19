@@ -18,10 +18,7 @@ pub struct ArqTree<T: ArqSpec> {
     val: Vec<T::M>,
 }
 
-impl<T: ArqSpec> ArqTree<T>
-where
-    T::F: Clone,
-{
+impl<T: ArqSpec> ArqTree<T> {
     /// Initializes a static balanced tree on top of the given sequence.
     pub fn new(init_val: Vec<T::M>) -> Self {
         let size = init_val.len();
@@ -59,7 +56,8 @@ where
     }
 
     fn push_to(&mut self, p: usize) {
-        for s in (1..32).rev() {
+        let one_plus_floor_log_p = (p + 1).next_power_of_two().trailing_zeros();
+        for s in (1..one_plus_floor_log_p).rev() {
             self.push(p >> s);
         }
     }
@@ -76,11 +74,13 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if l or r is out of range.
+    /// Panics if r >= size. Note that l > r is valid, meaning an empty range.
     pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F) {
         l += self.app.len();
         r += self.app.len();
-        self.push_to(l);
+        if l < r {
+            self.push_to(l);
+        }
         self.push_to(r);
         let (mut l0, mut r0) = (1, 1);
         while l <= r {
@@ -105,11 +105,13 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if l or r is out of range.
+    /// Panics if r >= size. Note that l > r is valid, meaning an empty range.
     pub fn query(&mut self, mut l: usize, mut r: usize) -> T::M {
         l += self.app.len();
         r += self.app.len();
-        self.push_to(l);
+        if l < r {
+            self.push_to(l);
+        }
         self.push_to(r);
         let (mut l_agg, mut r_agg) = (T::identity(), T::identity());
         while l <= r {
@@ -133,7 +135,7 @@ pub trait ArqSpec {
     // Note that while a Fn(M) -> M may seem like a more natural representation
     // for an endomorphism, compositions would then have to delegate to each of
     // their parts. This representation is more efficient.
-    type F;
+    type F: Clone;
     /// Type of monoid elements.
     type M;
 
@@ -157,7 +159,7 @@ pub trait ArqSpec {
 // in a range query, as well as the number of elements equal to the minimum.
 // Then instead of overwriting values with a constant assignment a[i] = f,
 // try supporting addition: a[i] += f.
-pub struct AssignMin;
+pub enum AssignMin {}
 impl ArqSpec for AssignMin {
     type F = i64;
     type M = i64;
@@ -213,7 +215,7 @@ pub fn first_negative(arq: &mut ArqTree<AssignMin>) -> i32 {
 // On the other hand, f((a, s)) = (f*s, s) is indeed an endomorphism on pairs
 // with vector addition: f((a, s) + (b, t)) = f((a+b, s+t)) = (f*(s+t), s+t)
 //                       = (f*s, s) + (f*t, t) = f((a,s)) + f((b,t)).
-pub struct AssignSum;
+pub enum AssignSum {}
 impl ArqSpec for AssignSum {
     type F = i64;
     type M = (i64, i64);
@@ -239,7 +241,7 @@ impl ArqSpec for AssignSum {
 // Note that the apply() operation is only correct when applied to leaf nodes.
 // Therefore, modify() must only be used in "eager" mode, i.e., with l == r.
 // compose() should be unimplemented!() to prevent accidental "lazy" updates.
-pub struct SupplyDemand;
+pub enum SupplyDemand {}
 impl ArqSpec for SupplyDemand {
     type F = (i64, i64);
     type M = (i64, i64, i64); // production, orders, sales
@@ -257,6 +259,109 @@ impl ArqSpec for SupplyDemand {
     }
     fn identity() -> Self::M {
         (0, 0, 0)
+    }
+}
+
+/// A generic implementation of Mo's algorithm, aka Query Sqrt Decomposition.
+/// It answers q offline queries over intervals in 0..n by shifting the query
+/// interval's endpoints by one position at a time.
+/// Each endpoint incurs a total cost of at most n * sqrt(q * L_OP * R_OP).
+pub trait MoState {
+    type Q;
+    type A;
+
+    /// cost ratio L_OP / R_OP between a left endpoint and a right endpoint move
+    const L_R_RATIO: f64 = 1.0;
+
+    fn query(&self, q: &Self::Q) -> Self::A;
+    fn insert_left(&mut self, pos: usize);
+    fn remove_left(&mut self, pos: usize);
+
+    fn insert_right(&mut self, pos: usize) {
+        self.insert_left(pos);
+    }
+    fn remove_right(&mut self, pos: usize) {
+        self.remove_left(pos);
+    }
+    /// After initializing self to a state corresponding to an empty interval,
+    /// call this function to answer all your queries.
+    fn process(&mut self, queries: &[(usize, usize, Self::Q)]) -> Vec<Self::A> {
+        let q = queries.len();
+        let mut q_positions: Vec<usize> = (0..q).collect();
+        if let Some(max_r) = queries.iter().map(|&(_, r, _)| r).max() {
+            let q_adjusted = q as f64 * Self::L_R_RATIO;
+            let bucket_width = 1 + max_r / q_adjusted.sqrt() as usize;
+            q_positions.sort_unstable_by_key(|&i| {
+                let (l, mut r) = (queries[i].0, queries[i].1);
+                let bucket = l / bucket_width;
+                if bucket % 2 != 0 {
+                    r = max_r - r;
+                }
+                (bucket, r)
+            });
+        }
+
+        let (mut cur_l, mut cur_r) = (1, 0);
+        let mut answers = Vec::with_capacity(queries.len());
+        for i in q_positions {
+            let (l, r, ref q) = queries[i];
+            while cur_l > l {
+                cur_l -= 1;
+                self.insert_left(cur_l);
+            }
+            while cur_r < r {
+                cur_r += 1;
+                self.insert_right(cur_r);
+            }
+            while cur_l < l {
+                self.remove_left(cur_l);
+                cur_l += 1;
+            }
+            while cur_r > r {
+                self.remove_right(cur_r);
+                cur_r -= 1;
+            }
+            answers.push((i, self.query(q)));
+        }
+        answers.sort_unstable_by_key(|&(i, _)| i);
+        answers.into_iter().map(|(_, ans)| ans).collect()
+    }
+}
+
+pub struct DistinctVals {
+    vals: Vec<usize>,
+    counts: Vec<usize>,
+    distinct: usize,
+}
+impl DistinctVals {
+    pub fn new(vals: Vec<usize>) -> Self {
+        let max_val = vals.iter().cloned().max().unwrap_or(0);
+        Self {
+            vals,
+            counts: vec![0; max_val + 1],
+            distinct: 0,
+        }
+    }
+}
+impl MoState for DistinctVals {
+    type Q = ();
+    type A = usize;
+    fn query(&self, _: &Self::Q) -> Self::A {
+        self.distinct
+    }
+    fn insert_left(&mut self, pos: usize) {
+        let v = self.vals[pos];
+        if self.counts[v] == 0 {
+            self.distinct += 1;
+        }
+        self.counts[v] += 1;
+    }
+    fn remove_left(&mut self, pos: usize) {
+        let v = self.vals[pos];
+        self.counts[v] -= 1;
+        if self.counts[v] == 0 {
+            self.distinct -= 1;
+        }
     }
 }
 
@@ -300,6 +405,7 @@ mod test {
         arq.modify(3, 5, &1);
 
         assert_eq!(arq.query(0, 9), (23, 10));
+        assert_eq!(arq.query(10, 4), (0, 0));
     }
 
     #[test]
@@ -311,5 +417,15 @@ mod test {
         arq.modify(9, 9, &(0, 20));
 
         assert_eq!(arq.query(0, 9), (125, 150, 75));
+    }
+
+    #[test]
+    fn test_mos_algorithm() {
+        let queries = vec![(0, 2, ()), (5, 5, ()), (2, 6, ()), (0, 6, ())];
+        let arr = vec![4, 8, 4, 7, 1, 9, 8];
+
+        let answers = DistinctVals::new(arr).process(&queries);
+
+        assert_eq!(answers, vec![2, 1, 5, 5]);
     }
 }
