@@ -168,10 +168,10 @@ impl<T: ArqSpec> DynamicArqNode<T> {
     }
 }
 
+type ArqView = (usize, i64, i64);
+
 /// A dynamic, and optionally persistent, associate range query data structure.
 pub struct DynamicArq<T: ArqSpec> {
-    l_bound: i64,
-    r_bound: i64,
     nodes: Vec<DynamicArqNode<T>>,
     is_persistent: bool,
     initializer: Box<dyn Fn(i64, i64) -> T::M>,
@@ -183,24 +183,24 @@ impl<T: ArqSpec> DynamicArq<T> {
         r_bound: i64,
         is_persistent: bool,
         initializer: Box<dyn Fn(i64, i64) -> T::M>,
-    ) -> Self {
+    ) -> (Self, ArqView) {
         let val = initializer(l_bound, r_bound);
         let nodes = vec![DynamicArqNode::new(val)];
-        Self {
-            l_bound,
-            r_bound,
+        let arq = Self {
             nodes,
             is_persistent,
             initializer,
-        }
+        };
+        let root_view = (0, l_bound, r_bound);
+        (arq, root_view)
     }
 
-    pub fn new_with_identity(l_bound: i64, r_bound: i64, is_persistent: bool) -> Self {
+    pub fn new_with_identity(l_bound: i64, r_bound: i64, is_persistent: bool) -> (Self, ArqView) {
         let initializer = Box::new(|_, _| T::identity());
         Self::new(l_bound, r_bound, is_persistent, initializer)
     }
 
-    fn push(&mut self, p: usize, l: i64, r: i64) -> (usize, usize) {
+    fn push(&mut self, (p, l, r): ArqView) -> (ArqView, ArqView) {
         let m = (l + r) / 2;
         let (lp, rp) = match self.nodes[p].down {
             Some(children) => children,
@@ -216,7 +216,7 @@ impl<T: ArqSpec> DynamicArq<T> {
             self.nodes[lp].apply(f, l == m);
             self.nodes[rp].apply(f, m + 1 == r);
         }
-        (lp, rp)
+        ((lp, l, m), (rp, m + 1, r))
     }
 
     fn pull(&mut self, p: usize) {
@@ -236,48 +236,40 @@ impl<T: ArqSpec> DynamicArq<T> {
         }
     }
 
-    fn m_helper(&mut self, p: usize, l: i64, r: i64, f: &T::F, cl: i64, cr: i64) -> usize {
+    /// Applies the endomorphism f to all entries from l to r, inclusive.
+    /// If l == r, the updates are eager. Otherwise, they are lazy.
+    pub fn modify(&mut self, view: ArqView, l: i64, r: i64, f: &T::F) -> ArqView {
+        let (p, cl, cr) = view;
         if r < cl || cr < l {
-            p
+            view
         } else if l <= cl && cr <= r /* && self.l == self.r forces eager */ {
             let p_clone = self.clone_node(p);
             self.nodes[p_clone].apply(f, l == r);
-            p_clone
+            (p_clone, cl, cr)
         } else {
-            let (lp, rp) = self.push(p, cl, cr);
-            let cm = (cl + cr) / 2;
+            let (l_view, r_view) = self.push(view);
             let p_clone = self.clone_node(p);
-            let lp_clone = self.m_helper(lp, l, r, f, cl, cm);
-            let rp_clone = self.m_helper(rp, l, r, f, cm + 1, cr);
+            let lp_clone = self.modify(l_view, l, r, f).0;
+            let rp_clone = self.modify(r_view, l, r, f).0;
             self.nodes[p_clone].down = Some((lp_clone, rp_clone));
             self.pull(p_clone);
-            p_clone
+            (p_clone, cl, cr)
         }
     }
 
-    fn q_helper(&mut self, p: usize, l: i64, r: i64, cl: i64, cr: i64) -> T::M {
+    /// Returns the aggregate range query on all entries from l to r, inclusive.
+    pub fn query(&mut self, view: ArqView, l: i64, r: i64) -> T::M {
+        let (p, cl, cr) = view;
         if r < cl || cr < l {
             T::identity()
         } else if l <= cl && cr <= r {
             T::op(&T::identity(), &self.nodes[p].val)
         } else {
-            let (lp, rp) = self.push(p, cl, cr);
-            let cm = (cl + cr) / 2;
-            let l_agg = self.q_helper(lp, l, r, cl, cm);
-            let r_agg = self.q_helper(rp, l, r, cm + 1, cr);
+            let (l_view, r_view) = self.push(view);
+            let l_agg = self.query(l_view, l, r);
+            let r_agg = self.query(r_view, l, r);
             T::op(&l_agg, &r_agg)
         }
-    }
-
-    /// Applies the endomorphism f to all entries from l to r, inclusive.
-    /// If l == r, the updates are eager. Otherwise, they are lazy.
-    pub fn modify(&mut self, p: usize, l: i64, r: i64, f: &T::F) -> usize {
-        self.m_helper(p, l, r, f, self.l_bound, self.r_bound)
-    }
-
-    /// Returns the aggregate range query on all entries from l to r, inclusive.
-    pub fn query(&mut self, p: usize, l: i64, r: i64) -> T::M {
-        self.q_helper(p, l, r, self.l_bound, self.r_bound)
     }
 }
 
@@ -351,18 +343,19 @@ pub fn first_negative_static(arq: &mut StaticArq<AssignMin>) -> i32 {
 
 /// An example of binary search on the tree of a DynamicArq.
 /// The tree may have any size, not necessarily a power of two.
-pub fn first_negative_dynamic(arq: &mut DynamicArq<AssignMin>, p: usize, cl: i64, cr: i64) -> i64 {
+pub fn first_negative_dynamic(arq: &mut DynamicArq<AssignMin>, view: ArqView) -> i64 {
+    let (p, cl, cr) = view;
     if arq.nodes[p].val >= 0 {
         -1
     } else if cl == cr {
         cl
     } else {
-        let (lp, rp) = arq.push(p, cl, cr);
-        let cm = (cl + cr) / 2;
+        let (l_view, r_view) = arq.push(view);
+        let lp = l_view.0;
         if arq.nodes[lp].val < 0 {
-            first_negative_dynamic(arq, lp, cl, cm)
+            first_negative_dynamic(arq, l_view)
         } else {
-            first_negative_dynamic(arq, rp, cm + 1, cr)
+            first_negative_dynamic(arq, r_view)
         }
     }
 }
@@ -554,31 +547,31 @@ mod test {
     #[test]
     fn test_dynamic_rmq() {
         let initializer = Box::new(|_, _| 0);
-        let mut arq = DynamicArq::<AssignMin>::new(0, 9, false, initializer);
+        let (mut arq, view) = DynamicArq::<AssignMin>::new(0, 9, false, initializer);
 
-        assert_eq!(arq.query(0, 0, 9), 0);
+        assert_eq!(arq.query(view, 0, 9), 0);
 
-        arq.modify(0, 2, 4, &-5);
-        arq.modify(0, 5, 7, &-3);
-        arq.modify(0, 1, 6, &1);
+        arq.modify(view, 2, 4, &-5);
+        arq.modify(view, 5, 7, &-3);
+        arq.modify(view, 1, 6, &1);
 
-        assert_eq!(arq.query(0, 0, 9), -3);
+        assert_eq!(arq.query(view, 0, 9), -3);
     }
 
     #[test]
     fn test_persistent_rmq() {
         let initializer = Box::new(|_, _| 0);
-        let mut arq = DynamicArq::<AssignMin>::new(0, 9, true, initializer);
+        let (mut arq, mut view) = DynamicArq::<AssignMin>::new(0, 9, true, initializer);
 
-        let mut p = 0;
-        p = arq.modify(p, 2, 4, &-5);
-        let snapshot = p;
-        p = arq.modify(p, 5, 7, &-3);
-        p = arq.modify(p, 1, 6, &1);
+        let at_init = view;
+        view = arq.modify(view, 2, 4, &-5);
+        let snapshot = view;
+        view = arq.modify(view, 5, 7, &-3);
+        view = arq.modify(view, 1, 6, &1);
 
-        assert_eq!(arq.query(0, 0, 9), 0);
+        assert_eq!(arq.query(at_init, 0, 9), 0);
         assert_eq!(arq.query(snapshot, 0, 9), -5);
-        assert_eq!(arq.query(p, 0, 9), -3);
+        assert_eq!(arq.query(view, 0, 9), -3);
     }
 
     #[test]
@@ -597,15 +590,15 @@ mod test {
     #[test]
     fn test_dynamic_range_sum() {
         let initializer = Box::new(|l, r| (0, 1 + r - l));
-        let mut arq = DynamicArq::<AssignSum>::new(0, 9, false, initializer);
+        let (mut arq, view) = DynamicArq::<AssignSum>::new(0, 9, false, initializer);
 
-        assert_eq!(arq.query(0, 0, 9), (0, 10));
+        assert_eq!(arq.query(view, 0, 9), (0, 10));
 
-        arq.modify(0, 1, 3, &10);
-        arq.modify(0, 3, 5, &1);
+        arq.modify(view, 1, 3, &10);
+        arq.modify(view, 3, 5, &1);
 
-        assert_eq!(arq.query(0, 0, 9), (23, 10));
-        assert_eq!(arq.query(0, 10, 4), (0, 0));
+        assert_eq!(arq.query(view, 0, 9), (23, 10));
+        assert_eq!(arq.query(view, 10, 4), (0, 0));
     }
 
     #[test]
@@ -621,13 +614,13 @@ mod test {
 
     #[test]
     fn test_dynamic_supply_demand() {
-        let mut arq = DynamicArq::<SupplyDemand>::new_with_identity(0, 9, false);
+        let (mut arq, view) = DynamicArq::<SupplyDemand>::new_with_identity(0, 9, false);
 
-        arq.modify(0, 1, 1, &(25, 100));
-        arq.modify(0, 3, 3, &(100, 30));
-        arq.modify(0, 9, 9, &(0, 20));
+        arq.modify(view, 1, 1, &(25, 100));
+        arq.modify(view, 3, 3, &(100, 30));
+        arq.modify(view, 9, 9, &(0, 20));
 
-        assert_eq!(arq.query(0, 0, 9), (125, 150, 75));
+        assert_eq!(arq.query(view, 0, 9), (125, 150, 75));
     }
 
     #[test]
@@ -646,14 +639,17 @@ mod test {
     #[test]
     fn test_dynamic_binary_search_rmq() {
         let initializer = Box::new(|_, r| 2 - r);
-        let (l_bound, r_bound) = (0, 7);
-        let mut arq = DynamicArq::<AssignMin>::new(l_bound, r_bound, false, initializer);
-        let pos = first_negative_dynamic(&mut arq, 0, l_bound, r_bound);
+        let (l_bound, r_bound) = (0, 1_000_000_000_000_000_000);
+        let (mut arq, view) = DynamicArq::<AssignMin>::new(l_bound, r_bound, false, initializer);
+        let pos = first_negative_dynamic(&mut arq, view);
 
-        arq.modify(0, 2, 7, &0);
-        let pos_zeros = first_negative_dynamic(&mut arq, 0, l_bound, r_bound);
+        arq.modify(view, 2, r_bound - 1, &0);
+        let pos_mostly_zeros = first_negative_dynamic(&mut arq, view);
+        arq.modify(view, 2, r_bound, &0);
+        let pos_zeros = first_negative_dynamic(&mut arq, view);
 
         assert_eq!(pos, 3);
+        assert_eq!(pos_mostly_zeros, r_bound);
         assert_eq!(pos_zeros, -1);
     }
 
