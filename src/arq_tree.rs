@@ -131,8 +131,6 @@ impl<T: ArqSpec> StaticArq<T> {
 }
 
 pub struct DynamicArqNode<T: ArqSpec> {
-    l: i64,
-    r: i64,
     val: T::M,
     app: Option<T::F>,
     down: Option<(usize, usize)>,
@@ -142,8 +140,6 @@ pub struct DynamicArqNode<T: ArqSpec> {
 impl<T: ArqSpec> Clone for DynamicArqNode<T> {
     fn clone(&self) -> Self {
         Self {
-            l: self.l,
-            r: self.r,
             val: T::op(&T::identity(), &self.val),
             app: self.app.clone(),
             down: self.down,
@@ -152,20 +148,17 @@ impl<T: ArqSpec> Clone for DynamicArqNode<T> {
 }
 
 impl<T: ArqSpec> DynamicArqNode<T> {
-    pub fn new(l: i64, r: i64, init: &dyn Fn(i64, i64) -> T::M) -> Self {
-        let val = init(l, r);
+    pub fn new(val: T::M) -> Self {
         Self {
-            l,
-            r,
             val,
             app: None,
             down: None,
         }
     }
 
-    fn apply(&mut self, f: &T::F) {
+    fn apply(&mut self, f: &T::F, is_leaf: bool) {
         self.val = T::apply(f, &self.val);
-        if self.l != self.r {
+        if !is_leaf {
             let h = match self.app {
                 Some(ref g) => T::compose(f, g),
                 None => f.clone(),
@@ -177,6 +170,8 @@ impl<T: ArqSpec> DynamicArqNode<T> {
 
 /// A dynamic, and optionally persistent, associate range query data structure.
 pub struct DynamicArq<T: ArqSpec> {
+    l_bound: i64,
+    r_bound: i64,
     nodes: Vec<DynamicArqNode<T>>,
     is_persistent: bool,
     initializer: Box<dyn Fn(i64, i64) -> T::M>,
@@ -184,41 +179,42 @@ pub struct DynamicArq<T: ArqSpec> {
 
 impl<T: ArqSpec> DynamicArq<T> {
     pub fn new(
-        l: i64,
-        r: i64,
+        l_bound: i64,
+        r_bound: i64,
         is_persistent: bool,
         initializer: Box<dyn Fn(i64, i64) -> T::M>,
     ) -> Self {
-        let nodes = vec![DynamicArqNode::new(l, r, &initializer)];
+        let val = initializer(l_bound, r_bound);
+        let nodes = vec![DynamicArqNode::new(val)];
         Self {
+            l_bound,
+            r_bound,
             nodes,
             is_persistent,
             initializer,
         }
     }
 
-    pub fn new_with_identity(l: i64, r: i64, is_persistent: bool) -> Self {
+    pub fn new_with_identity(l_bound: i64, r_bound: i64, is_persistent: bool) -> Self {
         let initializer = Box::new(|_, _| T::identity());
-        Self::new(l, r, is_persistent, initializer)
+        Self::new(l_bound, r_bound, is_persistent, initializer)
     }
 
-    fn push(&mut self, p: usize) -> (usize, usize) {
+    fn push(&mut self, p: usize, l: i64, r: i64) -> (usize, usize) {
+        let m = (l + r) / 2;
         let (lp, rp) = match self.nodes[p].down {
             Some(children) => children,
             None => {
-                let l = self.nodes[p].l;
-                let r = self.nodes[p].r;
-                let m = (l + r) / 2;
-                self.nodes
-                    .push(DynamicArqNode::new(l, m, &self.initializer));
-                self.nodes
-                    .push(DynamicArqNode::new(m + 1, r, &self.initializer));
+                let l_val = (self.initializer)(l, m);
+                let r_val = (self.initializer)(m + 1, r);
+                self.nodes.push(DynamicArqNode::new(l_val));
+                self.nodes.push(DynamicArqNode::new(r_val));
                 (self.nodes.len() - 2, self.nodes.len() - 1)
             }
         };
         if let Some(ref f) = self.nodes[p].app.take() {
-            self.nodes[lp].apply(f);
-            self.nodes[rp].apply(f);
+            self.nodes[lp].apply(f, l == m);
+            self.nodes[rp].apply(f, m + 1 == r);
         }
         (lp, rp)
     }
@@ -240,42 +236,48 @@ impl<T: ArqSpec> DynamicArq<T> {
         }
     }
 
-    /// Applies the endomorphism f to all entries from l to r, inclusive.
-    /// If l == r, the updates are eager. Otherwise, they are lazy.
-    pub fn modify(&mut self, p: usize, l: i64, r: i64, f: &T::F) -> usize {
-        let cur = &self.nodes[p];
-        if r < cur.l || cur.r < l {
+    fn m_helper(&mut self, p: usize, l: i64, r: i64, f: &T::F, cl: i64, cr: i64) -> usize {
+        if r < cl || cr < l {
             p
-        } else if l <= cur.l && cur.r <= r
-        /* && self.l == self.r forces eager */
-        {
+        } else if l <= cl && cr <= r /* && self.l == self.r forces eager */ {
             let p_clone = self.clone_node(p);
-            self.nodes[p_clone].apply(f);
+            self.nodes[p_clone].apply(f, l == r);
             p_clone
         } else {
-            let (lp, rp) = self.push(p);
+            let (lp, rp) = self.push(p, cl, cr);
+            let cm = (cl + cr) / 2;
             let p_clone = self.clone_node(p);
-            let lp_clone = self.modify(lp, l, r, f);
-            let rp_clone = self.modify(rp, l, r, f);
+            let lp_clone = self.m_helper(lp, l, r, f, cl, cm);
+            let rp_clone = self.m_helper(rp, l, r, f, cm + 1, cr);
             self.nodes[p_clone].down = Some((lp_clone, rp_clone));
             self.pull(p_clone);
             p_clone
         }
     }
 
-    /// Returns the aggregate range query on all entries from l to r, inclusive.
-    pub fn query(&mut self, p: usize, l: i64, r: i64) -> T::M {
-        let cur = &self.nodes[p];
-        if r < cur.l || cur.r < l {
+    fn q_helper(&mut self, p: usize, l: i64, r: i64, cl: i64, cr: i64) -> T::M {
+        if r < cl || cr < l {
             T::identity()
-        } else if l <= cur.l && cur.r <= r {
-            T::op(&T::identity(), &cur.val)
+        } else if l <= cl && cr <= r {
+            T::op(&T::identity(), &self.nodes[p].val)
         } else {
-            let (lp, rp) = self.push(p);
-            let l_agg = self.query(lp, l, r);
-            let r_agg = self.query(rp, l, r);
+            let (lp, rp) = self.push(p, cl, cr);
+            let cm = (cl + cr) / 2;
+            let l_agg = self.q_helper(lp, l, r, cl, cm);
+            let r_agg = self.q_helper(rp, l, r, cm + 1, cr);
             T::op(&l_agg, &r_agg)
         }
+    }
+
+    /// Applies the endomorphism f to all entries from l to r, inclusive.
+    /// If l == r, the updates are eager. Otherwise, they are lazy.
+    pub fn modify(&mut self, p: usize, l: i64, r: i64, f: &T::F) -> usize {
+        self.m_helper(p, l, r, f, self.l_bound, self.r_bound)
+    }
+
+    /// Returns the aggregate range query on all entries from l to r, inclusive.
+    pub fn query(&mut self, p: usize, l: i64, r: i64) -> T::M {
+        self.q_helper(p, l, r, self.l_bound, self.r_bound)
     }
 }
 
@@ -349,17 +351,18 @@ pub fn first_negative_static(arq: &mut StaticArq<AssignMin>) -> i32 {
 
 /// An example of binary search on the tree of a DynamicArq.
 /// The tree may have any size, not necessarily a power of two.
-pub fn first_negative_dynamic(arq: &mut DynamicArq<AssignMin>, p: usize) -> i64 {
+pub fn first_negative_dynamic(arq: &mut DynamicArq<AssignMin>, p: usize, cl: i64, cr: i64) -> i64 {
     if arq.nodes[p].val >= 0 {
         -1
-    } else if arq.nodes[p].l == arq.nodes[p].r {
-        arq.nodes[p].l
+    } else if cl == cr {
+        cl
     } else {
-        let (lp, rp) = arq.push(p);
+        let (lp, rp) = arq.push(p, cl, cr);
+        let cm = (cl + cr) / 2;
         if arq.nodes[lp].val < 0 {
-            first_negative_dynamic(arq, lp)
+            first_negative_dynamic(arq, lp, cl, cm)
         } else {
-            first_negative_dynamic(arq, rp)
+            first_negative_dynamic(arq, rp, cm + 1, cr)
         }
     }
 }
@@ -643,11 +646,12 @@ mod test {
     #[test]
     fn test_dynamic_binary_search_rmq() {
         let initializer = Box::new(|_, r| 2 - r);
-        let mut arq = DynamicArq::<AssignMin>::new(0, 7, false, initializer);
-        let pos = first_negative_dynamic(&mut arq, 0);
+        let (l_bound, r_bound) = (0, 7);
+        let mut arq = DynamicArq::<AssignMin>::new(l_bound, r_bound, false, initializer);
+        let pos = first_negative_dynamic(&mut arq, 0, l_bound, r_bound);
 
         arq.modify(0, 2, 7, &0);
-        let pos_zeros = first_negative_dynamic(&mut arq, 0);
+        let pos_zeros = first_negative_dynamic(&mut arq, 0, l_bound, r_bound);
 
         assert_eq!(pos, 3);
         assert_eq!(pos_zeros, -1);
