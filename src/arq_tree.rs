@@ -13,12 +13,12 @@
 ///            if size is a power of two, there is a unique root at index 1.
 /// arq.push(i) locks i and acquires access to its children.
 /// arq.pull(i) is called when the lock on i is released.
-pub struct ArqTree<T: ArqSpec> {
-    app: Vec<Option<T::F>>,
+pub struct StaticArq<T: ArqSpec> {
     val: Vec<T::M>,
+    app: Vec<Option<T::F>>,
 }
 
-impl<T: ArqSpec> ArqTree<T> {
+impl<T: ArqSpec> StaticArq<T> {
     /// Initializes a static balanced tree on top of the given sequence.
     pub fn new(init_val: Vec<T::M>) -> Self {
         let size = init_val.len();
@@ -26,7 +26,7 @@ impl<T: ArqSpec> ArqTree<T> {
         val.append(&mut { init_val });
         let app = vec![None; size];
 
-        let mut arq = Self { app, val };
+        let mut arq = Self { val, app };
         for p in (0..size).rev() {
             arq.pull(p);
         }
@@ -130,6 +130,155 @@ impl<T: ArqSpec> ArqTree<T> {
     }
 }
 
+pub struct DynamicArqNode<T: ArqSpec> {
+    l: i64,
+    r: i64,
+    val: T::M,
+    app: Option<T::F>,
+    down: Option<(usize, usize)>,
+}
+
+// TODO: can this be replaced by a #[derive(Clone)]?
+impl<T: ArqSpec> Clone for DynamicArqNode<T> {
+    fn clone(&self) -> Self {
+        Self {
+            l: self.l,
+            r: self.r,
+            val: T::op(&T::identity(), &self.val),
+            app: self.app.clone(),
+            down: self.down,
+        }
+    }
+}
+
+impl<T: ArqSpec> DynamicArqNode<T> {
+    pub fn new(l: i64, r: i64, init: &dyn Fn(i64, i64) -> T::M) -> Self {
+        let val = init(l, r);
+        Self {
+            l,
+            r,
+            val,
+            app: None,
+            down: None,
+        }
+    }
+
+    fn apply(&mut self, f: &T::F) {
+        self.val = T::apply(f, &self.val);
+        if self.l != self.r {
+            let h = match self.app {
+                Some(ref g) => T::compose(f, g),
+                None => f.clone(),
+            };
+            self.app = Some(h);
+        }
+    }
+}
+
+/// A dynamic, and optionally persistent, associate range query data structure.
+pub struct DynamicArq<T: ArqSpec> {
+    nodes: Vec<DynamicArqNode<T>>,
+    is_persistent: bool,
+    initializer: Box<dyn Fn(i64, i64) -> T::M>,
+}
+
+impl<T: ArqSpec> DynamicArq<T> {
+    pub fn new(
+        l: i64,
+        r: i64,
+        is_persistent: bool,
+        initializer: Box<dyn Fn(i64, i64) -> T::M>,
+    ) -> Self {
+        let nodes = vec![DynamicArqNode::new(l, r, &initializer)];
+        Self {
+            nodes,
+            is_persistent,
+            initializer,
+        }
+    }
+
+    pub fn new_with_identity(l: i64, r: i64, is_persistent: bool) -> Self {
+        let initializer = Box::new(|_, _| T::identity());
+        Self::new(l, r, is_persistent, initializer)
+    }
+
+    fn push(&mut self, p: usize) -> (usize, usize) {
+        let (lp, rp) = match self.nodes[p].down {
+            Some(children) => children,
+            None => {
+                let l = self.nodes[p].l;
+                let r = self.nodes[p].r;
+                let m = (l + r) / 2;
+                self.nodes
+                    .push(DynamicArqNode::new(l, m, &self.initializer));
+                self.nodes
+                    .push(DynamicArqNode::new(m + 1, r, &self.initializer));
+                (self.nodes.len() - 2, self.nodes.len() - 1)
+            }
+        };
+        if let Some(ref f) = self.nodes[p].app.take() {
+            self.nodes[lp].apply(f);
+            self.nodes[rp].apply(f);
+        }
+        (lp, rp)
+    }
+
+    fn pull(&mut self, p: usize) {
+        let (lp, rp) = self.nodes[p].down.unwrap();
+        let left_val = &self.nodes[lp].val;
+        let right_val = &self.nodes[rp].val;
+        self.nodes[p].val = T::op(left_val, right_val);
+    }
+
+    fn clone_node(&mut self, p: usize) -> usize {
+        if self.is_persistent {
+            let node = self.nodes[p].clone();
+            self.nodes.push(node);
+            self.nodes.len() - 1
+        } else {
+            p
+        }
+    }
+
+    /// Applies the endomorphism f to all entries from l to r, inclusive.
+    /// If l == r, the updates are eager. Otherwise, they are lazy.
+    pub fn modify(&mut self, p: usize, l: i64, r: i64, f: &T::F) -> usize {
+        let cur = &self.nodes[p];
+        if r < cur.l || cur.r < l {
+            p
+        } else if l <= cur.l && cur.r <= r
+        /* && self.l == self.r forces eager */
+        {
+            let p_clone = self.clone_node(p);
+            self.nodes[p_clone].apply(f);
+            p_clone
+        } else {
+            let (lp, rp) = self.push(p);
+            let p_clone = self.clone_node(p);
+            let lp_clone = self.modify(lp, l, r, f);
+            let rp_clone = self.modify(rp, l, r, f);
+            self.nodes[p_clone].down = Some((lp_clone, rp_clone));
+            self.pull(p_clone);
+            p_clone
+        }
+    }
+
+    /// Returns the aggregate range query on all entries from l to r, inclusive.
+    pub fn query(&mut self, p: usize, l: i64, r: i64) -> T::M {
+        let cur = &self.nodes[p];
+        if r < cur.l || cur.r < l {
+            T::identity()
+        } else if l <= cur.l && cur.r <= r {
+            T::op(&T::identity(), &cur.val)
+        } else {
+            let (lp, rp) = self.push(p);
+            let l_agg = self.query(lp, l, r);
+            let r_agg = self.query(rp, l, r);
+            T::op(&l_agg, &r_agg)
+        }
+    }
+}
+
 pub trait ArqSpec {
     /// Type of data representing an endomorphism.
     // Note that while a Fn(M) -> M may seem like a more natural representation
@@ -177,25 +326,42 @@ impl ArqSpec for AssignMin {
     }
 }
 
-/// An example of binary search on an ArqTree.
+/// An example of binary search on the tree of a StaticArq.
 /// In this case, we use RMQ to locate the leftmost negative element.
 /// To ensure the existence of a valid root note (i == 1) from which to descend,
-/// the tree size must be a power of two.
-pub fn first_negative(arq: &mut ArqTree<AssignMin>) -> i32 {
+/// the tree's size must be a power of two.
+pub fn first_negative_static(arq: &mut StaticArq<AssignMin>) -> i32 {
     assert!(arq.app.len().is_power_of_two());
-    let mut i = 1;
-    if arq.val[i] >= 0 {
+    let mut p = 1;
+    if arq.val[p] >= 0 {
         return -1;
     }
-    while i < arq.app.len() {
-        arq.push(i);
-        i <<= 1;
-        if arq.val[i] >= 0 {
-            i |= 1;
+    while p < arq.app.len() {
+        arq.push(p);
+        p <<= 1;
+        if arq.val[p] >= 0 {
+            p |= 1;
         }
     }
-    let pos = i - arq.app.len();
+    let pos = p - arq.app.len();
     pos as i32
+}
+
+/// An example of binary search on the tree of a DynamicArq.
+/// The tree may have any size, not necessarily a power of two.
+pub fn first_negative_dynamic(arq: &mut DynamicArq<AssignMin>, p: usize) -> i64 {
+    if arq.nodes[p].val >= 0 {
+        -1
+    } else if arq.nodes[p].l == arq.nodes[p].r {
+        arq.nodes[p].l
+    } else {
+        let (lp, rp) = arq.push(p);
+        if arq.nodes[lp].val < 0 {
+            first_negative_dynamic(arq, lp)
+        } else {
+            first_negative_dynamic(arq, rp)
+        }
+    }
 }
 
 /// Range Sum Query, a slightly trickier classic application of ARQ.
@@ -335,7 +501,7 @@ pub struct DistinctVals {
 }
 impl DistinctVals {
     pub fn new(vals: Vec<usize>) -> Self {
-        let max_val = vals.iter().cloned().max().unwrap_or(0);
+        let &max_val = vals.iter().max().unwrap_or(&0);
         Self {
             vals,
             counts: vec![0; max_val + 1],
@@ -371,7 +537,7 @@ mod test {
 
     #[test]
     fn test_rmq() {
-        let mut arq = ArqTree::<AssignMin>::new(vec![0; 10]);
+        let mut arq = StaticArq::<AssignMin>::new(vec![0; 10]);
 
         assert_eq!(arq.query(0, 9), 0);
 
@@ -383,21 +549,38 @@ mod test {
     }
 
     #[test]
-    fn test_rmq_binary_search() {
-        let vec = vec![0, 1, -2, 3, -4, -5, 6, -7];
-        let mut arq = ArqTree::<AssignMin>::new(vec);
-        let pos = first_negative(&mut arq);
+    fn test_dynamic_rmq() {
+        let initializer = Box::new(|_, _| 0);
+        let mut arq = DynamicArq::<AssignMin>::new(0, 9, false, initializer);
 
-        arq.modify(2, 7, &0);
-        let pos_zeros = first_negative(&mut arq);
+        assert_eq!(arq.query(0, 0, 9), 0);
 
-        assert_eq!(pos, 2);
-        assert_eq!(pos_zeros, -1);
+        arq.modify(0, 2, 4, &-5);
+        arq.modify(0, 5, 7, &-3);
+        arq.modify(0, 1, 6, &1);
+
+        assert_eq!(arq.query(0, 0, 9), -3);
+    }
+
+    #[test]
+    fn test_persistent_rmq() {
+        let initializer = Box::new(|_, _| 0);
+        let mut arq = DynamicArq::<AssignMin>::new(0, 9, true, initializer);
+
+        let mut p = 0;
+        p = arq.modify(p, 2, 4, &-5);
+        let snapshot = p;
+        p = arq.modify(p, 5, 7, &-3);
+        p = arq.modify(p, 1, 6, &1);
+
+        assert_eq!(arq.query(0, 0, 9), 0);
+        assert_eq!(arq.query(snapshot, 0, 9), -5);
+        assert_eq!(arq.query(p, 0, 9), -3);
     }
 
     #[test]
     fn test_range_sum() {
-        let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); 10]);
+        let mut arq = StaticArq::<AssignSum>::new(vec![(0, 1); 10]);
 
         assert_eq!(arq.query(0, 9), (0, 10));
 
@@ -409,14 +592,65 @@ mod test {
     }
 
     #[test]
+    fn test_dynamic_range_sum() {
+        let initializer = Box::new(|l, r| (0, 1 + r - l));
+        let mut arq = DynamicArq::<AssignSum>::new(0, 9, false, initializer);
+
+        assert_eq!(arq.query(0, 0, 9), (0, 10));
+
+        arq.modify(0, 1, 3, &10);
+        arq.modify(0, 3, 5, &1);
+
+        assert_eq!(arq.query(0, 0, 9), (23, 10));
+        assert_eq!(arq.query(0, 10, 4), (0, 0));
+    }
+
+    #[test]
     fn test_supply_demand() {
-        let mut arq = ArqTree::<SupplyDemand>::new(vec![(0, 0, 0); 10]);
+        let mut arq = StaticArq::<SupplyDemand>::new(vec![(0, 0, 0); 10]);
 
         arq.modify(1, 1, &(25, 100));
         arq.modify(3, 3, &(100, 30));
         arq.modify(9, 9, &(0, 20));
 
         assert_eq!(arq.query(0, 9), (125, 150, 75));
+    }
+
+    #[test]
+    fn test_dynamic_supply_demand() {
+        let mut arq = DynamicArq::<SupplyDemand>::new_with_identity(0, 9, false);
+
+        arq.modify(0, 1, 1, &(25, 100));
+        arq.modify(0, 3, 3, &(100, 30));
+        arq.modify(0, 9, 9, &(0, 20));
+
+        assert_eq!(arq.query(0, 0, 9), (125, 150, 75));
+    }
+
+    #[test]
+    fn test_binary_search_rmq() {
+        let vec = vec![2, 1, 0, -1, -2, -3, -4, -5];
+        let mut arq = StaticArq::<AssignMin>::new(vec);
+        let pos = first_negative_static(&mut arq);
+
+        arq.modify(3, 7, &0);
+        let pos_zeros = first_negative_static(&mut arq);
+
+        assert_eq!(pos, 3);
+        assert_eq!(pos_zeros, -1);
+    }
+
+    #[test]
+    fn test_dynamic_binary_search_rmq() {
+        let initializer = Box::new(|_, r| 2 - r);
+        let mut arq = DynamicArq::<AssignMin>::new(0, 7, false, initializer);
+        let pos = first_negative_dynamic(&mut arq, 0);
+
+        arq.modify(0, 2, 7, &0);
+        let pos_zeros = first_negative_dynamic(&mut arq, 0);
+
+        assert_eq!(pos, 3);
+        assert_eq!(pos_zeros, -1);
     }
 
     #[test]

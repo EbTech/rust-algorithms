@@ -3,7 +3,7 @@
 //! module's contents directly here instead of the use statements.
 //! Also, replace io::Cursor with io::stdin as shown in scanner.rs.
 extern crate contest_algorithms;
-use contest_algorithms::arq_tree::{ArqTree, AssignSum};
+use contest_algorithms::arq_tree::{AssignSum, StaticArq};
 use contest_algorithms::graph::Graph;
 use contest_algorithms::scanner::Scanner;
 
@@ -85,7 +85,7 @@ fn main() {
     let mut p = vec![0; n];
     dfs(&tree, 0, &mut l, &mut r, &mut p, &mut 0);
 
-    let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); n + 1]);
+    let mut arq = StaticArq::<AssignSum>::new(vec![(0, 1); n + 1]);
     let q = scan.token::<usize>();
     for _ in 0..q {
         let c = scan.token::<usize>();
