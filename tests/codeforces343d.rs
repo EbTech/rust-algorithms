@@ -3,8 +3,8 @@
 //! module's contents directly here instead of the use statements.
 //! Also, replace io::Cursor with io::stdin as shown in scanner.rs.
 extern crate contest_algorithms;
-use contest_algorithms::arq_tree::{AssignSum, StaticArq};
 use contest_algorithms::graph::Graph;
+use contest_algorithms::range_query::{specs::AssignSum, StaticArq};
 use contest_algorithms::scanner::Scanner;
 
 const SAMPLE_INPUT: &str = "\

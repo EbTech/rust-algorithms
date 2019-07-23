@@ -24,11 +24,11 @@ impl FlowGraph {
         }
     }
 
-    /// Adds an edge with specified capacity and cost. The reverse edge is also
-    /// added for residual graph computation, but has zero capacity.
-    pub fn add_edge(&mut self, u: usize, v: usize, cap: i64, cost: i64) {
+    /// Adds an edge with specified directional capacities and cost per unit of
+    /// flow. If only forward flow is allowed, rcap should be zero.
+    pub fn add_edge(&mut self, u: usize, v: usize, cap: i64, rcap: i64, cost: i64) {
         self.cap.push(cap);
-        self.cap.push(0);
+        self.cap.push(rcap);
         self.cost.push(cost);
         self.cost.push(-cost);
         self.graph.add_undirected_edge(u, v);
@@ -203,8 +203,8 @@ mod test {
     #[test]
     fn test_basic_flow() {
         let mut graph = FlowGraph::new(3, 2);
-        graph.add_edge(0, 1, 4, 1);
-        graph.add_edge(1, 2, 3, 1);
+        graph.add_edge(0, 1, 4, 0, 0);
+        graph.add_edge(1, 2, 3, 0, 0);
 
         let flow = graph.dinic(0, 2).0;
         assert_eq!(flow, 3);
@@ -213,10 +213,10 @@ mod test {
     #[test]
     fn test_min_cost_flow() {
         let mut graph = FlowGraph::new(4, 4);
-        graph.add_edge(0, 1, 10, -10);
-        graph.add_edge(1, 2, 7, 8);
-        graph.add_edge(2, 3, 7, 8);
-        graph.add_edge(1, 3, 7, 10);
+        graph.add_edge(0, 1, 10, 0, -10);
+        graph.add_edge(1, 2, 7, 0, 8);
+        graph.add_edge(2, 3, 7, 0, 8);
+        graph.add_edge(1, 3, 7, 0, 10);
 
         let (cost, flow, _) = graph.mcf(0, 3);
         assert_eq!(cost, 18);
@@ -237,21 +237,21 @@ mod test {
 
         //Initialize source / sink connections; both left & right have 6 nodes
         for lhs_vertex in left_start..left_start + 6 {
-            graph.add_edge(source, lhs_vertex, 1, 1);
+            graph.add_edge(source, lhs_vertex, 1, 0, 0);
         }
 
         for rhs_vertex in right_start..right_start + 6 {
-            graph.add_edge(rhs_vertex, sink, 1, 1);
+            graph.add_edge(rhs_vertex, sink, 1, 0, 0);
         }
 
-        graph.add_edge(left_start + 0, right_start + 1, 1, 1);
-        graph.add_edge(left_start + 0, right_start + 2, 1, 1);
-        graph.add_edge(left_start + 2, right_start + 0, 1, 1);
-        graph.add_edge(left_start + 2, right_start + 3, 1, 1);
-        graph.add_edge(left_start + 3, right_start + 2, 1, 1);
-        graph.add_edge(left_start + 4, right_start + 2, 1, 1);
-        graph.add_edge(left_start + 4, right_start + 3, 1, 1);
-        graph.add_edge(left_start + 5, right_start + 5, 1, 1);
+        graph.add_edge(left_start + 0, right_start + 1, 1, 0, 0);
+        graph.add_edge(left_start + 0, right_start + 2, 1, 0, 0);
+        graph.add_edge(left_start + 2, right_start + 0, 1, 0, 0);
+        graph.add_edge(left_start + 2, right_start + 3, 1, 0, 0);
+        graph.add_edge(left_start + 3, right_start + 2, 1, 0, 0);
+        graph.add_edge(left_start + 4, right_start + 2, 1, 0, 0);
+        graph.add_edge(left_start + 4, right_start + 3, 1, 0, 0);
+        graph.add_edge(left_start + 5, right_start + 5, 1, 0, 0);
 
         let (flow_amt, flow) = graph.dinic(source, sink);
         assert_eq!(flow_amt, 5);
