@@ -24,7 +24,7 @@ impl<T: ArqSpec> DynamicArqNode<T> {
         Self {
             val,
             app: None,
-            down: (0, 0),
+            down: (usize::max_value(), usize::max_value()),
         }
     }
 
@@ -50,31 +50,65 @@ pub struct DynamicArq<T: ArqSpec> {
 }
 
 impl<T: ArqSpec> DynamicArq<T> {
-    pub fn new(
-        l_bound: i64,
-        r_bound: i64,
-        is_persistent: bool,
-        initializer: Box<dyn Fn(i64, i64) -> T::M>,
-    ) -> (Self, ArqView) {
-        let val = initializer(l_bound, r_bound);
-        let nodes = vec![DynamicArqNode::new(val)];
-        let arq = Self {
-            nodes,
+    /// Initializes the data structure without creating any nodes.
+    /// The initializer f must satisfy: f(l, r) = T::op(f(l, m), f(m+1, r))
+    pub fn new(is_persistent: bool, initializer: Box<dyn Fn(i64, i64) -> T::M>) -> Self {
+        Self {
+            nodes: vec![],
             is_persistent,
             initializer,
-        };
-        let root_view = (0, l_bound, r_bound);
-        (arq, root_view)
+        }
     }
 
-    pub fn new_with_identity(l_bound: i64, r_bound: i64, is_persistent: bool) -> (Self, ArqView) {
+    /// Initializes the data structure without creating any nodes.
+    pub fn new_with_identity(is_persistent: bool) -> Self {
         let initializer = Box::new(|_, _| T::identity());
-        Self::new(l_bound, r_bound, is_persistent, initializer)
+        Self::new(is_persistent, initializer)
+    }
+
+    /// Lazily builds a tree over the range [l_bound, r_bound].
+    pub fn build_using_initializer(&mut self, l_bound: i64, r_bound: i64) -> ArqView {
+        let view = (self.nodes.len(), l_bound, r_bound);
+        let val = (self.initializer)(l_bound, r_bound);
+        self.nodes.push(DynamicArqNode::new(val));
+        view
+    }
+
+    /// Builds a tree whose leaves are set to a given non-empty slice.
+    pub fn build_from_slice(&mut self, init_val: &[T::M]) -> ArqView {
+        if init_val.len() == 1 {
+            let view = (self.nodes.len(), 0, 0);
+            let val = T::op(&T::identity(), &init_val[0]);
+            self.nodes.push(DynamicArqNode::new(val));
+            return view;
+        }
+        let m = (init_val.len() + 1) / 2;
+        let (l_init, r_init) = init_val.split_at(m);
+        let l_view = self.build_from_slice(l_init);
+        let r_view = self.build_from_slice(r_init);
+        self.merge_equal_sized(l_view, r_view)
+    }
+
+    /// Merges two balanced subtrees into a single tree with a 0-indexed view.
+    pub fn merge_equal_sized(&mut self, l_view: ArqView, r_view: ArqView) -> ArqView {
+        let l_len = l_view.2 - l_view.1 + 1;
+        let r_len = r_view.2 - r_view.1 + 1;
+        assert!(l_len == r_len || l_len == r_len + 1);
+
+        let view = (self.nodes.len(), 0, l_len + r_len - 1);
+        let root = DynamicArqNode {
+            val: T::identity(),
+            app: None,
+            down: (l_view.0, r_view.0),
+        };
+        self.nodes.push(root);
+        self.pull(view.0);
+        view
     }
 
     pub fn push(&mut self, (p, l, r): ArqView) -> (ArqView, ArqView) {
         let m = (l + r) / 2;
-        if self.nodes[p].down.0 == 0 {
+        if self.nodes[p].down.0 == usize::max_value() {
             let l_val = (self.initializer)(l, m);
             let r_val = (self.initializer)(m + 1, r);
             self.nodes.push(DynamicArqNode::new(l_val));

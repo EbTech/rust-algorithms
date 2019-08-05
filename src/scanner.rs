@@ -86,8 +86,8 @@ mod test {
 
     #[test]
     fn test_in_memory_io() {
-        let cursor = io::Cursor::new("50 8");
-        let mut scan = Scanner::new(cursor);
+        let input = "50 8".as_bytes();
+        let mut scan = Scanner::new(input);
         let mut out = String::new();
         use std::fmt::Write; // needed for writeln!()
 
@@ -100,8 +100,8 @@ mod test {
 
     #[test]
     fn test_in_memory_unsafe() {
-        let cursor = io::Cursor::new("50 8");
-        let mut scan = UnsafeScanner::new(cursor);
+        let input = "50 8".as_bytes();
+        let mut scan = UnsafeScanner::new(input);
         let mut out = String::new();
         use std::fmt::Write; // needed for writeln!()
 

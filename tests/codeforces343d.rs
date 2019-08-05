@@ -1,7 +1,7 @@
 //! Solves [Water Tree](http://codeforces.com/contest/343/problem/D).
 //! To make a self-contained file for contest submission, dump each desired
 //! module's contents directly here instead of the use statements.
-//! Also, replace io::Cursor with io::stdin as shown in scanner.rs.
+//! Also, use the commented code in main() to employ standard I/O.
 extern crate contest_algorithms;
 use contest_algorithms::graph::Graph;
 use contest_algorithms::range_query::{specs::AssignSum, StaticArq};
@@ -62,8 +62,7 @@ fn dfs(
 #[test]
 fn main() {
     use std::fmt::Write;
-    let cursor = std::io::Cursor::new(SAMPLE_INPUT);
-    let mut scan = Scanner::new(cursor);
+    let mut scan = Scanner::new(SAMPLE_INPUT.as_bytes());
     let mut out = String::new();
     /* To read/write with stdin/stdout instead:
         use std::io::{self, Write};
@@ -85,7 +84,7 @@ fn main() {
     let mut p = vec![0; n];
     dfs(&tree, 0, &mut l, &mut r, &mut p, &mut 0);
 
-    let mut arq = StaticArq::<AssignSum>::new(vec![(0, 1); n + 1]);
+    let mut arq = StaticArq::<AssignSum>::new(&vec![(0, 1); n + 1]);
     let q = scan.token::<usize>();
     for _ in 0..q {
         let c = scan.token::<usize>();
