@@ -26,9 +26,8 @@ mod test {
 
     #[test]
     fn test_dynamic_rmq() {
-        let initializer = Box::new(|_, _| 0);
-        let mut arq = DynamicArq::<AssignMin>::new(false, initializer);
-        let view = arq.build_using_initializer(0, 9);
+        let mut arq = DynamicArq::<AssignMin>::new(false);
+        let view = arq.build_from_slice(&[0; 10]);
 
         assert_eq!(arq.query(view, 0, 9), 0);
 
@@ -41,9 +40,8 @@ mod test {
 
     #[test]
     fn test_persistent_rmq() {
-        let initializer = Box::new(|_, _| 0);
-        let mut arq = DynamicArq::<AssignMin>::new(true, initializer);
-        let mut view = arq.build_using_initializer(0, 9);
+        let mut arq = DynamicArq::<AssignMin>::new(true);
+        let mut view = arq.build_from_slice(&[0; 10]);
 
         let at_init = view;
         view = arq.modify(view, 2, 4, &-5);
@@ -54,6 +52,19 @@ mod test {
         assert_eq!(arq.query(at_init, 0, 9), 0);
         assert_eq!(arq.query(snapshot, 0, 9), -5);
         assert_eq!(arq.query(view, 0, 9), -3);
+    }
+
+    #[test]
+    fn test_huge_rmq() {
+        let quintillion = 1_000_000_000_000_000_000;
+        let mut arq = DynamicArq::<AssignMin>::new(false);
+        let view = arq.build_from_identity(9 * quintillion + 1);
+
+        arq.modify(view, 2 * quintillion, 4 * quintillion, &-5);
+        arq.modify(view, 5 * quintillion, 7 * quintillion, &-3);
+        arq.modify(view, 1 * quintillion, 6 * quintillion, &1);
+
+        assert_eq!(arq.query(view, 0, 9 * quintillion), -3);
     }
 
     #[test]
@@ -71,9 +82,8 @@ mod test {
 
     #[test]
     fn test_dynamic_range_sum() {
-        let initializer = Box::new(|l, r| (0, 1 + r - l));
-        let mut arq = DynamicArq::<AssignSum>::new(false, initializer);
-        let view = arq.build_using_initializer(0, 9);
+        let mut arq = DynamicArq::<AssignSum>::new(false);
+        let view = arq.build_from_slice(&[(0, 1); 10]);
 
         assert_eq!(arq.query(view, 0, 9), (0, 10));
 
@@ -97,8 +107,8 @@ mod test {
 
     #[test]
     fn test_dynamic_supply_demand() {
-        let mut arq = DynamicArq::<SupplyDemand>::new_with_identity(false);
-        let view = arq.build_using_initializer(0, 9);
+        let mut arq = DynamicArq::<SupplyDemand>::new(false);
+        let view = arq.build_from_identity(10);
 
         arq.modify(view, 1, 1, &(25, 100));
         arq.modify(view, 3, 3, &(100, 30));
@@ -121,9 +131,9 @@ mod test {
     }
 
     #[test]
-    fn test_dynslice_binary_search_rmq() {
+    fn test_dynamic_binary_search_rmq() {
         let vec = vec![2, 1, 0, -1, -2, -3, -4, -5];
-        let mut arq = DynamicArq::<AssignMin>::new_with_identity(false);
+        let mut arq = DynamicArq::<AssignMin>::new(false);
         let view = arq.build_from_slice(&vec);
         let first_neg = dynamic_arq::first_negative(&mut arq, view);
 
@@ -131,24 +141,6 @@ mod test {
         let first_neg_zeros = dynamic_arq::first_negative(&mut arq, view);
 
         assert_eq!(first_neg, Some(3));
-        assert_eq!(first_neg_zeros, None);
-    }
-
-    #[test]
-    fn test_dynamic_binary_search_rmq() {
-        let initializer = Box::new(|_, r| 2 - r);
-        let (l_bound, r_bound) = (0, 1_000_000_000_000_000_000);
-        let mut arq = DynamicArq::<AssignMin>::new(false, initializer);
-        let view = arq.build_using_initializer(l_bound, r_bound);
-        let first_neg = dynamic_arq::first_negative(&mut arq, view);
-
-        arq.modify(view, 2, r_bound - 1, &0);
-        let first_neg_late = dynamic_arq::first_negative(&mut arq, view);
-        arq.modify(view, 2, r_bound, &0);
-        let first_neg_zeros = dynamic_arq::first_negative(&mut arq, view);
-
-        assert_eq!(first_neg, Some(3));
-        assert_eq!(first_neg_late, Some(r_bound));
         assert_eq!(first_neg_zeros, None);
     }
 }

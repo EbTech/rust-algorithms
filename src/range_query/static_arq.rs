@@ -23,8 +23,8 @@ impl<T: ArqSpec> StaticArq<T> {
     /// Initializes a static balanced tree on top of the given sequence.
     pub fn new(init_val: &[T::M]) -> Self {
         let size = init_val.len();
-        let mut val = (0..size).map(|_| T::identity()).collect::<Vec<_>>();
-        val.extend(init_val.iter().map(|v| T::op(&T::identity(), v)));
+        let mut val = vec![T::identity(); size];
+        val.extend_from_slice(init_val);
         let app = vec![None; size];
 
         let mut arq = Self { val, app };

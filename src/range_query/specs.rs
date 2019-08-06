@@ -7,7 +7,7 @@ pub trait ArqSpec {
     // their parts. This representation is more efficient.
     type F: Clone;
     /// Type of monoid elements.
-    type M;
+    type M: Clone;
 
     /// For eager updates, compose() ho be unimplemented!(). For lazy updates:
     /// Require for all f,g,a: apply(compose(f, g), a) = apply(f, apply(g, a))
