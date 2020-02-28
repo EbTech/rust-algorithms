@@ -196,7 +196,8 @@ mod test {
 
     #[test]
     fn test_toposort() {
-        let mut graph = Graph::new(4, 4);
+        let mut graph = Graph::new(4, 5);
+        graph.add_edge(0, 0);
         graph.add_edge(0, 2);
         graph.add_edge(3, 2);
         graph.add_edge(3, 1);

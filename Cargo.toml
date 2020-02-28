@@ -1,6 +1,6 @@
 [package]
 name = "contest-algorithms"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Aram Ebtekar"]
 edition = "2018"
 
@@ -13,6 +13,3 @@ license = "MIT"
 
 [badges]
 travis-ci = { repository = "EbTech/rust-algorithms", branch = "master" }
-
-[dependencies]
-bit-vec = "0.6.*"

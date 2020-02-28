@@ -1,4 +1,5 @@
 //! String processing algorithms.
+use std::cmp::{max, min};
 
 /// Data structure for Knuth-Morris-Pratt string matching against a pattern.
 pub struct Matcher<'a, T> {
@@ -117,12 +118,12 @@ impl SuffixArray {
             let mut cur_rank = prev_rank.clone();
 
             let pos = (n - skip..n).chain(sfx.into_iter().filter_map(|p| p.checked_sub(skip)));
-            sfx = Self::counting_sort(pos, &prev_rank, n.max(256));
+            sfx = Self::counting_sort(pos, &prev_rank, max(n, 256));
 
             let mut prev = sfx[0];
             cur_rank[prev] = 0;
             for &cur in sfx.iter().skip(1) {
-                if prev.max(cur) + skip < n
+                if max(prev, cur) + skip < n
                     && prev_rank[prev] == prev_rank[cur]
                     && prev_rank[prev + skip] == prev_rank[cur + skip]
                 {
@@ -145,7 +146,7 @@ impl SuffixArray {
                 i += 1 << k;
                 j += 1 << k;
                 len += 1 << k;
-                if i.max(j) >= self.sfx.len() {
+                if max(i, j) >= self.sfx.len() {
                     break;
                 }
             }
@@ -195,16 +196,15 @@ impl<K: std::hash::Hash + Eq + Default> Trie<K> {
 ///
 /// Panics if text is empty.
 pub fn palindromes<T: Eq>(text: &[T]) -> Vec<usize> {
-    let mut pal = Vec::with_capacity(2 * text.len() - 1); // only mutable var!
+    let mut pal = Vec::with_capacity(2 * text.len() - 1);
     pal.push(1);
     while pal.len() < pal.capacity() {
         let i = pal.len() - 1;
-        let max_len = (i + 1).min(pal.capacity() - i);
+        let max_len = min(i + 1, pal.capacity() - i);
         while pal[i] < max_len && text[(i - pal[i] - 1) / 2] == text[(i + pal[i] + 1) / 2] {
             pal[i] += 2;
         }
-        if pal[i] < 2 {
-            let a = 1 - pal[i];
+        if let Some(a) = 1usize.checked_sub(pal[i]) {
             pal.push(a);
         } else {
             for d in 1.. {

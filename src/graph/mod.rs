@@ -4,8 +4,8 @@
 //!
 //! All methods will panic if given an out-of-bounds element index.
 pub mod connectivity;
-mod dfs;
 pub mod flow;
+mod util;
 
 /// Represents a union of disjoint sets. Each set's elements are arranged in a
 /// tree, whose root is the set's representative.
@@ -103,42 +103,6 @@ impl Graph {
             next_e: self.first[u],
         }
     }
-
-    /// Finds the sequence of edges in an Euler path starting from u, assuming
-    /// it exists and that the graph is directed. Undefined behavior if this
-    /// precondition is violated. To extend this to undirected graphs, maintain
-    /// a visited array to skip the reverse edge.
-    pub fn euler_path(&self, u: usize) -> Vec<usize> {
-        let mut adj_iters = (0..self.num_v())
-            .map(|u| self.adj_list(u))
-            .collect::<Vec<_>>();
-        let mut edges = Vec::with_capacity(self.num_e());
-        self.euler_recurse(u, &mut adj_iters, &mut edges);
-        edges.reverse();
-        edges
-    }
-
-    // Helper function used by euler_path. Note that we can't use a for-loop
-    // that would consume the adjacency list as recursive calls may need it.
-    fn euler_recurse(&self, u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
-        while let Some((e, v)) = adj[u].next() {
-            self.euler_recurse(v, adj, edges);
-            edges.push(e);
-        }
-    }
-
-    /// Kruskal's minimum spanning tree algorithm on an undirected graph.
-    pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
-        assert_eq!(self.num_e(), 2 * weights.len());
-        let mut edges = (0..weights.len()).collect::<Vec<_>>();
-        edges.sort_unstable_by_key(|&e| weights[e]);
-
-        let mut components = DisjointSets::new(self.num_v());
-        edges
-            .into_iter()
-            .filter(|&e| components.merge(self.endp[2 * e], self.endp[2 * e + 1]))
-            .collect()
-    }
 }
 
 /// An iterator for convenient adjacency list traversal.
@@ -165,27 +129,15 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_euler() {
-        let mut graph = Graph::new(3, 4);
+    fn test_adj_list() {
+        let mut graph = Graph::new(4, 4);
         graph.add_edge(0, 1);
-        graph.add_edge(1, 0);
         graph.add_edge(1, 2);
-        graph.add_edge(2, 1);
+        graph.add_edge(1, 3);
+        graph.add_edge(3, 0);
 
-        assert_eq!(graph.euler_path(0), vec![0, 2, 3, 1]);
-    }
+        let adj: Vec<(usize, usize)> = graph.adj_list(1).collect();
 
-    #[test]
-    fn test_min_spanning_tree() {
-        let mut graph = Graph::new(3, 3);
-        graph.add_undirected_edge(0, 1);
-        graph.add_undirected_edge(1, 2);
-        graph.add_undirected_edge(2, 0);
-        let weights = [7, 3, 5];
-
-        let mst = graph.min_spanning_tree(&weights);
-        let mst_cost = mst.iter().map(|&e| weights[e]).sum::<i64>();
-        assert_eq!(mst, vec![1, 2]);
-        assert_eq!(mst_cost, 8);
+        assert_eq!(adj, vec![(2, 3), (1, 2)]);
     }
 }
