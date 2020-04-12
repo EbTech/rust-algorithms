@@ -6,8 +6,9 @@ extern crate contest_algorithms;
 use contest_algorithms::graph::Graph;
 use contest_algorithms::range_query::{specs::AssignSum, StaticArq};
 use contest_algorithms::scanner::Scanner;
+use std::io;
 
-const SAMPLE_INPUT: &str = "\
+const SAMPLE_INPUT: &[u8] = b"\
 5
 1 2
 5 1
@@ -27,7 +28,7 @@ const SAMPLE_INPUT: &str = "\
 3 4
 3 5
 ";
-const SAMPLE_OUTPUT: &str = "\
+const SAMPLE_OUTPUT: &[u8] = b"\
 0
 0
 0
@@ -59,18 +60,7 @@ fn dfs(
     r[u] = *time;
 }
 
-#[test]
-fn main() {
-    use std::fmt::Write;
-    let mut scan = Scanner::new(SAMPLE_INPUT.as_bytes());
-    let mut out = String::new();
-    /* To read/write with stdin/stdout instead:
-        use std::io::{self, Write};
-        let (stdin, stdout) = (io::stdin(), io::stdout());
-        let mut scan = Scanner::new(stdin.lock());
-        let mut out = io::BufWriter::new(stdout.lock());
-    */
-
+fn solve<R: io::BufRead, W: io::Write>(scan: &mut Scanner<R>, out: &mut W) {
     let n = scan.token::<usize>();
     let mut tree = Graph::new(n, 2 * (n - 1));
     for _ in 1..n {
@@ -102,6 +92,13 @@ fn main() {
             writeln!(out, "{}", ans).ok();
         }
     }
+}
+
+#[test]
+fn main() {
+    let mut scan = Scanner::new(SAMPLE_INPUT);
+    let mut out = vec![];
+    solve(&mut scan, &mut out);
 
     assert_eq!(out, SAMPLE_OUTPUT);
 }

@@ -17,8 +17,8 @@ impl ConnectivityData {
             time: 0,
             vis: vec![0; num_v].into_boxed_slice(),
             low: vec![0; num_v].into_boxed_slice(),
-            v_stack: Vec::new(),
-            e_stack: Vec::new(),
+            v_stack: vec![],
+            e_stack: vec![],
         }
     }
 

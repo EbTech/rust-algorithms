@@ -13,7 +13,7 @@ impl<R: io::BufRead> Scanner<R> {
     pub fn new(reader: R) -> Self {
         Self {
             reader,
-            buffer: Vec::new(),
+            buffer: vec![],
         }
     }
 
@@ -46,7 +46,7 @@ impl<R: io::BufRead> UnsafeScanner<R> {
     pub fn new(reader: R) -> Self {
         Self {
             reader,
-            buf_str: Vec::new(),
+            buf_str: vec![],
             buf_iter: "".split_ascii_whitespace(),
         }
     }
@@ -84,32 +84,36 @@ pub fn writer_to_file(filename: &str) -> io::BufWriter<std::fs::File> {
 mod test {
     use super::*;
 
-    #[test]
-    fn test_in_memory_io() {
-        let input = "50 8".as_bytes();
-        let mut scan = Scanner::new(input);
-        let mut out = String::new();
-        use std::fmt::Write; // needed for writeln!()
-
+    fn solve<R: io::BufRead, W: io::Write>(scan: &mut Scanner<R>, out: &mut W) {
         let x = scan.token::<i32>();
         let y = scan.token::<i32>();
-        writeln!(out, "Test {}", x - y).ok();
+        writeln!(out, "{} - {} = {}", x, y, x - y).ok();
+    }
 
-        assert_eq!(out, "Test 42\n");
+    fn unsafe_solve<R: io::BufRead, W: io::Write>(scan: &mut UnsafeScanner<R>, out: &mut W) {
+        let x = scan.token::<i32>();
+        let y = scan.token::<i32>();
+        writeln!(out, "{} - {} = {}", x, y, x - y).ok();
+    }
+
+    #[test]
+    fn test_in_memory_io() {
+        let input: &[u8] = b"50 8";
+        let mut scan = Scanner::new(input);
+        let mut out = vec![];
+
+        solve(&mut scan, &mut out);
+        assert_eq!(out, b"50 - 8 = 42\n");
     }
 
     #[test]
     fn test_in_memory_unsafe() {
-        let input = "50 8".as_bytes();
+        let input: &[u8] = b"50 8";
         let mut scan = UnsafeScanner::new(input);
-        let mut out = String::new();
-        use std::fmt::Write; // needed for writeln!()
+        let mut out = vec![];
 
-        let x = scan.token::<i32>();
-        let y = scan.token::<i32>();
-        writeln!(out, "Test {}", x - y).ok();
-
-        assert_eq!(out, "Test 42\n");
+        unsafe_solve(&mut scan, &mut out);
+        assert_eq!(out, b"50 - 8 = 42\n");
     }
 
     #[test]
@@ -117,12 +121,9 @@ mod test {
         let (stdin, stdout) = (io::stdin(), io::stdout());
         let mut scan = Scanner::new(stdin.lock());
         let mut out = io::BufWriter::new(stdout.lock());
-        use io::Write; // needed for writeln!()
 
         if false {
-            let x = scan.token::<i32>();
-            let y = scan.token::<i32>();
-            writeln!(out, "Test {}", x - y).ok();
+            solve(&mut scan, &mut out);
         }
     }
 
@@ -131,10 +132,7 @@ mod test {
     fn test_panic_file() {
         let mut scan = scanner_from_file("input_file.txt");
         let mut out = writer_to_file("output_file.txt");
-        use io::Write; // needed for writeln!()
 
-        let x = scan.token::<i32>();
-        let y = scan.token::<i32>();
-        writeln!(out, "Test {}", x - y).ok();
+        solve(&mut scan, &mut out);
     }
 }
