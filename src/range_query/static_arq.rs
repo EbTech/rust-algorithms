@@ -1,13 +1,16 @@
-//! Associative Range Query Tree based on [Al.Cash's compact representation]
-//! (http://codeforces.com/blog/entry/18051).
+//! Associative Range Query Tree
 use super::ArqSpec;
 
 /// Colloquially known as a "segtree" in the sport programming literature, it
-/// represents a sequence of elements a_i (0 <= i < size) from a monoid (M, +)
+/// represents a sequence of elements a_i (0 <= i < size) from a monoid (S, +)
 /// on which we want to support fast range operations:
 ///
-/// - modify(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for an endomorphism f
+/// - update(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for an endomorphism f
 /// - query(l, r) returns the aggregate a_l + a_{l+1} + ... + a_r
+///
+/// This compact representation is based on a [blog post by Al.Cash]
+/// (http://codeforces.com/blog/entry/18051). All nodes have 0 or 2 children.
+/// Hence, trees whose size is not a power of two will have multiple roots.
 ///
 /// Future work: ArqTree would lend itself naturally to Rust's ownership system.
 /// Initially, we should only have access to the root nodes:
@@ -15,13 +18,13 @@ use super::ArqSpec;
 /// arq.push(i) locks i and acquires access to its children.
 /// arq.pull(i) is called when the lock on i is released.
 pub struct StaticArq<T: ArqSpec> {
-    val: Vec<T::M>,
+    val: Vec<T::S>,
     app: Vec<Option<T::F>>,
 }
 
 impl<T: ArqSpec> StaticArq<T> {
-    /// Initializes a static balanced tree on top of the given sequence.
-    pub fn new(init_val: &[T::M]) -> Self {
+    /// Initializes a static balanced binary tree on top of the given sequence.
+    pub fn new(init_val: &[T::S]) -> Self {
         let size = init_val.len();
         let mut val = vec![T::identity(); size];
         val.extend_from_slice(init_val);
@@ -76,7 +79,7 @@ impl<T: ArqSpec> StaticArq<T> {
     /// # Panics
     ///
     /// Panics if r >= size. Note that l > r is valid, meaning an empty range.
-    pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F) {
+    pub fn update(&mut self, mut l: usize, mut r: usize, f: &T::F) {
         l += self.app.len();
         r += self.app.len();
         if l < r {
@@ -107,7 +110,7 @@ impl<T: ArqSpec> StaticArq<T> {
     /// # Panics
     ///
     /// Panics if r >= size. Note that l > r is valid, meaning an empty range.
-    pub fn query(&mut self, mut l: usize, mut r: usize) -> T::M {
+    pub fn query(&mut self, mut l: usize, mut r: usize) -> T::S {
         l += self.app.len();
         r += self.app.len();
         if l < r {
@@ -131,7 +134,7 @@ impl<T: ArqSpec> StaticArq<T> {
     }
 }
 
-/// An example of binary search on the tree of a StaticArq.
+/// An example of binary search to find the first position whose element is negative.
 /// In this case, we use RMQ to locate the leftmost negative element.
 /// To ensure the existence of a valid root note (i == 1) from which to descend,
 /// the tree's size must be a power of two.

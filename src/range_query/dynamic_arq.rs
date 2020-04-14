@@ -1,9 +1,9 @@
-//! Associative Range Query Tree with dynamic allocation, supporting dynamic
-//! node construction and persistence
+//! Associative Range Query Tree with dynamic allocation, supporting sparse
+//! initialization and persistence
 use super::ArqSpec;
 
 pub struct DynamicArqNode<T: ArqSpec> {
-    val: T::M,
+    val: T::S,
     app: Option<T::F>,
     down: (usize, usize),
 }
@@ -66,7 +66,7 @@ impl<T: ArqSpec> DynamicArq<T> {
     }
 
     /// Builds a tree whose leaves are set to a given non-empty slice.
-    pub fn build_from_slice(&mut self, init_val: &[T::M]) -> ArqView {
+    pub fn build_from_slice(&mut self, init_val: &[T::S]) -> ArqView {
         if init_val.len() == 1 {
             let mut root = DynamicArqNode::default();
             root.val = init_val[0].clone();
@@ -126,7 +126,7 @@ impl<T: ArqSpec> DynamicArq<T> {
 
     /// Applies the endomorphism f to all entries from l to r, inclusive.
     /// If l == r, the updates are eager. Otherwise, they are lazy.
-    pub fn modify(&mut self, view: ArqView, l: i64, r: i64, f: &T::F) -> ArqView {
+    pub fn update(&mut self, view: ArqView, l: i64, r: i64, f: &T::F) -> ArqView {
         let (p_orig, s) = view;
         if r < 0 || s - 1 < l {
             view
@@ -138,8 +138,8 @@ impl<T: ArqSpec> DynamicArq<T> {
             let (l_view, r_view) = self.push(view);
             let ls = l_view.1;
             let p_clone = self.clone_node(p_orig);
-            let lp_clone = self.modify(l_view, l, r, f).0;
-            let rp_clone = self.modify(r_view, l - ls, r - ls, f).0;
+            let lp_clone = self.update(l_view, l, r, f).0;
+            let rp_clone = self.update(r_view, l - ls, r - ls, f).0;
             self.nodes[p_clone].down = (lp_clone, rp_clone);
             self.pull(p_clone);
             (p_clone, s)
@@ -147,7 +147,7 @@ impl<T: ArqSpec> DynamicArq<T> {
     }
 
     /// Returns the aggregate range query on all entries from l to r, inclusive.
-    pub fn query(&mut self, view: ArqView, l: i64, r: i64) -> T::M {
+    pub fn query(&mut self, view: ArqView, l: i64, r: i64) -> T::S {
         let (p, s) = view;
         if r < 0 || s - 1 < l {
             T::identity()
@@ -163,8 +163,8 @@ impl<T: ArqSpec> DynamicArq<T> {
     }
 }
 
-/// An example of binary search on the tree of a DynamicArq.
-/// The tree may have any size, not necessarily a power of two.
+/// An example of binary search to find the first position whose element is negative.
+/// The DynamicArq version works on trees of any size, not necessarily a power of two.
 pub fn first_negative(arq: &mut DynamicArq<super::specs::AssignMin>, view: ArqView) -> Option<i64> {
     let (p, s) = view;
     if s == 1 {

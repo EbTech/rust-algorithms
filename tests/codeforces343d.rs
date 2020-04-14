@@ -82,11 +82,11 @@ fn solve<R: io::BufRead, W: io::Write>(scan: &mut Scanner<R>, out: &mut W) {
         let (sum, len) = arq.query(l[v], r[v]);
         if c == 1 {
             if sum != len {
-                arq.modify(p[v], p[v], &0);
-                arq.modify(l[v], r[v], &1);
+                arq.update(p[v], p[v], &0);
+                arq.update(l[v], r[v], &1);
             }
         } else if c == 2 {
-            arq.modify(l[v], l[v], &0);
+            arq.update(l[v], l[v], &0);
         } else {
             let ans = if sum == len { 1 } else { 0 };
             writeln!(out, "{}", ans).ok();

@@ -23,13 +23,13 @@ To my delight, I found that Rust eliminates entire classes of bugs, while reduci
 
 Some contest sites and online judges that support Rust:
 - [Codeforces](https://codeforces.com)
-- [Google Kick Start and Code Jam](https://codingcompetitions.withgoogle.com)
 - [Kattis](https://open.kattis.com/help/rust)
 - [SPOJ](https://www.spoj.com/)
 - [LeetCode](https://leetcode.com/contest)
 - [HackerRank](https://www.hackerrank.com/contests)
 
 The following support pre-2018 versions of Rust:
+- [Google Kick Start and Code Jam](https://codingcompetitions.withgoogle.com)
 - [AtCoder](https://atcoder.jp)
 - [Timus](http://acm.timus.ru/help.aspx?topic=rust)
 
