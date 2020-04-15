@@ -37,8 +37,8 @@ impl<T: ArqSpec> StaticArq<T> {
         arq
     }
 
-    fn apply(&mut self, p: usize, f: &T::F) {
-        self.val[p] = T::apply(f, &self.val[p]);
+    fn apply(&mut self, p: usize, f: &T::F, s: i64) {
+        self.val[p] = T::apply(f, &self.val[p], s);
         if let Some(lazy) = self.app.get_mut(p) {
             let h = match *lazy {
                 Some(ref g) => T::compose(f, g),
@@ -50,8 +50,9 @@ impl<T: ArqSpec> StaticArq<T> {
 
     fn push(&mut self, p: usize) {
         if let Some(ref f) = self.app[p].take() {
-            self.apply(p << 1, f);
-            self.apply(p << 1 | 1, f);
+            let s = ((self.app.len() + p - 1) / p / 2).next_power_of_two() as i64;
+            self.apply(p << 1, f, s);
+            self.apply(p << 1 | 1, f, s);
         }
     }
 
@@ -61,8 +62,8 @@ impl<T: ArqSpec> StaticArq<T> {
 
     fn push_to(&mut self, p: usize) {
         let one_plus_floor_log_p = (p + 1).next_power_of_two().trailing_zeros();
-        for s in (1..one_plus_floor_log_p).rev() {
-            self.push(p >> s);
+        for i in (1..one_plus_floor_log_p).rev() {
+            self.push(p >> i);
         }
     }
 
@@ -86,20 +87,21 @@ impl<T: ArqSpec> StaticArq<T> {
             self.push_to(l);
         }
         self.push_to(r);
-        let (mut l0, mut r0) = (1, 1);
+        let (mut l0, mut r0, mut s) = (1, 1, 1);
         while l <= r {
             if l & 1 == 1 {
-                self.apply(l, f);
+                self.apply(l, f, s);
                 l0 = l0.max(l);
                 l += 1;
             }
             if r & 1 == 0 {
-                self.apply(r, f);
+                self.apply(r, f, s);
                 r0 = r0.max(r);
                 r -= 1;
             }
             l >>= 1;
             r >>= 1;
+            s <<= 1;
         }
         self.pull_from(l0);
         self.pull_from(r0);

@@ -31,7 +31,7 @@ impl<T: ArqSpec> Default for DynamicArqNode<T> {
 
 impl<T: ArqSpec> DynamicArqNode<T> {
     fn apply(&mut self, f: &T::F, size: i64) {
-        self.val = T::apply(f, &self.val);
+        self.val = T::apply(f, &self.val, size);
         if size > 1 {
             let h = match self.app {
                 Some(ref g) => T::compose(f, g),
@@ -107,7 +107,7 @@ impl<T: ArqSpec> DynamicArq<T> {
         ((lp, ls), (rp, s - ls))
     }
 
-    fn pull(&mut self, p: usize) {
+    pub fn pull(&mut self, p: usize) {
         let (lp, rp) = self.nodes[p].down;
         let left_val = &self.nodes[lp].val;
         let right_val = &self.nodes[rp].val;

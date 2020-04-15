@@ -74,12 +74,13 @@ fn solve<R: io::BufRead, W: io::Write>(scan: &mut Scanner<R>, out: &mut W) {
     let mut p = vec![0; n];
     dfs(&tree, 0, &mut l, &mut r, &mut p, &mut 0);
 
-    let mut arq = StaticArq::<AssignSum>::new(&vec![(0, 1); n + 1]);
+    let mut arq = StaticArq::<AssignSum>::new(&vec![0; n + 1]);
     let q = scan.token::<usize>();
     for _ in 0..q {
         let c = scan.token::<usize>();
         let v = scan.token::<usize>() - 1;
-        let (sum, len) = arq.query(l[v], r[v]);
+        let len = (r[v] - l[v] + 1) as i64;
+        let sum = arq.query(l[v], r[v]);
         if c == 1 {
             if sum != len {
                 arq.update(p[v], p[v], &0);

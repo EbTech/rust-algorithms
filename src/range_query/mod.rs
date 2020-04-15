@@ -69,29 +69,29 @@ mod test {
 
     #[test]
     fn test_range_sum() {
-        let mut arq = StaticArq::<AssignSum>::new(&[(0, 1); 10]);
+        let mut arq = StaticArq::<AssignSum>::new(&[0; 10]);
 
-        assert_eq!(arq.query(0, 9), (0, 10));
+        assert_eq!(arq.query(0, 9), 0);
 
         arq.update(1, 3, &10);
         arq.update(3, 5, &1);
 
-        assert_eq!(arq.query(0, 9), (23, 10));
-        assert_eq!(arq.query(10, 4), (0, 0));
+        assert_eq!(arq.query(0, 9), 23);
+        assert_eq!(arq.query(10, 4), 0);
     }
 
     #[test]
     fn test_dynamic_range_sum() {
         let mut arq = DynamicArq::<AssignSum>::new(false);
-        let view = arq.build_from_slice(&[(0, 1); 10]);
+        let view = arq.build_from_slice(&[0; 10]);
 
-        assert_eq!(arq.query(view, 0, 9), (0, 10));
+        assert_eq!(arq.query(view, 0, 9), 0);
 
         arq.update(view, 1, 3, &10);
         arq.update(view, 3, 5, &1);
 
-        assert_eq!(arq.query(view, 0, 9), (23, 10));
-        assert_eq!(arq.query(view, 10, 4), (0, 0));
+        assert_eq!(arq.query(view, 0, 9), 23);
+        assert_eq!(arq.query(view, 10, 4), 0);
     }
 
     #[test]

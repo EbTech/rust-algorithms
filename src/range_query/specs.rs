@@ -9,16 +9,21 @@ pub trait ArqSpec {
     // their parts. This representation is more efficient.
     type F: Clone;
 
-    /// Require for all a,b,c: op(a, op(b, c)) = op(op(a, b), c)
+    /// Must satisfy the Associative Law:
+    /// For all a,b,c, op(a, op(b, c)) = op(op(a, b), c)
     fn op(a: &Self::S, b: &Self::S) -> Self::S;
-    /// Require for all a: op(a, identity()) = op(identity(), a) = a
+    /// Must satisfy the Identity Law:
+    /// For all a, op(a, identity()) = op(identity(), a) = a
     fn identity() -> Self::S;
-    /// For eager updates, compose() can be unimplemented!(). For lazy updates:
-    /// Require for all f,g,a: apply(compose(f, g), a) = apply(f, apply(g, a))
+    /// For point query / eager updates, compose() can be unimplemented!()
+    /// For range query / lazy updates, it must satisfy the Composition Law:
+    /// For all f,g,a, apply(compose(f, g), a) = apply(f, apply(g, a))
     fn compose(f: &Self::F, g: &Self::F) -> Self::F;
-    /// For eager updates, apply() can assume to act on a leaf. For lazy updates:
-    /// Require for all f,a,b: apply(f, op(a, b)) = op(apply(f, a), apply(f, b))
-    fn apply(f: &Self::F, a: &Self::S) -> Self::S;
+    /// For point query / eager updates, apply() can assume it acts on a leaf.
+    /// For range query / lazy updates, it must satisfy the Distributive Law:
+    /// For all f,a,b, apply(f, op(a, b)) = op(apply(f, a), apply(f, b))
+    /// The `size` parameter makes this law easier to satisfy in certain cases.
+    fn apply(f: &Self::F, a: &Self::S, size: i64) -> Self::S;
 }
 
 /// Range Minimum Query (RMQ), a classic application of ARQ.
@@ -42,7 +47,7 @@ impl ArqSpec for AssignMin {
     fn compose(&f: &Self::F, _: &Self::F) -> Self::F {
         f
     }
-    fn apply(&f: &Self::F, _: &Self::S) -> Self::S {
+    fn apply(&f: &Self::F, _: &Self::S, _: i64) -> Self::S {
         f
     }
 }
@@ -55,9 +60,9 @@ impl ArqSpec for AssignMin {
 ///
 /// Associated functions will panic on overflow.
 //
-// Note that the apply() operation on raw entries is undefined: while leaf nodes
-// should simply be set to f, internal nodes must be set to f * size_of_subtree.
-// Thus, our monoid type S should store the pair (entry, size_of_subtree).
+// Note that while the `size` parameter seems necessary to satisfy the
+// Distributive Law, it is merely a convenience: in essence what we've done
+// is move to the product monoid of tuples (value, size_of_subtree).
 //
 // In mathematical jargon, we say that constant assignment f(a) = f is not an
 // endomorphism on (i64, +) because f(a+b) = f != 2*f = f(a) + f(b).
@@ -66,19 +71,19 @@ impl ArqSpec for AssignMin {
 //                       = (f*s, s) + (f*t, t) = f((a,s)) + f((b,t)).
 pub enum AssignSum {}
 impl ArqSpec for AssignSum {
-    type S = (i64, i64);
+    type S = i64;
     type F = i64;
-    fn op(&(a, s): &Self::S, &(b, t): &Self::S) -> Self::S {
-        (a + b, s + t)
+    fn op(&a: &Self::S, &b: &Self::S) -> Self::S {
+        a + b
     }
     fn identity() -> Self::S {
-        (0, 0)
+        0
     }
     fn compose(&f: &Self::F, _: &Self::F) -> Self::F {
         f
     }
-    fn apply(&f: &Self::F, &(_, s): &Self::S) -> Self::S {
-        (f * s, s)
+    fn apply(&f: &Self::F, _: &Self::S, size: i64) -> Self::S {
+        f * size
     }
 }
 
@@ -104,7 +109,7 @@ impl ArqSpec for SupplyDemand {
     fn compose(_: &Self::F, _: &Self::F) -> Self::F {
         unimplemented!()
     }
-    fn apply(&(p_add, o_add): &Self::F, &(p, o, _): &Self::S) -> Self::S {
+    fn apply(&(p_add, o_add): &Self::F, &(p, o, _): &Self::S, _: i64) -> Self::S {
         let p = p + p_add;
         let o = o + o_add;
         (p, o, p.min(o))
