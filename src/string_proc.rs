@@ -1,16 +1,60 @@
 //! String processing algorithms.
 use std::cmp::{max, min};
+use std::collections::{hash_map::Entry, HashMap, VecDeque};
 
-/// Data structure for Knuth-Morris-Pratt string matching against a pattern.
-pub struct Matcher<'a, T> {
+/// Prefix trie, easily augmentable by adding more fields and/or methods
+pub struct Trie<C: std::hash::Hash + Eq> {
+    links: Vec<HashMap<C, usize>>,
+}
+
+impl<C: std::hash::Hash + Eq> Default for Trie<C> {
+    /// Creates an empty trie with a root node.
+    fn default() -> Self {
+        Self {
+            links: vec![HashMap::new()],
+        }
+    }
+}
+
+impl<C: std::hash::Hash + Eq> Trie<C> {
+    /// Inserts a word into the trie, and returns the index of its node.
+    pub fn insert(&mut self, word: impl IntoIterator<Item = C>) -> usize {
+        let mut node = 0;
+
+        for ch in word {
+            let len = self.links.len();
+            node = match self.links[node].entry(ch) {
+                Entry::Occupied(entry) => *entry.get(),
+                Entry::Vacant(entry) => {
+                    entry.insert(len);
+                    self.links.push(HashMap::new());
+                    len
+                }
+            }
+        }
+        node
+    }
+
+    /// Finds a word in the trie, and returns the index of its node.
+    pub fn get(&self, word: impl IntoIterator<Item = C>) -> Option<usize> {
+        let mut node = 0;
+        for ch in word {
+            node = *self.links[node].get(&ch)?;
+        }
+        Some(node)
+    }
+}
+
+/// Single-pattern matching with the Knuth-Morris-Pratt algorithm
+pub struct Matcher<'a, C: Eq> {
     /// The string pattern to search for.
-    pub pattern: &'a [T],
+    pub pattern: &'a [C],
     /// KMP match failure automaton. fail[i] is the length of the longest
-    /// proper prefix-suffix of pattern[0...i].
+    /// proper prefix-suffix of pattern[0..=i].
     pub fail: Vec<usize>,
 }
 
-impl<'a, T: Eq> Matcher<'a, T> {
+impl<'a, C: Eq> Matcher<'a, C> {
     /// Precomputes the automaton that allows linear-time string matching.
     ///
     /// # Example
@@ -33,7 +77,7 @@ impl<'a, T: Eq> Matcher<'a, T> {
     /// # Panics
     ///
     /// Panics if pattern is empty.
-    pub fn new(pattern: &'a [T]) -> Self {
+    pub fn new(pattern: &'a [C]) -> Self {
         let mut fail = Vec::with_capacity(pattern.len());
         fail.push(0);
         let mut len = 0;
@@ -49,10 +93,10 @@ impl<'a, T: Eq> Matcher<'a, T> {
         Self { pattern, fail }
     }
 
-    /// KMP algorithm, sets matches[i] = length of longest prefix of pattern
-    /// matching a suffix of text[0...i].
-    pub fn kmp_match(&self, text: &[T]) -> Vec<usize> {
-        let mut matches = Vec::with_capacity(text.len());
+    /// KMP algorithm, sets match_lens[i] = length of longest prefix of pattern
+    /// matching a suffix of text[0..=i].
+    pub fn kmp_match(&self, text: &[C]) -> Vec<usize> {
+        let mut match_lens = Vec::with_capacity(text.len());
         let mut len = 0;
         for ch in text {
             if len == self.pattern.len() {
@@ -64,9 +108,94 @@ impl<'a, T: Eq> Matcher<'a, T> {
             if self.pattern[len] == *ch {
                 len += 1;
             }
-            matches.push(len);
+            match_lens.push(len);
         }
-        matches
+        match_lens
+    }
+}
+
+/// Multi-pattern matching with the Aho-Corasick algorithm
+pub struct MultiMatcher<C: std::hash::Hash + Eq> {
+    /// A prefix trie storing the string patterns to search for.
+    pub trie: Trie<C>,
+    /// Stores which completed pattern string each node corresponds to.
+    pub pat_id: Vec<Option<usize>>,
+    /// Aho-Corasick failure automaton. fail[i] is the node corresponding to the
+    /// longest prefix-suffix of the node corresponding to i.
+    pub fail: Vec<usize>,
+    /// Shortcut to the next match along the failure chain, or to the root.
+    pub fast: Vec<usize>,
+}
+
+impl<C: std::hash::Hash + Eq> MultiMatcher<C> {
+    fn next(trie: &Trie<C>, fail: &[usize], mut node: usize, ch: &C) -> usize {
+        loop {
+            if let Some(&child) = trie.links[node].get(ch) {
+                return child;
+            } else if node == 0 {
+                return 0;
+            }
+            node = fail[node];
+        }
+    }
+
+    /// Precomputes the automaton that allows linear-time string matching.
+    /// If there are duplicate patterns, all but one copy will be ignored.
+    pub fn new(patterns: Vec<impl IntoIterator<Item = C>>) -> Self {
+        let mut trie = Trie::default();
+        let pat_nodes: Vec<usize> = patterns.into_iter().map(|pat| trie.insert(pat)).collect();
+
+        let mut pat_id = vec![None; trie.links.len()];
+        for (i, node) in pat_nodes.into_iter().enumerate() {
+            pat_id[node] = Some(i);
+        }
+
+        let mut fail = vec![0; trie.links.len()];
+        let mut fast = vec![0; trie.links.len()];
+        let mut q: VecDeque<usize> = trie.links[0].values().cloned().collect();
+
+        while let Some(node) = q.pop_front() {
+            for (ch, &child) in &trie.links[node] {
+                let nx = Self::next(&trie, &fail, fail[node], &ch);
+                fail[child] = nx;
+                fast[child] = if pat_id[nx].is_some() { nx } else { fast[nx] };
+                q.push_back(child);
+            }
+        }
+
+        Self {
+            trie,
+            pat_id,
+            fail,
+            fast,
+        }
+    }
+
+    /// Aho-Corasick algorithm, sets match_nodes[i] = node corresponding to
+    /// longest prefix of some pattern matching a suffix of text[0..=i].
+    pub fn ac_match(&self, text: &[C]) -> Vec<usize> {
+        let mut match_nodes = Vec::with_capacity(text.len());
+        let mut node = 0;
+        for ch in text {
+            node = Self::next(&self.trie, &self.fail, node, &ch);
+            match_nodes.push(node);
+        }
+        match_nodes
+    }
+
+    /// For each non-empty match, returns where in the text it ends, and the index
+    /// of the corresponding pattern.
+    pub fn get_end_pos_and_pat_id(&self, match_nodes: &[usize]) -> Vec<(usize, usize)> {
+        let mut res = vec![];
+        for (text_pos, &(mut node)) in match_nodes.iter().enumerate() {
+            while node != 0 {
+                if let Some(id) = self.pat_id[node] {
+                    res.push((text_pos + 1, id));
+                }
+                node = self.fast[node];
+            }
+        }
+        res
     }
 }
 
@@ -155,39 +284,6 @@ impl SuffixArray {
     }
 }
 
-/// Prefix trie
-#[derive(Default)]
-pub struct Trie<K: std::hash::Hash + Eq> {
-    count: usize,
-    branches: std::collections::HashMap<K, Trie<K>>,
-}
-
-impl<K: std::hash::Hash + Eq + Default> Trie<K> {
-    /// Inserts a word into the trie.
-    pub fn insert(&mut self, word: impl IntoIterator<Item = K>) {
-        let mut node = self;
-        node.count += 1;
-
-        for ch in word {
-            node = { node }.branches.entry(ch).or_default();
-            node.count += 1;
-        }
-    }
-
-    /// Computes the number of inserted words that start with the given prefix.
-    pub fn get(&self, prefix: impl IntoIterator<Item = K>) -> usize {
-        let mut node = self;
-
-        for ch in prefix {
-            match node.branches.get(&ch) {
-                Some(sub) => node = sub,
-                None => return 0,
-            }
-        }
-        node.count
-    }
-}
-
 /// Manacher's algorithm for computing palindrome substrings in linear time.
 /// pal[2*i] = odd length of palindrome centred at text[i].
 /// pal[2*i+1] = even length of palindrome centred at text[i+0.5].
@@ -226,13 +322,34 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_kmp() {
+    fn test_kmp_matching() {
         let text = b"banana";
         let pattern = b"ana";
 
         let matches = Matcher::new(pattern).kmp_match(text);
 
         assert_eq!(matches, vec![0, 1, 2, 3, 2, 3]);
+    }
+
+    #[test]
+    fn test_ac_matching() {
+        let text = b"banana bans, apple benefits.";
+        let dict = vec![
+            "banana".bytes(),
+            "benefit".bytes(),
+            "banapple".bytes(),
+            "ban".bytes(),
+            "fit".bytes(),
+        ];
+
+        let matcher = MultiMatcher::new(dict);
+        let match_nodes = matcher.ac_match(text);
+        let end_pos_and_id = matcher.get_end_pos_and_pat_id(&match_nodes);
+
+        assert_eq!(
+            end_pos_and_id,
+            vec![(3, 3), (6, 0), (10, 3), (26, 1), (26, 4)]
+        );
     }
 
     #[test]
@@ -256,24 +373,6 @@ mod test {
         for (p, &r) in sfx2.rank.last().unwrap().iter().enumerate() {
             assert_eq!(sfx2.sfx[r], p);
         }
-    }
-
-    #[test]
-    fn test_trie() {
-        let dict = vec!["banana", "benefit", "banapple", "ban"];
-
-        let trie = dict.into_iter().fold(Trie::default(), |mut trie, word| {
-            Trie::insert(&mut trie, word.bytes());
-            trie
-        });
-
-        assert_eq!(trie.get("".bytes()), 4);
-        assert_eq!(trie.get("b".bytes()), 4);
-        assert_eq!(trie.get("ba".bytes()), 3);
-        assert_eq!(trie.get("ban".bytes()), 3);
-        assert_eq!(trie.get("bana".bytes()), 2);
-        assert_eq!(trie.get("banan".bytes()), 1);
-        assert_eq!(trie.get("bane".bytes()), 0);
     }
 
     #[test]

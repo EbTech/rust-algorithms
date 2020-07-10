@@ -5,7 +5,7 @@
 
 A collection of classic data structures and algorithms, emphasizing usability, beauty and clarity over full generality. As such, this should be viewed not as a blackbox *library*, but as a whitebox *cookbook* demonstrating the design and implementation of algorithms. I hope it will be useful to students and educators, as well as fans of algorithmic programming contests.
 
-This repository is distributed under the [MIT License](LICENSE). The license text need not be included in contest submissions, though I would appreciate linking back to this repo for others to find. Enjoy!
+This repository is distributed under the [MIT License](LICENSE). Contest submissions need not include the license text. Enjoy!
 
 ## For Students and Educators
 
@@ -52,4 +52,4 @@ Rather than try to persuade you with words, this repository aims to show by exam
 - [Arithmetic](src/math/num.rs): rational and complex numbers, linear algebra, safe modular arithmetic
 - [FFT](src/math/fft.rs): fast Fourier transform, number theoretic transform, convolution
 - [Scanner](src/scanner.rs): utility for reading input data ergonomically
-- [String processing](src/string_proc.rs): Knuth-Morris-Pratt string matching, suffix arrays, Manacher's palindrome search
+- [String processing](src/string_proc.rs): Knuth-Morris-Pratt and Aho-Corasick string matching, suffix array, Manacher's linear-time palindrome search
