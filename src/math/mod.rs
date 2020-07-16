@@ -29,6 +29,64 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
     }
 }
 
+fn mod_mul(a: i64, b: i64, m: i64) -> i64 {
+    (a as i128 * b as i128 % m as i128) as i64
+}
+
+/// Assuming m >= 2 and exp >= 0, finds base ^ exp % m in logarithmic time
+pub fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
+    assert!(m >= 2);
+    assert!(exp >= 0);
+    let mut ans = 1 % m;
+    base = base % m;
+    while exp > 0 {
+        if exp % 2 == 1 {
+            ans = mod_mul(ans, base, m);
+        }
+        base = mod_mul(base, base, m);
+        exp /= 2;
+    }
+    ans
+}
+
+const BASES: [i64; 12] = [ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37 ];
+fn miller_test(n: i64, d: i64, r: i64, a: i64) -> bool {
+    let mut x = mod_exp(a, d, n);
+    if x == 1 || x == n - 1 {
+        return true;
+    }
+    for _ in 0..r {
+        x = mod_mul(x, x, n);
+        if x == n - 1 {
+            return true;
+        }
+    }
+    false
+}
+
+// Assuming x >= 0, returns true if x is prime
+pub fn is_prime(n: i64) -> bool {
+    assert!(n >= 0);
+    if n <= 1 {
+        return false;
+    }
+    if n <= 3 {
+        return true;
+    }
+    let mut d = n - 1;
+    let mut r = 0;
+    while d % 2 == 0 {
+        d /= 2;
+        r += 1;
+    }
+    for base in BASES.iter() {
+        if *base <= n - 2 && !miller_test(n, d, r, *base) {
+            return false;
+        }
+    }
+    true
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -43,5 +101,24 @@ mod test {
 
         assert_eq!(canon_egcd(a, b, d), Some((d, -2, 1)));
         assert_eq!(canon_egcd(b, a, d), Some((d, -1, 3)));
+    }
+
+    #[test]
+    fn test_fpow() {
+        let m = 1_000_000_007;
+        assert_eq!(mod_exp(0, 0, m), 1);
+        assert_eq!(mod_exp(0, 1, m), 0);
+        assert_eq!(mod_exp(0, 10, m), 0);
+        assert_eq!(mod_exp(123, 456, m), 565291922);
+    }
+
+    #[test]
+    fn test_miller() {
+        assert_eq!(is_prime(2), true);
+        assert_eq!(is_prime(4), false);
+        assert_eq!(is_prime(269), true);
+        assert_eq!(is_prime(1_000_000_007), true);
+        assert_eq!(is_prime((1 << 61) - 1), true);
+        assert_eq!(is_prime(7156857700403137441), false);
     }
 }
