@@ -29,8 +29,16 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
     }
 }
 
+fn pos_mod(n: i64, m: i64) -> i64 {
+    if n < 0 {
+        n + m
+    } else {
+        n
+    }
+}
+
 fn mod_mul(a: i64, b: i64, m: i64) -> i64 {
-    (a as i128 * b as i128 % m as i128) as i64
+    pos_mod((a as i128 * b as i128 % m as i128) as i64, m)
 }
 
 /// Assuming m >= 2 and exp >= 0, finds base ^ exp % m in logarithmic time
@@ -46,10 +54,14 @@ pub fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
         base = mod_mul(base, base, m);
         exp /= 2;
     }
-    ans
+    pos_mod(ans, m)
 }
 
-const BASES: [i64; 12] = [ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37 ];
+/// Assuming m >= 2, finds multiplicative inverse of n under modulus m
+pub fn mod_inv(n: i64, m: i64) -> i64 {
+    mod_exp(n, m - 2, m)
+}
+
 fn miller_test(n: i64, d: i64, r: i64, a: i64) -> bool {
     let mut x = mod_exp(a, d, n);
     if x == 1 || x == n - 1 {
@@ -64,7 +76,8 @@ fn miller_test(n: i64, d: i64, r: i64, a: i64) -> bool {
     false
 }
 
-// Assuming x >= 0, returns true if x is prime
+const BASES: [i64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
+/// Assuming x >= 0, returns true if x is prime
 pub fn is_prime(n: i64) -> bool {
     assert!(n >= 0);
     if n <= 1 {
@@ -87,6 +100,32 @@ pub fn is_prime(n: i64) -> bool {
     true
 }
 
+fn pollard_rho(n: i64) -> i64 {
+    for a in 1..n {
+        let f = |x| pos_mod(mod_mul(x, x, n) + a, n);
+        for b in 0..n {
+            let mut x = b;
+            let mut y = b;
+            loop {
+                x = f(x);
+                y = f(f(y));
+                let p = num::fast_gcd((x - y).abs(), n);
+                if p > 1 && p < n {
+                    return p;
+                }
+                if x == y {
+                    break;
+                }
+            }
+        }
+    }
+    panic!("No divisor found!");
+}
+
+pub fn factorize(n: i64) -> Vec<i64> {
+    Vec::new()
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -104,12 +143,21 @@ mod test {
     }
 
     #[test]
-    fn test_fpow() {
+    fn test_modexp() {
         let m = 1_000_000_007;
         assert_eq!(mod_exp(0, 0, m), 1);
         assert_eq!(mod_exp(0, 1, m), 0);
         assert_eq!(mod_exp(0, 10, m), 0);
         assert_eq!(mod_exp(123, 456, m), 565291922);
+    }
+
+    #[test]
+    fn test_modinv() {
+        let m = 1_000_000_007;
+        assert_eq!(mod_inv(1, m), 1);
+        assert_eq!(mod_inv(-1, m), m - 1);
+        assert_eq!(mod_inv(3301, m), 756740387);
+        assert_eq!(mod_inv(756740387, m), 3301);
     }
 
     #[test]
@@ -120,5 +168,10 @@ mod test {
         assert_eq!(is_prime(1_000_000_007), true);
         assert_eq!(is_prime((1 << 61) - 1), true);
         assert_eq!(is_prime(7156857700403137441), false);
+    }
+
+    #[test]
+    fn test_pollard() {
+        println!("{}", pollard_rho(4));
     }
 }
