@@ -131,18 +131,16 @@ pub fn factorize(n: i64) -> Vec<i64> {
     }
     let mut stack = Vec::new();
     stack.push(n);
-    while !stack.is_empty() {
-        let x = stack[stack.len() - 1];
-        stack.pop();
-        if is_prime(x) {
-            factors.push(x);
-        } else if x % 2 == 0 {
+    while let Some(top) = stack.pop() {
+        if is_prime(top) {
+            factors.push(top);
+        } else if top % 2 == 0 {
             stack.push(2);
-            stack.push(x / 2);
+            stack.push(top / 2);
         } else {
-            let div = pollard_rho(x);
+            let div = pollard_rho(top);
             stack.push(div);
-            stack.push(x / div);
+            stack.push(top / div);
         }
     }
     factors.sort();
