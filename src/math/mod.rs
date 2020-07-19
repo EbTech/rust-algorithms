@@ -122,8 +122,31 @@ fn pollard_rho(n: i64) -> i64 {
     panic!("No divisor found!");
 }
 
+/// Assuming x >= 0, finds the prime factorization of n
 pub fn factorize(n: i64) -> Vec<i64> {
-    Vec::new()
+    assert!(n >= 0);
+    let mut factors = Vec::new();
+    if n < 2 {
+        return factors;
+    }
+    let mut stack = Vec::new();
+    stack.push(n);
+    while !stack.is_empty() {
+        let x = stack[stack.len() - 1];
+        stack.pop();
+        if is_prime(x) {
+            factors.push(x);
+        } else if x % 2 == 0 {
+            stack.push(2);
+            stack.push(x / 2);
+        } else {
+            let div = pollard_rho(x);
+            stack.push(div);
+            stack.push(x / div);
+        }
+    }
+    factors.sort();
+    factors
 }
 
 #[cfg(test)]
@@ -172,6 +195,10 @@ mod test {
 
     #[test]
     fn test_pollard() {
-        println!("{}", pollard_rho(4));
+        assert_eq!(factorize(1), Vec::new());
+        assert_eq!(factorize(2), vec![2]);
+        assert_eq!(factorize(4), vec![2, 2]);
+        assert_eq!(factorize(12), vec![2, 2, 3]);
+        assert_eq!(factorize(7156857700403137441), vec![11, 13, 17, 19, 29, 37, 41, 43, 61, 97, 109, 127]);
     }
 }
