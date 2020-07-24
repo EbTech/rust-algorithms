@@ -41,9 +41,9 @@ fn mod_mul(a: i64, b: i64, m: i64) -> i64 {
     pos_mod((a as i128 * b as i128 % m as i128) as i64, m)
 }
 
-/// Assuming m >= 2 and exp >= 0, finds base ^ exp % m in logarithmic time
-pub fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
-    assert!(m >= 2);
+/// Assuming m >= 1 and exp >= 0, finds base ^ exp % m in logarithmic time
+fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
+    assert!(m >= 1);
     assert!(exp >= 0);
     let mut ans = 1 % m;
     base = base % m;
@@ -58,7 +58,7 @@ pub fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
 }
 
 /// Assuming m >= 2, finds multiplicative inverse of n under modulus m
-pub fn mod_inv(n: i64, m: i64) -> i64 {
+fn mod_inv(n: i64, m: i64) -> i64 {
     mod_exp(n, m - 2, m)
 }
 
@@ -86,12 +86,8 @@ pub fn is_prime(n: i64) -> bool {
     if n <= 3 {
         return true;
     }
-    let mut d = n - 1;
-    let mut r = 0;
-    while d % 2 == 0 {
-        d /= 2;
-        r += 1;
-    }
+    let r = (n - 1).trailing_zeros() as i64;
+    let d = (n - 1) >> r;
     for base in BASES.iter() {
         if *base <= n - 2 && !miller_test(n, d, r, *base) {
             return false;
@@ -109,7 +105,7 @@ fn pollard_rho(n: i64) -> i64 {
             loop {
                 x = f(x);
                 y = f(f(y));
-                let p = num::fast_gcd((x - y).abs(), n);
+                let p = num::fast_gcd(x - y, n);
                 if p > 1 && p < n {
                     return p;
                 }
@@ -122,9 +118,9 @@ fn pollard_rho(n: i64) -> i64 {
     panic!("No divisor found!");
 }
 
-/// Assuming x >= 0, finds the prime factorization of n
+/// Assuming x >= 1, finds the prime factorization of n
 pub fn factorize(n: i64) -> Vec<i64> {
-    assert!(n >= 0);
+    assert!(n >= 1);
     let mut factors = Vec::new();
     if n < 2 {
         return factors;
@@ -135,7 +131,7 @@ pub fn factorize(n: i64) -> Vec<i64> {
         if is_prime(top) {
             factors.push(top);
         } else if top % 2 == 0 {
-            stack.push(2);
+            factors.push(2);
             stack.push(top / 2);
         } else {
             let div = pollard_rho(top);
@@ -143,7 +139,7 @@ pub fn factorize(n: i64) -> Vec<i64> {
             stack.push(top / div);
         }
     }
-    factors.sort();
+    factors.sort_unstable();
     factors
 }
 
