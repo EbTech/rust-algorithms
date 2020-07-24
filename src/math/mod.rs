@@ -83,7 +83,7 @@ pub fn is_prime(n: i64) -> bool {
     if n <= 1 {
         return false;
     }
-    if n <= 3 {
+    if n <= 3 { 
         return true;
     }
     let r = (n - 1).trailing_zeros() as i64;
@@ -99,18 +99,17 @@ pub fn is_prime(n: i64) -> bool {
 fn pollard_rho(n: i64) -> i64 {
     for a in 1..n {
         let f = |x| pos_mod(mod_mul(x, x, n) + a, n);
-        for b in 0..n {
-            let mut x = b;
-            let mut y = b;
-            loop {
-                x = f(x);
-                y = f(f(y));
-                let p = num::fast_gcd(x - y, n);
-                if p > 1 && p < n {
-                    return p;
-                }
-                if x == y {
+        let mut x = 2;
+        let mut y = 2;
+        loop {
+            x = f(x);
+            y = f(f(y));
+            let p = num::fast_gcd(x - y, n);
+            if p > 1 {
+                if p == n {
                     break;
+                } else {
+                    return p;
                 }
             }
         }
