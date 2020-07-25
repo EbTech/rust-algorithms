@@ -57,17 +57,12 @@ fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
     pos_mod(ans, m)
 }
 
-/// Assuming m >= 2, finds multiplicative inverse of n under modulus m
-fn mod_inv(n: i64, m: i64) -> i64 {
-    mod_exp(n, m - 2, m)
-}
-
-fn miller_test(n: i64, d: i64, r: i64, a: i64) -> bool {
+fn is_strong_probable_prime(n: i64, d: i64, r: i64, a: i64) -> bool {
     let mut x = mod_exp(a, d, n);
     if x == 1 || x == n - 1 {
         return true;
     }
-    for _ in 0..r {
+    for _ in 0..(r -1) {
         x = mod_mul(x, x, n);
         if x == n - 1 {
             return true;
@@ -80,20 +75,15 @@ const BASES: [i64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
 /// Assuming x >= 0, returns true if x is prime
 pub fn is_prime(n: i64) -> bool {
     assert!(n >= 0);
-    if n <= 1 {
-        return false;
-    }
-    if n <= 3 { 
-        return true;
-    }
+    match n {
+        0 | 1 => return false,
+        2 | 3 => return true,
+        _ if n % 2 == 0 => return false,
+        _ => { }
+    };
     let r = (n - 1).trailing_zeros() as i64;
     let d = (n - 1) >> r;
-    for base in BASES.iter() {
-        if *base <= n - 2 && !miller_test(n, d, r, *base) {
-            return false;
-        }
-    }
-    true
+    BASES.iter().all(|&base| base > n - 2 || is_strong_probable_prime(n, d, r, base))
 }
 
 fn pollard_rho(n: i64) -> i64 {
@@ -168,19 +158,13 @@ mod test {
     }
 
     #[test]
-    fn test_modinv() {
-        let m = 1_000_000_007;
-        assert_eq!(mod_inv(1, m), 1);
-        assert_eq!(mod_inv(-1, m), m - 1);
-        assert_eq!(mod_inv(3301, m), 756740387);
-        assert_eq!(mod_inv(756740387, m), 3301);
-    }
-
-    #[test]
     fn test_miller() {
         assert_eq!(is_prime(2), true);
         assert_eq!(is_prime(4), false);
+        assert_eq!(is_prime(6), false);
+        assert_eq!(is_prime(8), false);
         assert_eq!(is_prime(269), true);
+        assert_eq!(is_prime(1000), false);
         assert_eq!(is_prime(1_000_000_007), true);
         assert_eq!(is_prime((1 << 61) - 1), true);
         assert_eq!(is_prime(7156857700403137441), false);
