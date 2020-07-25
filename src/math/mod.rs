@@ -62,7 +62,7 @@ fn is_strong_probable_prime(n: i64, d: i64, r: i64, a: i64) -> bool {
     if x == 1 || x == n - 1 {
         return true;
     }
-    for _ in 0..(r -1) {
+    for _ in 0..(r - 1) {
         x = mod_mul(x, x, n);
         if x == n - 1 {
             return true;
@@ -79,11 +79,13 @@ pub fn is_prime(n: i64) -> bool {
         0 | 1 => return false,
         2 | 3 => return true,
         _ if n % 2 == 0 => return false,
-        _ => { }
+        _ => {}
     };
     let r = (n - 1).trailing_zeros() as i64;
     let d = (n - 1) >> r;
-    BASES.iter().all(|&base| base > n - 2 || is_strong_probable_prime(n, d, r, base))
+    BASES
+        .iter()
+        .all(|&base| base > n - 2 || is_strong_probable_prime(n, d, r, base))
 }
 
 fn pollard_rho(n: i64) -> i64 {
@@ -115,10 +117,10 @@ pub fn factorize(n: i64) -> Vec<i64> {
     }
     let r = n.trailing_zeros();
     let mut factors = vec![2; r as usize];
-    let mut stack = vec![n >> r];
-    if stack[0] == 1 {
-        stack.pop();
-    }
+    let mut stack = match n >> r {
+        1 => Vec::new(),
+        x => vec![x]
+    };
     while let Some(top) = stack.pop() {
         if is_prime(top) {
             factors.push(top);
@@ -176,6 +178,9 @@ mod test {
         assert_eq!(factorize(2), vec![2]);
         assert_eq!(factorize(4), vec![2, 2]);
         assert_eq!(factorize(12), vec![2, 2, 3]);
-        assert_eq!(factorize(7156857700403137441), vec![11, 13, 17, 19, 29, 37, 41, 43, 61, 97, 109, 127]);
+        assert_eq!(
+            factorize(7156857700403137441),
+            vec![11, 13, 17, 19, 29, 37, 41, 43, 61, 97, 109, 127]
+        );
     }
 }
