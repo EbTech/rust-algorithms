@@ -112,9 +112,6 @@ fn pollard_rho(n: i64) -> i64 {
 /// Assuming x >= 1, finds the prime factorization of n
 pub fn factorize(n: i64) -> Vec<i64> {
     assert!(n >= 1);
-    if n == 1 {
-        return Vec::new();
-    }
     let r = n.trailing_zeros();
     let mut factors = vec![2; r as usize];
     let mut stack = match n >> r {
