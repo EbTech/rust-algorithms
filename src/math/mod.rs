@@ -29,6 +29,7 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
     }
 }
 
+// TODO: deduplicate modular arithmetic code with num::Field
 fn pos_mod(n: i64, m: i64) -> i64 {
     if n < 0 {
         n + m
@@ -36,17 +37,13 @@ fn pos_mod(n: i64, m: i64) -> i64 {
         n
     }
 }
-
 fn mod_mul(a: i64, b: i64, m: i64) -> i64 {
     pos_mod((a as i128 * b as i128 % m as i128) as i64, m)
 }
-
-/// Assuming m >= 1 and exp >= 0, finds base ^ exp % m in logarithmic time
-fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
+fn mod_exp(mut base: i64, mut exp: u64, m: i64) -> i64 {
     assert!(m >= 1);
-    assert!(exp >= 0);
     let mut ans = 1 % m;
-    base = base % m;
+    base %= m;
     while exp > 0 {
         if exp % 2 == 1 {
             ans = mod_mul(ans, base, m);
@@ -57,12 +54,12 @@ fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
     pos_mod(ans, m)
 }
 
-fn is_strong_probable_prime(n: i64, d: i64, r: i64, a: i64) -> bool {
-    let mut x = mod_exp(a, d, n);
+fn is_strong_probable_prime(n: i64, exp: u64, r: i64, a: i64) -> bool {
+    let mut x = mod_exp(a, exp, n);
     if x == 1 || x == n - 1 {
         return true;
     }
-    for _ in 0..(r - 1) {
+    for _ in 1..r {
         x = mod_mul(x, x, n);
         if x == n - 1 {
             return true;
@@ -71,21 +68,22 @@ fn is_strong_probable_prime(n: i64, d: i64, r: i64, a: i64) -> bool {
     false
 }
 
-const BASES: [i64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
-/// Assuming x >= 0, returns true if x is prime
+/// Assuming x >= 0, returns whether x is prime
 pub fn is_prime(n: i64) -> bool {
+    const BASES: [i64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
     assert!(n >= 0);
     match n {
-        0 | 1 => return false,
-        2 | 3 => return true,
-        _ if n % 2 == 0 => return false,
-        _ => {}
-    };
-    let r = (n - 1).trailing_zeros() as i64;
-    let d = (n - 1) >> r;
-    BASES
-        .iter()
-        .all(|&base| base > n - 2 || is_strong_probable_prime(n, d, r, base))
+        0 | 1 => false,
+        2 | 3 => true,
+        _ if n % 2 == 0 => false,
+        _ => {
+            let r = (n - 1).trailing_zeros() as i64;
+            let exp = (n - 1) as u64 >> r;
+            BASES
+                .iter()
+                .all(|&base| base > n - 2 || is_strong_probable_prime(n, exp, r, base))
+        }
+    }
 }
 
 fn pollard_rho(n: i64) -> i64 {
@@ -96,13 +94,11 @@ fn pollard_rho(n: i64) -> i64 {
         loop {
             x = f(x);
             y = f(f(y));
-            let p = num::fast_gcd(x - y, n);
-            if p > 1 {
-                if p == n {
-                    break;
-                } else {
-                    return p;
-                }
+            let div = num::fast_gcd(x - y, n);
+            if div == n {
+                break;
+            } else if div > 1 {
+                return div;
             }
         }
     }
@@ -110,13 +106,14 @@ fn pollard_rho(n: i64) -> i64 {
 }
 
 /// Assuming x >= 1, finds the prime factorization of n
+/// TODO: pollard_rho needs randomization to ensure correctness in contest settings!
 pub fn factorize(n: i64) -> Vec<i64> {
     assert!(n >= 1);
-    let r = n.trailing_zeros();
-    let mut factors = vec![2; r as usize];
+    let r = n.trailing_zeros() as usize;
+    let mut factors = vec![2; r];
     let mut stack = match n >> r {
-        1 => Vec::new(),
-        x => vec![x]
+        1 => vec![],
+        x => vec![x],
     };
     while let Some(top) = stack.pop() {
         if is_prime(top) {
@@ -171,7 +168,7 @@ mod test {
 
     #[test]
     fn test_pollard() {
-        assert_eq!(factorize(1), Vec::new());
+        assert_eq!(factorize(1), vec![]);
         assert_eq!(factorize(2), vec![2]);
         assert_eq!(factorize(4), vec![2, 2]);
         assert_eq!(factorize(12), vec![2, 2, 3]);

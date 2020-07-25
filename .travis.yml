@@ -1,6 +1,6 @@
 language: rust
 rust:
-  - 1.35.0 # Version currently supported by Codeforces
+  - 1.42.0 # Version currently supported by Codeforces
   - stable
   - beta
   - nightly

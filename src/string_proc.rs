@@ -322,6 +322,22 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_trie() {
+        let dict = vec!["banana", "benefit", "banapple", "ban"];
+
+        let trie = dict.into_iter().fold(Trie::default(), |mut trie, word| {
+            trie.insert(word.bytes());
+            trie
+        });
+
+        assert_eq!(trie.get("".bytes()), Some(0));
+        assert_eq!(trie.get("b".bytes()), Some(1));
+        assert_eq!(trie.get("banana".bytes()), Some(6));
+        assert_eq!(trie.get("be".bytes()), Some(7));
+        assert_eq!(trie.get("bane".bytes()), None);
+    }
+
+    #[test]
     fn test_kmp_matching() {
         let text = b"banana";
         let pattern = b"ana";
