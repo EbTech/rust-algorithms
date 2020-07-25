@@ -110,18 +110,18 @@ fn pollard_rho(n: i64) -> i64 {
 /// Assuming x >= 1, finds the prime factorization of n
 pub fn factorize(n: i64) -> Vec<i64> {
     assert!(n >= 1);
-    let mut factors = Vec::new();
-    if n < 2 {
-        return factors;
+    if n == 1 {
+        return Vec::new();
     }
-    let mut stack = Vec::new();
-    stack.push(n);
+    let r = n.trailing_zeros();
+    let mut factors = vec![2; r as usize];
+    let mut stack = vec![n >> r];
+    if stack[0] == 1 {
+        stack.pop();
+    }
     while let Some(top) = stack.pop() {
         if is_prime(top) {
             factors.push(top);
-        } else if top % 2 == 0 {
-            factors.push(2);
-            stack.push(top / 2);
         } else {
             let div = pollard_rho(top);
             stack.push(div);
