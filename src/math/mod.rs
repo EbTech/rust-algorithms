@@ -29,6 +29,108 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
     }
 }
 
+fn pos_mod(n: i64, m: i64) -> i64 {
+    if n < 0 {
+        n + m
+    } else {
+        n
+    }
+}
+
+fn mod_mul(a: i64, b: i64, m: i64) -> i64 {
+    pos_mod((a as i128 * b as i128 % m as i128) as i64, m)
+}
+
+/// Assuming m >= 1 and exp >= 0, finds base ^ exp % m in logarithmic time
+fn mod_exp(mut base: i64, mut exp: i64, m: i64) -> i64 {
+    assert!(m >= 1);
+    assert!(exp >= 0);
+    let mut ans = 1 % m;
+    base = base % m;
+    while exp > 0 {
+        if exp % 2 == 1 {
+            ans = mod_mul(ans, base, m);
+        }
+        base = mod_mul(base, base, m);
+        exp /= 2;
+    }
+    pos_mod(ans, m)
+}
+
+fn is_strong_probable_prime(n: i64, d: i64, r: i64, a: i64) -> bool {
+    let mut x = mod_exp(a, d, n);
+    if x == 1 || x == n - 1 {
+        return true;
+    }
+    for _ in 0..(r - 1) {
+        x = mod_mul(x, x, n);
+        if x == n - 1 {
+            return true;
+        }
+    }
+    false
+}
+
+const BASES: [i64; 12] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
+/// Assuming x >= 0, returns true if x is prime
+pub fn is_prime(n: i64) -> bool {
+    assert!(n >= 0);
+    match n {
+        0 | 1 => return false,
+        2 | 3 => return true,
+        _ if n % 2 == 0 => return false,
+        _ => {}
+    };
+    let r = (n - 1).trailing_zeros() as i64;
+    let d = (n - 1) >> r;
+    BASES
+        .iter()
+        .all(|&base| base > n - 2 || is_strong_probable_prime(n, d, r, base))
+}
+
+fn pollard_rho(n: i64) -> i64 {
+    for a in 1..n {
+        let f = |x| pos_mod(mod_mul(x, x, n) + a, n);
+        let mut x = 2;
+        let mut y = 2;
+        loop {
+            x = f(x);
+            y = f(f(y));
+            let p = num::fast_gcd(x - y, n);
+            if p > 1 {
+                if p == n {
+                    break;
+                } else {
+                    return p;
+                }
+            }
+        }
+    }
+    panic!("No divisor found!");
+}
+
+/// Assuming x >= 1, finds the prime factorization of n
+pub fn factorize(n: i64) -> Vec<i64> {
+    assert!(n >= 1);
+    let r = n.trailing_zeros();
+    let mut factors = vec![2; r as usize];
+    let mut stack = match n >> r {
+        1 => Vec::new(),
+        x => vec![x]
+    };
+    while let Some(top) = stack.pop() {
+        if is_prime(top) {
+            factors.push(top);
+        } else {
+            let div = pollard_rho(top);
+            stack.push(div);
+            stack.push(top / div);
+        }
+    }
+    factors.sort_unstable();
+    factors
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -43,5 +145,39 @@ mod test {
 
         assert_eq!(canon_egcd(a, b, d), Some((d, -2, 1)));
         assert_eq!(canon_egcd(b, a, d), Some((d, -1, 3)));
+    }
+
+    #[test]
+    fn test_modexp() {
+        let m = 1_000_000_007;
+        assert_eq!(mod_exp(0, 0, m), 1);
+        assert_eq!(mod_exp(0, 1, m), 0);
+        assert_eq!(mod_exp(0, 10, m), 0);
+        assert_eq!(mod_exp(123, 456, m), 565291922);
+    }
+
+    #[test]
+    fn test_miller() {
+        assert_eq!(is_prime(2), true);
+        assert_eq!(is_prime(4), false);
+        assert_eq!(is_prime(6), false);
+        assert_eq!(is_prime(8), false);
+        assert_eq!(is_prime(269), true);
+        assert_eq!(is_prime(1000), false);
+        assert_eq!(is_prime(1_000_000_007), true);
+        assert_eq!(is_prime((1 << 61) - 1), true);
+        assert_eq!(is_prime(7156857700403137441), false);
+    }
+
+    #[test]
+    fn test_pollard() {
+        assert_eq!(factorize(1), Vec::new());
+        assert_eq!(factorize(2), vec![2]);
+        assert_eq!(factorize(4), vec![2, 2]);
+        assert_eq!(factorize(12), vec![2, 2, 3]);
+        assert_eq!(
+            factorize(7156857700403137441),
+            vec![11, 13, 17, 19, 29, 37, 41, 43, 61, 97, 109, 127]
+        );
     }
 }
