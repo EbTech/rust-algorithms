@@ -15,15 +15,23 @@ pub trait ArqSpec {
     /// Must satisfy the Identity Law:
     /// For all a, op(a, identity()) = op(identity(), a) = a
     fn identity() -> Self::S;
-    /// For point query / eager updates, compose() can be unimplemented!()
-    /// For range query / lazy updates, it must satisfy the Composition Law:
+    /// Must satisfy the Composition Law:
     /// For all f,g,a, apply(compose(f, g), a) = apply(f, apply(g, a))
     fn compose(f: &Self::F, g: &Self::F) -> Self::F;
-    /// For point query / eager updates, apply() can assume it acts on a leaf.
-    /// For range query / lazy updates, it must satisfy the Distributive Law:
-    /// For all f,a,b, apply(f, op(a, b)) = op(apply(f, a), apply(f, b))
+    /// Must satisfy the Distributive Law:
+    /// For all f,a,b, apply(f, op(a, b), s+t) = op(apply(f, a, s), apply(f, b, t))
     /// The `size` parameter makes this law easier to satisfy in certain cases.
     fn apply(f: &Self::F, a: &Self::S, size: i64) -> Self::S;
+
+    // The following relaxations to the laws may apply.
+    // If only point updates are made, the Composition and Distributive Laws
+    // no longer apply.
+    // - compose() is never called, so it can be left unimplemented!().
+    // - apply() is only ever called on leaves, i.e., with size == 1.
+    // If only point queries are made, the Associative and Distributive Laws
+    // no longer apply.
+    // - op()'s result only matters when identity() is an argument.
+    // - apply()'s result only matters on leaves, i.e., with size == 1.
 }
 
 /// Range Minimum Query (RMQ), a classic application of ARQ.
@@ -109,7 +117,8 @@ impl ArqSpec for SupplyDemand {
     fn compose(_: &Self::F, _: &Self::F) -> Self::F {
         unimplemented!()
     }
-    fn apply(&(p_add, o_add): &Self::F, &(p, o, _): &Self::S, _: i64) -> Self::S {
+    fn apply(&(p_add, o_add): &Self::F, &(p, o, _): &Self::S, s: i64) -> Self::S {
+        assert_eq!(s, 1);
         let p = p + p_add;
         let o = o + o_add;
         (p, o, p.min(o))

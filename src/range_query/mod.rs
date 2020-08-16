@@ -6,10 +6,52 @@ pub use dynamic_arq::{ArqView, DynamicArq};
 pub use specs::ArqSpec;
 pub use static_arq::StaticArq;
 
+/// A simple data structure for coordinate compression
+pub struct SparseIndex {
+    coords: Vec<i64>
+}
+
+impl SparseIndex {
+    /// Build an index, given the full set of coordinates to compress.
+    pub fn new(mut coords: Vec<i64>) -> Self {
+        coords.sort_unstable();
+        coords.dedup();
+        Self { coords }
+    }
+
+    /// Return Ok(i) if the coordinate q appears at index i
+    /// Return Err(i) if q appears between indices i-1 and i
+    pub fn compress(&self, q: i64) -> Result<usize, usize> {
+        self.coords.binary_search(&q)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::specs::*;
     use super::*;
+
+    #[test]
+    fn test_coord_compress() {
+        let mut coords = vec![16, 99, 45, 18];
+        let index = SparseIndex::new(coords.clone());
+
+        coords.sort_unstable();
+        for (i, q) in coords.into_iter().enumerate() {
+            assert_eq!(index.compress(q - 1), Err(i));
+            assert_eq!(index.compress(q), Ok(i));
+            assert_eq!(index.compress(q + 1), Err(i + 1));
+        }
+    }
+
+    #[test]
+    fn test_range_compress() {
+        let queries = vec![(0, 10), (10, 19), (20, 29)];
+        let coords = queries.iter().flat_map(|&(i, j)| vec![i, j + 1]).collect();
+        let index = SparseIndex::new(coords);
+        
+        assert_eq!(index.coords, vec![0, 10, 11, 20, 30]);
+    }
 
     #[test]
     fn test_rmq() {
