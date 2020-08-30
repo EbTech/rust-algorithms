@@ -105,6 +105,7 @@ impl MoState for DistinctVals {
 /// evaluated using the convex hull trick with square root decomposition.
 pub struct PiecewiseLinearFn {
     sorted_lines: Vec<(i64, i64)>,
+    intersections: Vec<f64>,
     recent_lines: Vec<(i64, i64)>,
     merge_threshold: usize,
 }
@@ -116,6 +117,7 @@ impl PiecewiseLinearFn {
     pub fn with_merge_threshold(merge_threshold: usize) -> Self {
         Self {
             sorted_lines: vec![],
+            intersections: vec![],
             recent_lines: vec![],
             merge_threshold,
         }
@@ -129,14 +131,51 @@ impl PiecewiseLinearFn {
     fn update_envelope(&mut self) {
         self.recent_lines.extend(self.sorted_lines.drain(..));
         self.recent_lines.sort_unstable();
-        for (slope, intercept) in self.recent_lines.drain(..) {
-            // TODO: do convex hull trick algorithm
-            self.sorted_lines.push((slope, intercept));
+        self.intersections.clear();
+
+        'outer: for (m1, b1) in self.recent_lines.drain(..) {
+            while let Some(&(m2, b2)) = self.sorted_lines.last() {
+                // The lines are sorted by intercept so an incoming line with
+                // the same slope can never beat the previous line.
+                if m2 == m1 {
+                    continue 'outer;
+                }
+                let new_intersection = (b1 - b2) as f64 / (m2 - m1) as f64;
+                if let Some(&last_intersection) = self.intersections.last() {
+                    if new_intersection < last_intersection {
+                        self.intersections.pop();
+                        self.sorted_lines.pop();
+                        continue;
+                    }
+                }
+                self.intersections.push(new_intersection);
+                break;
+            }
+            self.sorted_lines.push((m1, b1));
         }
     }
 
+    fn eval_in_envelope(&self, x: i64) -> i64 {
+        // Wow is this messy
+        let idx = match self
+            .intersections
+            .binary_search_by(|&y| y.partial_cmp(&(x as f64)).unwrap())
+        {
+            Ok(k) => k,
+            Err(k) => k,
+        };
+        let (m, b) = self.sorted_lines[idx];
+        m * x + b
+    }
+
     fn eval_helper(&self, x: i64) -> i64 {
-        0 // TODO: pick actual minimum, or infinity if empty
+        self.sorted_lines
+            .iter()
+            .map(|&(m, b)| m * x + b)
+            // I'm probably being too tricky
+            .chain(std::iter::once(self.eval_in_envelope(x)))
+            .min()
+            .unwrap()
     }
 
     /// Evaluates the function at x
