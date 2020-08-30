@@ -156,6 +156,9 @@ impl PiecewiseLinearFn {
     }
 
     fn eval_in_envelope(&self, x: i64) -> i64 {
+        if self.sorted_lines.is_empty() {
+            return i64::MAX;
+        }
         // Wow is this messy
         let idx = match self
             .intersections
