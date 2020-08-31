@@ -142,7 +142,7 @@ impl PiecewiseLinearFn {
                 if m2 == m1 {
                     continue 'outer;
                 }
-                let new_intersection = (b1 - b2) as f64 / (m2 - m1) as f64;
+                let new_intersection = (b1 - b2) / (m2 - m1);
                 if &new_intersection > self.intersections.last().unwrap_or(&f64::MIN) {
                     self.intersections.push(new_intersection);
                     break;
