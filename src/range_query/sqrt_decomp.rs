@@ -203,17 +203,19 @@ mod test {
 
     #[test]
     fn test_convex_hull_trick() {
-        let lines = [(0, 4), (1, 0), (-1, 10), (2, -1), (-1, 6)];
+        let lines = [(0, 3), (1, 0), (-1, 8), (2, -1), (-1, 4)];
         let xs = [0, 1, 2, 3, 4, 5];
-        let results = [[4, 4, 4, 4, 4, 4],
-        [0,1,2,3,4,4]];
+        let results = [[3, 3, 3, 3, 3, 3],
+        [0,1,2,3,3,3],
+        [0,1,2,3,3,3],
+        [-1,1,2,3,3,3],
+        [-1,1,2,1,0,-1]];
 
         for threshold in 0..=lines.len() {
             let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
             for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
                 func.min_with(slope, intercept);
                 let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x)).collect();
-                dbg!(&func, &expected, &ys);
                 assert_eq!(expected, &ys[..]);
             }
         }
