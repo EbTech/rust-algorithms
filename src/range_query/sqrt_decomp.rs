@@ -103,6 +103,7 @@ impl MoState for DistinctVals {
 
 /// Represents a minimum (lower envelope) of a collection of linear functions of a variable,
 /// evaluated using the convex hull trick with square root decomposition.
+#[derive(Debug)]
 pub struct PiecewiseLinearFn {
     sorted_lines: Vec<(i64, i64)>,
     intersections: Vec<f64>,
@@ -130,7 +131,7 @@ impl PiecewiseLinearFn {
 
     fn update_envelope(&mut self) {
         self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines.sort_unstable();
+        self.recent_lines.sort_unstable_by_key(|&(m,b)| (-m, b));
         self.intersections.clear();
 
         'outer: for (m1, b1) in self.recent_lines.drain(..) {
@@ -169,10 +170,9 @@ impl PiecewiseLinearFn {
     }
 
     fn eval_helper(&self, x: i64) -> i64 {
-        self.sorted_lines
+        self.recent_lines
             .iter()
             .map(|&(m, b)| m * x + b)
-            // I'm probably being too tricky
             .chain(std::iter::once(self.eval_in_envelope(x)))
             .min()
             .unwrap()
@@ -203,7 +203,19 @@ mod test {
 
     #[test]
     fn test_convex_hull_trick() {
-        let mut func = PiecewiseLinearFn::with_merge_threshold(3);
-        // TODO: make test
+        let lines = [(0, 4), (1, 0), (-1, 10), (2, -1), (-1, 6)];
+        let xs = [0, 1, 2, 3, 4, 5];
+        let results = [[4, 4, 4, 4, 4, 4],
+        [0,1,2,3,4,4]];
+
+        for threshold in 0..=lines.len() {
+            let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
+            for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
+                func.min_with(slope, intercept);
+                let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x)).collect();
+                dbg!(&func, &expected, &ys);
+                assert_eq!(expected, &ys[..]);
+            }
+        }
     }
 }
