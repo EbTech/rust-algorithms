@@ -131,7 +131,7 @@ impl PiecewiseLinearFn {
 
     fn update_envelope(&mut self) {
         self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines.sort_unstable_by_key(|&(m,b)| (-m, b));
+        self.recent_lines.sort_unstable_by_key(|&(m, b)| (-m, b));
         self.intersections.clear();
 
         'outer: for (m1, b1) in self.recent_lines.drain(..) {
@@ -160,7 +160,7 @@ impl PiecewiseLinearFn {
         // Wow is this messy
         let idx = match self
             .intersections
-            .binary_search_by(|&y| y.partial_cmp(&(x as f64)).unwrap())
+            .binary_search_by(|y| y.partial_cmp(&(x as f64)).unwrap())
         {
             Ok(k) => k,
             Err(k) => k,
@@ -205,14 +205,18 @@ mod test {
     fn test_convex_hull_trick() {
         let lines = [(0, 3), (1, 0), (-1, 8), (2, -1), (-1, 4)];
         let xs = [0, 1, 2, 3, 4, 5];
-        let results = [[3, 3, 3, 3, 3, 3],
-        [0,1,2,3,3,3],
-        [0,1,2,3,3,3],
-        [-1,1,2,3,3,3],
-        [-1,1,2,1,0,-1]];
-
+        // results[i] consists of the expected y-coordinates after processing
+        // the first i+1 lines.
+        let results = [
+            [3, 3, 3, 3, 3, 3],
+            [0, 1, 2, 3, 3, 3],
+            [0, 1, 2, 3, 3, 3],
+            [-1, 1, 2, 3, 3, 3],
+            [-1, 1, 2, 1, 0, -1],
+        ];
         for threshold in 0..=lines.len() {
             let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
+            assert_eq!(func.evaluate(0), i64::MAX);
             for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
                 func.min_with(slope, intercept);
                 let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x)).collect();
