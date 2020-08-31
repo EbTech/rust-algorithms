@@ -141,15 +141,12 @@ impl PiecewiseLinearFn {
                     continue 'outer;
                 }
                 let new_intersection = (b1 - b2) as f64 / (m2 - m1) as f64;
-                if let Some(&last_intersection) = self.intersections.last() {
-                    if new_intersection < last_intersection {
-                        self.intersections.pop();
-                        self.sorted_lines.pop();
-                        continue;
-                    }
+                if &new_intersection > self.intersections.last().unwrap_or(&f64::MIN) {
+                    self.intersections.push(new_intersection);
+                    break;
                 }
-                self.intersections.push(new_intersection);
-                break;
+                self.intersections.pop();
+                self.sorted_lines.pop();
             }
             self.sorted_lines.push((m1, b1));
         }
