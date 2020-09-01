@@ -132,20 +132,19 @@ impl PiecewiseLinearFn {
     fn update_envelope(&mut self) {
         self.recent_lines.extend(self.sorted_lines.drain(..));
         self.recent_lines
-            .sort_unstable_by(|(m1, b1), (m2, b2)| (-m1, b1).partial_cmp(&(-m2, b2)).unwrap());
+            .sort_unstable_by(|x, y| y.partial_cmp(&x).unwrap());
         self.intersections.clear();
 
-        'outer: for (m1, b1) in self.recent_lines.drain(..) {
+        for (m1, b1) in self.recent_lines.drain(..) {
             while let Some(&(m2, b2)) = self.sorted_lines.last() {
-                // The lines are sorted by intercept so an incoming line with
-                // the same slope can never beat the previous line.
-                if m2 == m1 {
-                    continue 'outer;
-                }
-                let new_intersection = (b1 - b2) / (m2 - m1);
-                if &new_intersection > self.intersections.last().unwrap_or(&f64::MIN) {
-                    self.intersections.push(new_intersection);
-                    break;
+                // If slopes are equal, the later line will always have lower
+                // intercept, so we can get rid of the old one.
+                if (m1 - m2).abs() > 1e-10f64 {
+                    let new_intersection = (b1 - b2) / (m2 - m1);
+                    if &new_intersection > self.intersections.last().unwrap_or(&f64::MIN) {
+                        self.intersections.push(new_intersection);
+                        break;
+                    }
                 }
                 self.intersections.pop();
                 self.sorted_lines.pop();
