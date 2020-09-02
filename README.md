@@ -47,9 +47,10 @@ Rather than try to persuade you with words, this repository aims to show by exam
 - [Elementary graph algorithms](src/graph/util.rs): minimum spanning tree, Euler path, Dijkstra's algorithm, DFS iteration
 - [Network flows](src/graph/flow.rs): Dinic's blocking flow, Hopcroft-Karp bipartite matching, min cost max flow
 - [Connected components](src/graph/connectivity.rs): 2-edge-, 2-vertex- and strongly connected components, bridges, articulation points, topological sort, 2-SAT
-- [Associative range query](src/range_query): known colloquially as *segtrees*, coordinate compression, convex hull trick, and Mo's query square root decomposition
+- [Associative range query](src/range_query): known colloquially as *segtrees*, as well as Mo's query square root decomposition
 - [Number theory](src/math/mod.rs): canonical solution to Bezout's identity, Miller's primality test
 - [Arithmetic](src/math/num.rs): rational and complex numbers, linear algebra, safe modular arithmetic
 - [FFT](src/math/fft.rs): fast Fourier transform, number theoretic transform, convolution
 - [Scanner](src/scanner.rs): utility for reading input data ergonomically
 - [String processing](src/string_proc.rs): Knuth-Morris-Pratt and Aho-Corasick string matching, suffix array, Manacher's linear-time palindrome search
+- [Miscellaneous algorithms](src/misc.rs): slice binary search, coordinate compression, convex hull trick with sqrt decomposition

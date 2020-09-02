@@ -101,76 +101,6 @@ impl MoState for DistinctVals {
     }
 }
 
-/// Represents a minimum (lower envelope) of a collection of linear functions of a variable,
-/// evaluated using the convex hull trick with square root decomposition.
-#[derive(Debug)]
-pub struct PiecewiseLinearFn {
-    sorted_lines: Vec<(f64, f64)>,
-    intersections: Vec<f64>,
-    recent_lines: Vec<(f64, f64)>,
-    merge_threshold: usize,
-}
-
-impl PiecewiseLinearFn {
-    /// For N inserts interleaved with Q queries, a threshold of N/sqrt(Q) yields
-    /// O(N sqrt Q + Q log N) time complexity. If all queries come after all inserts,
-    /// any threshold less than N (e.g., 0) yields O(N + Q log N) time complexity.
-    pub fn with_merge_threshold(merge_threshold: usize) -> Self {
-        Self {
-            sorted_lines: vec![],
-            intersections: vec![],
-            recent_lines: vec![],
-            merge_threshold,
-        }
-    }
-
-    /// Replaces this function with the minimum of itself and a provided line
-    pub fn min_with(&mut self, slope: f64, intercept: f64) {
-        self.recent_lines.push((slope, intercept));
-    }
-
-    fn update_envelope(&mut self) {
-        self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines.sort_unstable_by(super::asserting_cmp);
-        self.intersections.clear();
-
-        for (m1, b1) in self.recent_lines.drain(..).rev() {
-            while let Some(&(m2, b2)) = self.sorted_lines.last() {
-                // If slopes are equal, the later line will always have lower
-                // intercept, so we can get rid of the old one.
-                if (m1 - m2).abs() > 1e-9 {
-                    let new_intersection = (b1 - b2) / (m2 - m1);
-                    if &new_intersection > self.intersections.last().unwrap_or(&f64::MIN) {
-                        self.intersections.push(new_intersection);
-                        break;
-                    }
-                }
-                self.intersections.pop();
-                self.sorted_lines.pop();
-            }
-            self.sorted_lines.push((m1, b1));
-        }
-    }
-
-    fn eval_helper(&self, x: f64) -> f64 {
-        let idx = super::slice_lower_bound(&self.intersections, &x);
-        std::iter::once(self.sorted_lines.get(idx))
-            .flatten()
-            .chain(self.recent_lines.iter())
-            .map(|&(m, b)| m * x + b)
-            .min_by(super::asserting_cmp)
-            .unwrap_or(1e18)
-    }
-
-    /// Evaluates the function at x
-    pub fn evaluate(&mut self, x: f64) -> f64 {
-        if self.recent_lines.len() > self.merge_threshold {
-            self.update_envelope();
-        }
-        self.eval_helper(x)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -183,29 +113,5 @@ mod test {
         let answers = DistinctVals::new(arr).process(&queries);
 
         assert_eq!(answers, vec![2, 1, 5, 5]);
-    }
-
-    #[test]
-    fn test_convex_hull_trick() {
-        let lines = [(0, 3), (1, 0), (-1, 8), (2, -1), (-1, 4)];
-        let xs = [0, 1, 2, 3, 4, 5];
-        // results[i] consists of the expected y-coordinates after processing
-        // the first i+1 lines.
-        let results = [
-            [3, 3, 3, 3, 3, 3],
-            [0, 1, 2, 3, 3, 3],
-            [0, 1, 2, 3, 3, 3],
-            [-1, 1, 2, 3, 3, 3],
-            [-1, 1, 2, 1, 0, -1],
-        ];
-        for threshold in 0..=lines.len() {
-            let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
-            assert_eq!(func.evaluate(0.0), 1e18);
-            for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
-                func.min_with(slope as f64, intercept as f64);
-                let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x as f64) as i64).collect();
-                assert_eq!(expected, &ys[..]);
-            }
-        }
     }
 }
