@@ -6,19 +6,24 @@ pub use dynamic_arq::{ArqView, DynamicArq};
 pub use specs::ArqSpec;
 pub use static_arq::StaticArq;
 
-/// Assuming slice is sorted, returns the minimum i for which slice[i] >= key,
-/// or slice.len() if no such i exists
-pub fn slice_lower_bound<T: Ord>(slice: &[T], key: &T) -> usize {
+/// A comparator on partially ordered elements, that panics if they are incomparable
+pub fn asserting_cmp<T: PartialOrd>(a: &T, b: &T) -> std::cmp::Ordering {
+    a.partial_cmp(b).expect("Comparing incomparable elements")
+}
+
+/// Assuming slice is totally ordered and sorted, returns the minimum i for which
+/// slice[i] >= key, or slice.len() if no such i exists
+pub fn slice_lower_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
     slice
-        .binary_search_by(|x| x.cmp(key).then(std::cmp::Ordering::Greater))
+        .binary_search_by(|x| asserting_cmp(x, key).then(std::cmp::Ordering::Greater))
         .unwrap_err()
 }
 
-/// Assuming slice is sorted, returns the minimum i for which slice[i] > key,
-/// or slice.len() if no such i exists
-pub fn slice_upper_bound<T: Ord>(slice: &[T], key: &T) -> usize {
+/// Assuming slice is totally ordered and sorted, returns the minimum i for which
+/// slice[i] > key, or slice.len() if no such i exists
+pub fn slice_upper_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
     slice
-        .binary_search_by(|x| x.cmp(key).then(std::cmp::Ordering::Less))
+        .binary_search_by(|x| asserting_cmp(x, key).then(std::cmp::Ordering::Less))
         .unwrap_err()
 }
 

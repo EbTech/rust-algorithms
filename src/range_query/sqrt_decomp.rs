@@ -114,7 +114,7 @@ pub struct PiecewiseLinearFn {
 impl PiecewiseLinearFn {
     /// For N inserts interleaved with Q queries, a threshold of N/sqrt(Q) yields
     /// O(N sqrt Q + Q log N) time complexity. If all queries come after all inserts,
-    /// a threshold of 0 yields O(N + Q log N) time complexity.
+    /// any threshold less than N (e.g., 0) yields O(N + Q log N) time complexity.
     pub fn with_merge_threshold(merge_threshold: usize) -> Self {
         Self {
             sorted_lines: vec![],
@@ -131,15 +131,14 @@ impl PiecewiseLinearFn {
 
     fn update_envelope(&mut self) {
         self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines
-            .sort_unstable_by(|x, y| y.partial_cmp(&x).unwrap());
+        self.recent_lines.sort_unstable_by(super::asserting_cmp);
         self.intersections.clear();
 
-        for (m1, b1) in self.recent_lines.drain(..) {
+        for (m1, b1) in self.recent_lines.drain(..).rev() {
             while let Some(&(m2, b2)) = self.sorted_lines.last() {
                 // If slopes are equal, the later line will always have lower
                 // intercept, so we can get rid of the old one.
-                if (m1 - m2).abs() > 1e-10f64 {
+                if (m1 - m2).abs() > 1e-9 {
                     let new_intersection = (b1 - b2) / (m2 - m1);
                     if &new_intersection > self.intersections.last().unwrap_or(&f64::MIN) {
                         self.intersections.push(new_intersection);
@@ -153,28 +152,14 @@ impl PiecewiseLinearFn {
         }
     }
 
-    fn eval_in_envelope(&self, x: f64) -> f64 {
-        if self.sorted_lines.is_empty() {
-            return f64::MAX;
-        }
-        let idx = match self
-            .intersections
-            .binary_search_by(|y| y.partial_cmp(&x).unwrap())
-        {
-            Ok(k) => k,
-            Err(k) => k,
-        };
-        let (m, b) = self.sorted_lines[idx];
-        m * x + b
-    }
-
     fn eval_helper(&self, x: f64) -> f64 {
-        self.recent_lines
-            .iter()
+        let idx = super::slice_lower_bound(&self.intersections, &x);
+        std::iter::once(self.sorted_lines.get(idx))
+            .flatten()
+            .chain(self.recent_lines.iter())
             .map(|&(m, b)| m * x + b)
-            .min_by(|x, y| x.partial_cmp(y).unwrap())
-            .unwrap_or(f64::MAX)
-            .min(self.eval_in_envelope(x))
+            .min_by(super::asserting_cmp)
+            .unwrap_or(1e18)
     }
 
     /// Evaluates the function at x
@@ -215,7 +200,7 @@ mod test {
         ];
         for threshold in 0..=lines.len() {
             let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
-            assert_eq!(func.evaluate(0.0), f64::MAX);
+            assert_eq!(func.evaluate(0.0), 1e18);
             for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
                 func.min_with(slope as f64, intercept as f64);
                 let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x as f64) as i64).collect();
