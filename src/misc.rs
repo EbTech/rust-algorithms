@@ -70,7 +70,7 @@ impl PiecewiseLinearFn {
 
     fn update_envelope(&mut self) {
         self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines.sort_unstable_by(asserting_cmp);
+        self.recent_lines.sort_unstable_by(asserting_cmp); // TODO: switch to O(n) merge
         self.intersections.clear();
 
         for (new_m, new_b) in self.recent_lines.drain(..).rev() {
@@ -78,7 +78,7 @@ impl PiecewiseLinearFn {
                 // If slopes are equal, get rid of the old line as its intercept is higher
                 if (new_m - last_m).abs() > 1e-9 {
                     let intr = (new_b - last_b) / (last_m - new_m);
-                    if self.intersections.last().map(|&x| x < intr).unwrap_or(true) {
+                    if self.intersections.last() < Some(&intr) {
                         self.intersections.push(intr);
                         break;
                     }
@@ -92,9 +92,9 @@ impl PiecewiseLinearFn {
 
     fn eval_helper(&self, x: f64) -> f64 {
         let idx = slice_lower_bound(&self.intersections, &x);
-        std::iter::once(self.sorted_lines.get(idx))
-            .flatten()
-            .chain(self.recent_lines.iter())
+        self.recent_lines
+            .iter()
+            .chain(self.sorted_lines.get(idx))
             .map(|&(m, b)| m * x + b)
             .min_by(asserting_cmp)
             .unwrap_or(1e18)
