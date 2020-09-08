@@ -61,13 +61,12 @@ impl<'a, C: Eq> Matcher<'a, C> {
     ///
     /// ```
     /// use contest_algorithms::string_proc::Matcher;
-    /// let utf8_string = "hello";
-    ///
-    /// let match_from_byte_literal = Matcher::new(b"hello");
-    ///
-    /// let match_from_bytes = Matcher::new(utf8_string.as_bytes());
-    ///
+    /// let byte_string: &[u8] = b"hello";
+    /// let utf8_string: &str = "hello";
     /// let vec_char: Vec<char> = utf8_string.chars().collect();
+    ///
+    /// let match_from_byte_literal = Matcher::new(byte_string);
+    /// let match_from_utf8 = Matcher::new(utf8_string.as_bytes());
     /// let match_from_chars = Matcher::new(&vec_char);
     ///
     /// let vec_int = vec![4, -3, 1];
@@ -93,24 +92,24 @@ impl<'a, C: Eq> Matcher<'a, C> {
         Self { pattern, fail }
     }
 
-    /// KMP algorithm, sets match_lens[i] = length of longest prefix of pattern
+    /// KMP algorithm, sets @return[i] = length of longest prefix of pattern
     /// matching a suffix of text[0..=i].
-    pub fn kmp_match(&self, text: &[C]) -> Vec<usize> {
-        let mut match_lens = Vec::with_capacity(text.len());
+    pub fn kmp_match(&self, text: impl IntoIterator<Item = C>) -> Vec<usize> {
         let mut len = 0;
-        for ch in text {
-            if len == self.pattern.len() {
-                len = self.fail[len - 1];
-            }
-            while len > 0 && self.pattern[len] != *ch {
-                len = self.fail[len - 1];
-            }
-            if self.pattern[len] == *ch {
-                len += 1;
-            }
-            match_lens.push(len);
-        }
-        match_lens
+        text.into_iter()
+            .map(|ch| {
+                if len == self.pattern.len() {
+                    len = self.fail[len - 1];
+                }
+                while len > 0 && self.pattern[len] != ch {
+                    len = self.fail[len - 1];
+                }
+                if self.pattern[len] == ch {
+                    len += 1;
+                }
+                len
+            })
+            .collect()
     }
 }
 
@@ -141,7 +140,7 @@ impl<C: std::hash::Hash + Eq> MultiMatcher<C> {
 
     /// Precomputes the automaton that allows linear-time string matching.
     /// If there are duplicate patterns, all but one copy will be ignored.
-    pub fn new(patterns: Vec<impl IntoIterator<Item = C>>) -> Self {
+    pub fn new(patterns: impl IntoIterator<Item = impl IntoIterator<Item = C>>) -> Self {
         let mut trie = Trie::default();
         let pat_nodes: Vec<usize> = patterns.into_iter().map(|pat| trie.insert(pat)).collect();
 
@@ -171,16 +170,16 @@ impl<C: std::hash::Hash + Eq> MultiMatcher<C> {
         }
     }
 
-    /// Aho-Corasick algorithm, sets match_nodes[i] = node corresponding to
+    /// Aho-Corasick algorithm, sets @return[i] = node corresponding to
     /// longest prefix of some pattern matching a suffix of text[0..=i].
-    pub fn ac_match(&self, text: &[C]) -> Vec<usize> {
-        let mut match_nodes = Vec::with_capacity(text.len());
+    pub fn ac_match(&self, text: impl IntoIterator<Item = C>) -> Vec<usize> {
         let mut node = 0;
-        for ch in text {
-            node = Self::next(&self.trie, &self.fail, node, &ch);
-            match_nodes.push(node);
-        }
-        match_nodes
+        text.into_iter()
+            .map(|ch| {
+                node = Self::next(&self.trie, &self.fail, node, &ch);
+                node
+            })
+            .collect()
     }
 
     /// For each non-empty match, returns where in the text it ends, and the index
@@ -235,9 +234,9 @@ impl SuffixArray {
     }
 
     /// Suffix array construction in O(n log n) time.
-    pub fn new(text: &[u8]) -> Self {
-        let n = text.len();
-        let init_rank = text.iter().map(|&ch| ch as usize).collect::<Vec<_>>();
+    pub fn new(text: impl IntoIterator<Item = u8>) -> Self {
+        let init_rank = text.into_iter().map(|ch| ch as usize).collect::<Vec<_>>();
+        let n = init_rank.len();
         let mut sfx = Self::counting_sort(0..n, &init_rank, 256);
         let mut rank = vec![init_rank];
         // Invariant at the start of every loop iteration:
@@ -291,7 +290,7 @@ impl SuffixArray {
 /// # Panics
 ///
 /// Panics if text is empty.
-pub fn palindromes<T: Eq>(text: &[T]) -> Vec<usize> {
+pub fn palindromes(text: &[impl Eq]) -> Vec<usize> {
     let mut pal = Vec::with_capacity(2 * text.len() - 1);
     pal.push(1);
     while pal.len() < pal.capacity() {
@@ -339,27 +338,21 @@ mod test {
 
     #[test]
     fn test_kmp_matching() {
-        let text = b"banana";
-        let pattern = b"ana";
+        let pattern = "ana";
+        let text = "banana";
 
-        let matches = Matcher::new(pattern).kmp_match(text);
+        let matches = Matcher::new(pattern.as_bytes()).kmp_match(text.bytes());
 
         assert_eq!(matches, vec![0, 1, 2, 3, 2, 3]);
     }
 
     #[test]
     fn test_ac_matching() {
-        let text = b"banana bans, apple benefits.";
-        let dict = vec![
-            "banana".bytes(),
-            "benefit".bytes(),
-            "banapple".bytes(),
-            "ban".bytes(),
-            "fit".bytes(),
-        ];
+        let dict = vec!["banana", "benefit", "banapple", "ban", "fit"];
+        let text = "banana bans, apple benefits.";
 
-        let matcher = MultiMatcher::new(dict);
-        let match_nodes = matcher.ac_match(text);
+        let matcher = MultiMatcher::new(dict.iter().map(|s| s.bytes()));
+        let match_nodes = matcher.ac_match(text.bytes());
         let end_pos_and_id = matcher.get_end_pos_and_pat_id(&match_nodes);
 
         assert_eq!(
@@ -370,11 +363,11 @@ mod test {
 
     #[test]
     fn test_suffix_array() {
-        let text1 = b"bobocel";
-        let text2 = b"banana";
+        let text1 = "bobocel";
+        let text2 = "banana";
 
-        let sfx1 = SuffixArray::new(text1);
-        let sfx2 = SuffixArray::new(text2);
+        let sfx1 = SuffixArray::new(text1.bytes());
+        let sfx2 = SuffixArray::new(text2.bytes());
 
         assert_eq!(sfx1.sfx, vec![0, 2, 4, 5, 6, 1, 3]);
         assert_eq!(sfx2.sfx, vec![5, 3, 1, 0, 4, 2]);
@@ -393,9 +386,9 @@ mod test {
 
     #[test]
     fn test_palindrome() {
-        let text = b"banana";
+        let text = "banana";
 
-        let pal_len = palindromes(text);
+        let pal_len = palindromes(text.as_bytes());
 
         assert_eq!(pal_len, vec![1, 0, 1, 0, 3, 0, 5, 0, 3, 0, 1]);
     }

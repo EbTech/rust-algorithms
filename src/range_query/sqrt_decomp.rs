@@ -101,53 +101,6 @@ impl MoState for DistinctVals {
     }
 }
 
-/// Represents a minimum (lower envelope) of a collection of linear functions of a variable,
-/// evaluated using the convex hull trick with square root decomposition.
-pub struct PiecewiseLinearFn {
-    sorted_lines: Vec<(i64, i64)>,
-    recent_lines: Vec<(i64, i64)>,
-    merge_threshold: usize,
-}
-
-impl PiecewiseLinearFn {
-    /// For N inserts interleaved with Q queries, a threshold of N/sqrt(Q) yields
-    /// O(N sqrt Q + Q log N) time complexity. If all queries come after all inserts,
-    /// a threshold of 0 yields O(N + Q log N) time complexity.
-    pub fn with_merge_threshold(merge_threshold: usize) -> Self {
-        Self {
-            sorted_lines: vec![],
-            recent_lines: vec![],
-            merge_threshold,
-        }
-    }
-
-    /// Replaces this function with the minimum of itself and a provided line
-    pub fn min_with(&mut self, slope: i64, intercept: i64) {
-        self.recent_lines.push((slope, intercept));
-    }
-
-    fn update_envelope(&mut self) {
-        self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines.sort_unstable();
-        for (slope, intercept) in self.recent_lines.drain(..) {
-            // TODO: do convex hull trick algorithm
-            self.sorted_lines.push((slope, intercept));
-        }
-    }
-
-    fn eval_helper(&self, x: i64) -> i64 {
-        0 // TODO: pick actual minimum, or infinity if empty
-    }
-
-    /// Evaluates the function at x
-    pub fn evaluate(&mut self, x: i64) -> i64 {
-        if self.recent_lines.len() > self.merge_threshold {
-            self.update_envelope();
-        }
-        self.eval_helper(x)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -160,11 +113,5 @@ mod test {
         let answers = DistinctVals::new(arr).process(&queries);
 
         assert_eq!(answers, vec![2, 1, 5, 5]);
-    }
-
-    #[test]
-    fn test_convex_hull_trick() {
-        let mut func = PiecewiseLinearFn::with_merge_threshold(3);
-        // TODO: make test
     }
 }
