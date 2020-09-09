@@ -5,7 +5,7 @@ pub fn asserting_cmp<T: PartialOrd>(a: &T, b: &T) -> std::cmp::Ordering {
     a.partial_cmp(b).expect("Comparing incomparable elements")
 }
 
-/// Assuming slice is totally ordered and sorted, returns the minimum i for which
+/// Assuming slice is sorted and totally ordered, returns the minimum i for which
 /// slice[i] >= key, or slice.len() if no such i exists
 pub fn slice_lower_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
     slice
@@ -13,7 +13,7 @@ pub fn slice_lower_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
         .unwrap_err()
 }
 
-/// Assuming slice is totally ordered and sorted, returns the minimum i for which
+/// Assuming slice is sorted and totally ordered, returns the minimum i for which
 /// slice[i] > key, or slice.len() if no such i exists
 pub fn slice_upper_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
     slice
@@ -21,7 +21,7 @@ pub fn slice_upper_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
         .unwrap_err()
 }
 
-/// Merge two sorted collections into one
+/// Merge two sorted and totally ordered collections into one
 pub fn merge_sorted<T: PartialOrd>(
     i1: impl IntoIterator<Item = T>,
     i2: impl IntoIterator<Item = T>,
@@ -33,6 +33,16 @@ pub fn merge_sorted<T: PartialOrd>(
     }
     merged.extend(i1.chain(i2));
     merged
+}
+
+/// A stable sort
+pub fn merge_sort<T: Ord>(mut v: Vec<T>) -> Vec<T> {
+    if v.len() < 2 {
+        v
+    } else {
+        let v2 = v.split_off(v.len() / 2);
+        merge_sorted(merge_sort(v), merge_sort(v2))
+    }
 }
 
 /// A simple data structure for coordinate compression
@@ -58,9 +68,9 @@ impl SparseIndex {
 /// Represents a maximum (upper envelope) of a collection of linear functions of a variable,
 /// evaluated using the convex hull trick with square root decomposition.
 pub struct PiecewiseLinearFn {
+    recent_lines: Vec<(f64, f64)>,
     sorted_lines: Vec<(f64, f64)>,
     intersections: Vec<f64>,
-    recent_lines: Vec<(f64, f64)>,
     merge_threshold: usize,
 }
 
@@ -70,9 +80,9 @@ impl PiecewiseLinearFn {
     /// any threshold less than N (e.g., 0) yields O(N + Q log N) time complexity.
     pub fn with_merge_threshold(merge_threshold: usize) -> Self {
         Self {
+            recent_lines: vec![],
             sorted_lines: vec![],
             intersections: vec![],
-            recent_lines: vec![],
             merge_threshold,
         }
     }
@@ -153,6 +163,15 @@ mod test {
         assert_eq!(merge_sorted(None, Some(42)), vec![42]);
         assert_eq!(merge_sorted(vals1.iter().cloned(), None), vals1);
         assert_eq!(merge_sorted(vals1, vals2), vals_merged);
+    }
+
+    #[test]
+    fn test_merge_sort() {
+        let unsorted = vec![8, -5, 1, 4, -3, 4];
+        let sorted = vec![-5, -3, 1, 4, 4, 8];
+
+        assert_eq!(merge_sort(unsorted), sorted);
+        assert_eq!(merge_sort(sorted.clone()), sorted);
     }
 
     #[test]
