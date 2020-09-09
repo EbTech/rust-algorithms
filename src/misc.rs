@@ -78,33 +78,29 @@ impl PiecewiseLinearFn {
     }
 
     /// Replaces the represented function with the maximum of itself and a provided line
-    pub fn max_with(&mut self, slope: f64, intercept: f64) {
-        self.recent_lines.push((slope, intercept));
+    pub fn max_with(&mut self, new_m: f64, new_b: f64) {
+        self.recent_lines.push((new_m, new_b));
     }
 
-    fn update_envelope(&mut self) {
-        self.recent_lines.sort_unstable_by(asserting_cmp);
-        self.intersections.clear();
-
-        for (new_m, new_b) in merge_sorted(self.recent_lines.drain(..), self.sorted_lines.drain(..))
-        {
-            while let Some(&(last_m, last_b)) = self.sorted_lines.last() {
-                // If slopes are equal, get rid of the old line as its intercept is lower
-                if (new_m - last_m).abs() > 1e-9 {
-                    let intr = (new_b - last_b) / (last_m - new_m);
-                    if self.intersections.last() < Some(&intr) {
-                        self.intersections.push(intr);
-                        break;
-                    }
+    /// Similar to max_with but requires that (new_m, new_b) be the largest pair so far
+    fn max_with_sorted(&mut self, new_m: f64, new_b: f64) {
+        while let Some(&(last_m, last_b)) = self.sorted_lines.last() {
+            // If slopes are equal, get rid of the old line as its intercept is lower
+            if (new_m - last_m).abs() > 1e-9 {
+                let intersect = (new_b - last_b) / (last_m - new_m);
+                if self.intersections.last() < Some(&intersect) {
+                    self.intersections.push(intersect);
+                    break;
                 }
-                self.intersections.pop();
-                self.sorted_lines.pop();
             }
-            self.sorted_lines.push((new_m, new_b));
+            self.intersections.pop();
+            self.sorted_lines.pop();
         }
+        self.sorted_lines.push((new_m, new_b));
     }
 
-    fn eval_helper(&self, x: f64) -> f64 {
+    /// Evaluates the function at x
+    fn eval_unoptimized(&self, x: f64) -> f64 {
         let idx = slice_lower_bound(&self.intersections, &x);
         self.recent_lines
             .iter()
@@ -114,12 +110,17 @@ impl PiecewiseLinearFn {
             .unwrap_or(-1e18)
     }
 
-    /// Evaluates the function at x
+    /// Evaluates the function at x with good amortized runtime
     pub fn evaluate(&mut self, x: f64) -> f64 {
         if self.recent_lines.len() > self.merge_threshold {
-            self.update_envelope();
+            self.recent_lines.sort_unstable_by(asserting_cmp);
+            self.intersections.clear();
+            let all_lines = merge_sorted(self.recent_lines.drain(..), self.sorted_lines.drain(..));
+            for (new_m, new_b) in all_lines {
+                self.max_with_sorted(new_m, new_b);
+            }
         }
-        self.eval_helper(x)
+        self.eval_unoptimized(x)
     }
 }
 
