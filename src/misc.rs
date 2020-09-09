@@ -21,6 +21,20 @@ pub fn slice_upper_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
         .unwrap_err()
 }
 
+/// Merge two sorted collections into one
+pub fn merge_sorted<T: PartialOrd>(
+    i1: impl IntoIterator<Item = T>,
+    i2: impl IntoIterator<Item = T>,
+) -> Vec<T> {
+    let (mut i1, mut i2) = (i1.into_iter().peekable(), i2.into_iter().peekable());
+    let mut merged = Vec::with_capacity(i1.size_hint().0 + i2.size_hint().0);
+    while let (Some(a), Some(b)) = (i1.peek(), i2.peek()) {
+        merged.push(if a <= b { i1.next() } else { i2.next() }.unwrap());
+    }
+    merged.extend(i1.chain(i2));
+    merged
+}
+
 /// A simple data structure for coordinate compression
 pub struct SparseIndex {
     coords: Vec<i64>,
@@ -41,7 +55,7 @@ impl SparseIndex {
     }
 }
 
-/// Represents a minimum (lower envelope) of a collection of linear functions of a variable,
+/// Represents a maximum (upper envelope) of a collection of linear functions of a variable,
 /// evaluated using the convex hull trick with square root decomposition.
 pub struct PiecewiseLinearFn {
     sorted_lines: Vec<(f64, f64)>,
@@ -63,19 +77,19 @@ impl PiecewiseLinearFn {
         }
     }
 
-    /// Replaces the represented function with the minimum of itself and a provided line
-    pub fn min_with(&mut self, slope: f64, intercept: f64) {
+    /// Replaces the represented function with the maximum of itself and a provided line
+    pub fn max_with(&mut self, slope: f64, intercept: f64) {
         self.recent_lines.push((slope, intercept));
     }
 
     fn update_envelope(&mut self) {
-        self.recent_lines.extend(self.sorted_lines.drain(..));
-        self.recent_lines.sort_unstable_by(asserting_cmp); // TODO: switch to O(n) merge
+        self.recent_lines.sort_unstable_by(asserting_cmp);
         self.intersections.clear();
 
-        for (new_m, new_b) in self.recent_lines.drain(..).rev() {
+        for (new_m, new_b) in merge_sorted(self.recent_lines.drain(..), self.sorted_lines.drain(..))
+        {
             while let Some(&(last_m, last_b)) = self.sorted_lines.last() {
-                // If slopes are equal, get rid of the old line as its intercept is higher
+                // If slopes are equal, get rid of the old line as its intercept is lower
                 if (new_m - last_m).abs() > 1e-9 {
                     let intr = (new_b - last_b) / (last_m - new_m);
                     if self.intersections.last() < Some(&intr) {
@@ -96,8 +110,8 @@ impl PiecewiseLinearFn {
             .iter()
             .chain(self.sorted_lines.get(idx))
             .map(|&(m, b)| m * x + b)
-            .min_by(asserting_cmp)
-            .unwrap_or(1e18)
+            .max_by(asserting_cmp)
+            .unwrap_or(-1e18)
     }
 
     /// Evaluates the function at x
@@ -130,6 +144,17 @@ mod test {
     }
 
     #[test]
+    fn test_merge_sorted() {
+        let vals1 = vec![16, 45, 45, 82];
+        let vals2 = vec![-20, 40, 45, 50];
+        let vals_merged = vec![-20, 16, 40, 45, 45, 45, 50, 82];
+
+        assert_eq!(merge_sorted(None, Some(42)), vec![42]);
+        assert_eq!(merge_sorted(vals1.iter().cloned(), None), vals1);
+        assert_eq!(merge_sorted(vals1, vals2), vals_merged);
+    }
+
+    #[test]
     fn test_coord_compress() {
         let mut coords = vec![16, 99, 45, 18];
         let index = SparseIndex::new(coords.clone());
@@ -153,22 +178,22 @@ mod test {
 
     #[test]
     fn test_convex_hull_trick() {
-        let lines = [(0, 3), (1, 0), (-1, 8), (2, -1), (-1, 4)];
+        let lines = [(0, -3), (-1, 0), (1, -8), (-2, 1), (1, -4)];
         let xs = [0, 1, 2, 3, 4, 5];
         // results[i] consists of the expected y-coordinates after processing
         // the first i+1 lines.
         let results = [
-            [3, 3, 3, 3, 3, 3],
-            [0, 1, 2, 3, 3, 3],
-            [0, 1, 2, 3, 3, 3],
-            [-1, 1, 2, 3, 3, 3],
-            [-1, 1, 2, 1, 0, -1],
+            [-3, -3, -3, -3, -3, -3],
+            [0, -1, -2, -3, -3, -3],
+            [0, -1, -2, -3, -3, -3],
+            [1, -1, -2, -3, -3, -3],
+            [1, -1, -2, -1, 0, 1],
         ];
         for threshold in 0..=lines.len() {
             let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
-            assert_eq!(func.evaluate(0.0), 1e18);
+            assert_eq!(func.evaluate(0.0), -1e18);
             for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
-                func.min_with(slope as f64, intercept as f64);
+                func.max_with(slope as f64, intercept as f64);
                 let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x as f64) as i64).collect();
                 assert_eq!(expected, &ys[..]);
             }
