@@ -21,12 +21,13 @@ pub fn slice_upper_bound<T: PartialOrd>(slice: &[T], key: &T) -> usize {
         .unwrap_err()
 }
 
-/// Merge two sorted and totally ordered collections into one
+/// Stably merges two sorted and totally ordered collections into one
 pub fn merge_sorted<T: PartialOrd>(
     i1: impl IntoIterator<Item = T>,
     i2: impl IntoIterator<Item = T>,
 ) -> Vec<T> {
-    let (mut i1, mut i2) = (i1.into_iter().peekable(), i2.into_iter().peekable());
+    let mut i1 = i1.into_iter().peekable();
+    let mut i2 = i2.into_iter().peekable();
     let mut merged = Vec::with_capacity(i1.size_hint().0 + i2.size_hint().0);
     while let (Some(a), Some(b)) = (i1.peek(), i2.peek()) {
         merged.push(if a <= b { i1.next() } else { i2.next() }.unwrap());
@@ -51,15 +52,15 @@ pub struct SparseIndex {
 }
 
 impl SparseIndex {
-    /// Build an index, given the full set of coordinates to compress.
+    /// Builds an index, given the full set of coordinates to compress.
     pub fn new(mut coords: Vec<i64>) -> Self {
         coords.sort_unstable();
         coords.dedup();
         Self { coords }
     }
 
-    /// Return Ok(i) if the coordinate q appears at index i
-    /// Return Err(i) if q appears between indices i-1 and i
+    /// Returns Ok(i) if the coordinate q appears at index i
+    /// Returns Err(i) if q appears between indices i-1 and i
     pub fn compress(&self, q: i64) -> Result<usize, usize> {
         self.coords.binary_search(&q)
     }
@@ -68,28 +69,26 @@ impl SparseIndex {
 /// Represents a maximum (upper envelope) of a collection of linear functions of one
 /// variable, evaluated using an online version of the convex hull trick.
 /// It combines the offline algorithm with square root decomposition, resulting in an
-/// asymptotically suboptimal but simple algorithm with good amortized performnce:
-/// For N inserts interleaved with Q queries, a threshold of N/sqrt(Q) yields
-/// O(N sqrt Q + Q log N) time complexity. If all queries come after all inserts,
-/// any threshold less than N (e.g., 0) yields O(N + Q log N) time complexity.
+/// asymptotically suboptimal but simple algorithm with good amortized performance:
+/// N inserts interleaved with Q queries yields O(N sqrt Q + Q log N) time complexity
+/// in general, or O(N + Q log N) if all queries come after all inserts.
+// Proof: the Q log N term comes from calls to slice_lower_bound(). As for the N sqrt Q,
+//        note that between successive times when the hull is rebuilt, O(N) work is done,
+//        and the running totals of insertions and queries satisfy del_N (del_Q + 1) > N.
+//        Now, either del_Q >= sqrt Q, or else del_Q <= 2 sqrt Q - 1
+//                                          => del_N > N / (2 sqrt Q).
+//        Since del(N sqrt Q) >= max(N del(sqrt Q), del_N sqrt Q)
+//                            >= max(N del_Q / (2 sqrt Q), del_N sqrt Q),
+//        we conclude that del(N sqrt Q) >= N / 2.
+#[derive(Default)]
 pub struct PiecewiseLinearConvexFn {
     recent_lines: Vec<(f64, f64)>,
     sorted_lines: Vec<(f64, f64)>,
     intersections: Vec<f64>,
-    merge_threshold: usize,
+    amortized_work: usize,
 }
 
 impl PiecewiseLinearConvexFn {
-    /// Initializes with a given threshold for re-running the convex hull algorithm
-    pub fn with_merge_threshold(merge_threshold: usize) -> Self {
-        Self {
-            recent_lines: vec![],
-            sorted_lines: vec![],
-            intersections: vec![],
-            merge_threshold,
-        }
-    }
-
     /// Replaces the represented function with the maximum of itself and a provided line
     pub fn max_with(&mut self, new_m: f64, new_b: f64) {
         self.recent_lines.push((new_m, new_b));
@@ -125,7 +124,9 @@ impl PiecewiseLinearConvexFn {
 
     /// Evaluates the function at x with good amortized runtime
     pub fn evaluate(&mut self, x: f64) -> f64 {
-        if self.recent_lines.len() > self.merge_threshold {
+        self.amortized_work += self.recent_lines.len();
+        if self.amortized_work > self.sorted_lines.len() {
+            self.amortized_work = 0;
             self.recent_lines.sort_unstable_by(asserting_cmp);
             self.intersections.clear();
             let all_lines = merge_sorted(self.recent_lines.drain(..), self.sorted_lines.drain(..));
@@ -212,14 +213,12 @@ mod test {
             [1, -1, -2, -3, -3, -3],
             [1, -1, -2, -1, 0, 1],
         ];
-        for threshold in 0..=lines.len() {
-            let mut func = PiecewiseLinearConvexFn::with_merge_threshold(threshold);
-            assert_eq!(func.evaluate(0.0), -1e18);
-            for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
-                func.max_with(slope as f64, intercept as f64);
-                let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x as f64) as i64).collect();
-                assert_eq!(expected, &ys[..]);
-            }
+        let mut func = PiecewiseLinearConvexFn::default();
+        assert_eq!(func.evaluate(0.0), -1e18);
+        for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
+            func.max_with(slope as f64, intercept as f64);
+            let ys: Vec<i64> = xs.iter().map(|&x| func.evaluate(x as f64) as i64).collect();
+            assert_eq!(expected, &ys[..]);
         }
     }
 }
