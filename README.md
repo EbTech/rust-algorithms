@@ -50,7 +50,7 @@ Rather than try to persuade you with words, this repository aims to show by exam
 - [Number theory](src/math/mod.rs): canonical solution to Bezout's identity, Miller's primality test
 - [FFT](src/math/fft.rs): fast Fourier transform, number theoretic transform, convolution
 - [Arithmetic](src/math/num.rs): rational and complex numbers, linear algebra, safe modular arithmetic
-- [Ordering algorithms](src/order.rs): binary search, mergesort, coordinate compression, amortized convex hull trick
+- [Ordering algorithms](src/order.rs): binary search, mergesort, coordinate compression, online convex hull trick
 - [Associative range query](src/range_query): static and dynamic ARQ trees (a.k.a. segtrees), Mo's query square root decomposition
 - [Scanner](src/scanner.rs): utility for reading input data ergonomically
 - [String processing](src/string_proc.rs): Knuth-Morris-Pratt and Aho-Corasick string matching, suffix array, Manacher's linear-time palindrome search

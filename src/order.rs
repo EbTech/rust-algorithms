@@ -65,19 +65,22 @@ impl SparseIndex {
     }
 }
 
-/// Represents a maximum (upper envelope) of a collection of linear functions of a variable,
-/// evaluated using the convex hull trick with square root decomposition.
-pub struct PiecewiseLinearFn {
+/// Represents a maximum (upper envelope) of a collection of linear functions of one
+/// variable, evaluated using an online version of the convex hull trick.
+/// It combines the offline algorithm with square root decomposition, resulting in an
+/// asymptotically suboptimal but simple algorithm with good amortized performnce:
+/// For N inserts interleaved with Q queries, a threshold of N/sqrt(Q) yields
+/// O(N sqrt Q + Q log N) time complexity. If all queries come after all inserts,
+/// any threshold less than N (e.g., 0) yields O(N + Q log N) time complexity.
+pub struct PiecewiseLinearConvexFn {
     recent_lines: Vec<(f64, f64)>,
     sorted_lines: Vec<(f64, f64)>,
     intersections: Vec<f64>,
     merge_threshold: usize,
 }
 
-impl PiecewiseLinearFn {
-    /// For N inserts interleaved with Q queries, a threshold of N/sqrt(Q) yields
-    /// O(N sqrt Q + Q log N) time complexity. If all queries come after all inserts,
-    /// any threshold less than N (e.g., 0) yields O(N + Q log N) time complexity.
+impl PiecewiseLinearConvexFn {
+    /// Initializes with a given threshold for re-running the convex hull algorithm
     pub fn with_merge_threshold(merge_threshold: usize) -> Self {
         Self {
             recent_lines: vec![],
@@ -210,7 +213,7 @@ mod test {
             [1, -1, -2, -1, 0, 1],
         ];
         for threshold in 0..=lines.len() {
-            let mut func = PiecewiseLinearFn::with_merge_threshold(threshold);
+            let mut func = PiecewiseLinearConvexFn::with_merge_threshold(threshold);
             assert_eq!(func.evaluate(0.0), -1e18);
             for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
                 func.max_with(slope as f64, intercept as f64);
