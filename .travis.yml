@@ -12,4 +12,5 @@ script:
 matrix:
   allow_failures:
     - rust: nightly
+    - rust: beta # clippy currently has a bug on beta
   fast_finish: true

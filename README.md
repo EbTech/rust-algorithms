@@ -23,15 +23,15 @@ To my delight, I found that Rust eliminates entire classes of bugs, while reduci
 
 Some contest sites and online judges that support Rust:
 - [Codeforces](https://codeforces.com)
+- [AtCoder](https://atcoder.jp)
 - [Kattis](https://open.kattis.com/help/rust)
 - [SPOJ](https://www.spoj.com/)
 - [LeetCode](https://leetcode.com/contest)
 - [HackerRank](https://www.hackerrank.com/contests)
+- [Timus](http://acm.timus.ru/help.aspx?topic=rust)
 
 The following support pre-2018 versions of Rust:
 - [Google Kick Start and Code Jam](https://codingcompetitions.withgoogle.com)
-- [AtCoder](https://atcoder.jp)
-- [Timus](http://acm.timus.ru/help.aspx?topic=rust)
 
 For help in getting started, you may check out [some of my past submissions](https://codeforces.com/contest/1168/submission/55200038).
 
@@ -41,17 +41,83 @@ My other goal is to appeal to developers who feel limited by ancient (yet still 
 
 Rather than try to persuade you with words, this repository aims to show by example. If you're new to Rust, see [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/)
 
-## Contents
+# Contents
 
-- [Basic graph representations](src/graph/mod.rs): adjacency lists, disjoint set union
-- [Elementary graph algorithms](src/graph/util.rs): minimum spanning tree, Euler path, Dijkstra's algorithm, DFS iteration
-- [Connected components](src/graph/connectivity.rs): 2-edge-, 2-vertex- and strongly connected components, bridges, articulation points, topological sort, 2-SAT
-- [Network flows](src/graph/flow.rs): Dinic's blocking flow, Hopcroft-Karp bipartite matching, min cost max flow
-- [Number theory](src/math/mod.rs): canonical solution to Bezout's identity, Miller's primality test
-- [FFT](src/math/fft.rs): fast Fourier transform, number theoretic transform, convolution
-- [Arithmetic](src/math/num.rs): rational and complex numbers, linear algebra, safe modular arithmetic
-- [Ordering algorithms](src/order.rs): binary search, mergesort, coordinate compression, online convex hull trick
-- [Associative range query](src/range_query): static and dynamic ARQ trees (a.k.a. segtrees), Mo's query square root decomposition
-- [Scanner](src/scanner.rs): utility for reading input data ergonomically
-- [String processing](src/string_proc.rs): Knuth-Morris-Pratt and Aho-Corasick string matching, suffix array, Manacher's linear-time palindrome search
+## [Graphs](src/graph/)
+
+### [Graph representations](src/graph/mod.rs)
+
+- Integer index-based adjacency list representation
+- Disjoint set union
+
+### [Elementary graph algorithms](src/graph/util.rs)
+
+- Euler path and tour
+- Kruskal's minimum spanning tree 
+- Dijkstra's single-source shortest paths
+- DFS pre-order traversal
+
+### [Connected components](src/graph/connectivity.rs)
+
+- Connected components
+- Strongly connected components
+- Bridges and 2-edge-connected components
+- Articulation points and 2-vertex-connected components
+- Topological sort
+- 2-SAT solver
+
+### [Network flows](src/graph/flow.rs)
+
+- Dinic's blocking maximum flow
+- Hopcroft-Karp bipartite matching
+- Minimum cost maximum flow
+
+## [Math](src/math/)
+
+### [Number theory](src/math/mod.rs)
+
+- Greatest common divisor
+- Canonical solution to Bezout's identity
+- Miller's primality test
+
+### [Generic FFT](src/math/fft.rs)
+
+- Fast Fourier transform
+- Number theoretic transform
+- Convolution
+
+### [Arithmetic](src/math/num.rs)
+
+- Rational numbers
+- Complex numbers
+- Linear algebra
+- Safe modular arithmetic
+
+## [Ordering and search](src/order.rs)
+
+- Comparator for `PartialOrd`
+- Binary search: drop-in replacements for C++ `lower_bound()`/`upper_bound()`
+- Merge and mergesort
+- Coordinate compression
+- Online convex hull trick (update and query the upper envelope of a set of lines)
+
+## [Associative range query](src/range_query)
+
+- Statically allocated binary indexed ARQ tree (a.k.a. generic segtree with lazy propagation)
+- Dynamically allocated ARQ tree, optionally sparse and persistent
+- Mo's algorithm (a.k.a. query square root decomposition)
+
+## [Scanner](src/scanner.rs)
+
+- Utility for reading input data ergonomically
+- File and standard I/O examples
+
+## [String processing](src/string_proc.rs)
+
+- Generic trie
+- Knuth-Morris-Pratt single-pattern string matching
+- Aho-Corasick multi-pattern string matching
+- Suffix array: O(n log n) construction using counting sort
+- Longest common prefix
+- Manacher's linear-time palindrome search
 

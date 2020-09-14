@@ -1,6 +1,15 @@
-//! Miscellaneous algorithms.
+//! Ordering algorithms.
 
 /// A comparator on partially ordered elements, that panics if they are incomparable
+///
+/// # Example
+///
+/// ```
+/// use contest_algorithms::order::asserting_cmp;
+/// let mut vec = vec![4.5, -1.7, 1.2];
+/// vec.sort_unstable_by(asserting_cmp);
+/// assert_eq!(vec, vec![-1.7, 1.2, 4.5]);
+/// ```
 pub fn asserting_cmp<T: PartialOrd>(a: &T, b: &T) -> std::cmp::Ordering {
     a.partial_cmp(b).expect("Comparing incomparable elements")
 }
