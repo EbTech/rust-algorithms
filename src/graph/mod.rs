@@ -130,14 +130,18 @@ mod test {
 
     #[test]
     fn test_adj_list() {
-        let mut graph = Graph::new(4, 4);
-        graph.add_edge(0, 1);
+        let mut graph = Graph::new(5, 6);
+        graph.add_edge(2, 3);
+        graph.add_edge(2, 4);
+        graph.add_edge(4, 1);
         graph.add_edge(1, 2);
-        graph.add_edge(1, 3);
-        graph.add_edge(3, 0);
+        graph.add_undirected_edge(0, 2);
 
-        let adj: Vec<(usize, usize)> = graph.adj_list(1).collect();
+        let adj = graph.adj_list(2).collect::<Vec<_>>();
 
-        assert_eq!(adj, vec![(2, 3), (1, 2)]);
+        assert_eq!(adj, vec![(5, 0), (1, 4), (0, 3)]);
+        for (e, v) in adj {
+            assert_eq!(v, graph.endp[e]);
+        }
     }
 }

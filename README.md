@@ -69,6 +69,7 @@ Rather than try to persuade you with words, this repository aims to show by exam
 ### [Network flows](src/graph/flow.rs)
 
 - Dinic's blocking maximum flow
+- Minimum cut
 - Hopcroft-Karp bipartite matching
 - Minimum cost maximum flow
 

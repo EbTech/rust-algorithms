@@ -80,7 +80,7 @@ impl SparseIndex {
 /// It combines the offline algorithm with square root decomposition, resulting in an
 /// asymptotically suboptimal but simple algorithm with good amortized performance:
 /// N inserts interleaved with Q queries yields O(N sqrt Q + Q log N) time complexity
-/// in general, or O(N + Q log N) if all queries come after all inserts.
+/// in general, or O((N + Q) log N) if all queries come after all inserts.
 // Proof: the Q log N term comes from calls to slice_lower_bound(). As for the N sqrt Q,
 //        note that between successive times when the hull is rebuilt, O(N) work is done,
 //        and the running totals of insertions and queries satisfy del_N (del_Q + 1) > N.
