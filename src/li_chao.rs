@@ -20,7 +20,7 @@ impl LiChaoTree {
         Self {
             left,
             right,
-            lines: vec![(0, i64::MAX); 4 * (right - left + 1) as usize],
+            lines: vec![(0, i64::MIN); 4 * (right - left + 1) as usize],
         }
     }
 
@@ -32,15 +32,16 @@ impl LiChaoTree {
     /// kept.
     fn add_line_impl(&mut self, mut m: i64, mut b: i64, ix: usize, l: i64, r: i64) {
         let x = (l + r) / 2;
-        if m * x + b < self.lines[ix].0 * x + self.lines[ix].1 {
-            std::mem::swap(&mut m, &mut self.lines[ix].0);
-            std::mem::swap(&mut b, &mut self.lines[ix].1);
+        let (ref mut m_ix, ref mut b_ix) = self.lines[ix];
+        if m * x + b > *m_ix * x + *b_ix {
+            std::mem::swap(&mut m, m_ix);
+            std::mem::swap(&mut b, b_ix);
         }
         if r - l > 1 {
             if m < self.lines[ix].0 {
-                self.add_line_impl(m, b, 2 * ix + 1, x, r);
-            } else {
                 self.add_line_impl(m, b, 2 * ix, l, x);
+            } else {
+                self.add_line_impl(m, b, 2 * ix + 1, x, r);
             }
         }
     }
@@ -57,10 +58,10 @@ impl LiChaoTree {
         let y = self.lines[ix].0 * x + self.lines[ix].1;
         if r - l == 1 {
             y
-        } else if x >= (l + r) / 2 {
-            self.query_impl(x, 2 * ix + 1, (l + r) / 2, r).min(y)
+        } else if x < (l + r) / 2 {
+            self.query_impl(x, 2 * ix, l, (l + r) / 2).max(y)
         } else {
-            self.query_impl(x, 2 * ix, l, (l + r) / 2).min(y)
+            self.query_impl(x, 2 * ix + 1, (l + r) / 2, r).max(y)
         }
     }
 
@@ -76,20 +77,20 @@ mod test {
 
     #[test]
     fn test_li_chao_tree() {
-        let lines = [(0, 3), (1, 0), (-1, 8), (2, -1), (-1, 4)];
+        let lines = [(0, -3), (-1, 0), (1, -8), (-2, 1), (1, -4)];
         let xs = [0, 1, 2, 3, 4, 5];
         // results[i] consists of the expected y-coordinates after processing
         // the first i+1 lines.
         let results = [
-            [3, 3, 3, 3, 3, 3],
-            [0, 1, 2, 3, 3, 3],
-            [0, 1, 2, 3, 3, 3],
-            [-1, 1, 2, 3, 3, 3],
-            [-1, 1, 2, 1, 0, -1],
+            [-3, -3, -3, -3, -3, -3],
+            [-0, -1, -2, -3, -3, -3],
+            [-0, -1, -2, -3, -3, -3],
+            [1, -1, -2, -3, -3, -3],
+            [1, -1, -2, -1, -0, 1],
         ];
         let mut li_chao = LiChaoTree::new(0, 6);
 
-        assert_eq!(li_chao.query(0), i64::MAX);
+        assert_eq!(li_chao.query(0), i64::MIN);
         for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
             li_chao.add_line(slope, intercept);
             let ys: Vec<i64> = xs.iter().map(|&x| li_chao.query(x)).collect();
