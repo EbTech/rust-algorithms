@@ -1,7 +1,11 @@
 # Contest Algorithms in Rust
 
+[![Crates.io Version](https://img.shields.io/crates/v/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
+[![Documentation](https://docs.rs/contest-algorithms/badge.svg)](https://docs.rs/contest-algorithms)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bevyengine/bevy/blob/master/LICENSE)
+[![Crates.io Downloads](https://img.shields.io/crates/d/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
 [![Build Status](https://travis-ci.org/EbTech/rust-algorithms.svg?branch=master)](https://travis-ci.org/EbTech/rust-algorithms)
-[![Latest Version](https://img.shields.io/crates/v/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
+[![Gitter](https://badges.gitter.im/rust-algos/community.svg)](https://gitter.im/rust-algos/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 A collection of classic data structures and algorithms, emphasizing usability, beauty and clarity over full generality. As such, this should be viewed not as a blackbox *library*, but as a whitebox *cookbook* demonstrating the design and implementation of algorithms. I hope it will be useful to students and educators, as well as fans of algorithmic programming contests.
 
