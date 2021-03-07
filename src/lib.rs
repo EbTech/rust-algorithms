@@ -1,5 +1,5 @@
 //! Algorithms Cookbook in Rust.
-pub mod cashing;
+pub mod caching;
 pub mod graph;
 pub mod math;
 pub mod order;

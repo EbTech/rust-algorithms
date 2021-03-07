@@ -1,18 +1,18 @@
-//! Basic casher struct which stores a closure and a hashmap.
+//! Basic Cacher struct which stores a closure and a hashmap.
 //! The hasmap stores key value pairs representing previous
 //! function calls.
 //!
-//! When the Casher function is run, it first does a lookup
+//! When the Cacher function is run, it first does a lookup
 //! to see if the value has already been calculated. If it has,
 //! it returns that value. If it hasn't, it calculates the value,
 //! adds it to the hashmap, and returns it.
 
 use std::collections::HashMap;
 
-/// The Casher struct (Memoization) stores a function and a Hashmap.
+/// The Cacher struct (Memoization) stores a function and a Hashmap.
 /// The HashMap keeps track of previous input and output for the function so
-/// that it only ever has to be called once. Use for expensive functions.
-pub struct Casher<F, U, V>
+/// that it only ever has to be called once per input. Use for expensive functions.
+pub struct Cacher<F, U, V>
 where
     F: Fn(U) -> V,
     U: std::cmp::Eq + std::hash::Hash + Copy,
@@ -22,7 +22,7 @@ where
     values: HashMap<U, V>,
 }
 
-impl<F, U, V> Casher<F, U, V>
+impl<F, U, V> Cacher<F, U, V>
 where
     F: Fn(U) -> V,
     U: std::cmp::Eq + std::hash::Hash + Copy,
@@ -31,30 +31,39 @@ where
     /// Constuctor for the Casher
     /// # Examples
     /// ```
-    /// # use contest_algorithms::cashing::Casher;
-    /// let mut squared = Casher::new(|n: u32| n*n);
+    /// # use contest_algorithms::caching::Cacher;
+    /// let mut squared = Cacher::new(|n: u32| n*n);
     /// ```
-    pub fn new(calculation: F) -> Casher<F, U, V> {
-        Casher {
+    pub fn new(calculation: F) -> Cacher<F, U, V> {
+        Cacher {
             calculation,
             values: HashMap::new(),
         }
     }
 
-    /// Performs a lookup into the hashmap to see if the value has already
+    /// Performs a lookup into the HashMap to see if the value has already
     /// been calculated. If it has, returns the value. If it has not,
     /// calls the function, stores the value, then returns the value
     /// # Examples
     /// ```
-    /// # use contest_algorithms::cashing::Casher;
-    /// let mut squared = Casher::new(|n: u32| n*n);
+    /// # use contest_algorithms::caching::Cacher;
+    /// let mut squared = Cacher::new(|n: u32| n*n);
     ///
     /// // This is where we call the function
-    /// let sixteen = squared.on(4);
+    /// let sixteen = squared.call(4);
     /// ```
-    pub fn on(&mut self, arg: U) -> V {
-        // Clippy doesn't like that this isn't lazy but I'm fine with it.
-        *self.values.entry(arg).or_insert((self.calculation)(arg))
+    pub fn call(&mut self, arg: U) -> V {
+        // This is basically the magic of the whole
+        // structure. You can do this with the entry
+        // api, but I like how readable this particular
+        // block of code is.
+        if let Some(&val) = self.values.get(&arg) {
+            val
+        } else {
+            let val = (self.calculation)(arg);
+            self.values.insert(arg, val);
+            val
+        }
     }
 
     /// Calls the function without performing a lookup and replaces
@@ -72,35 +81,18 @@ where
         self.values.insert(arg, new_val);
         new_val
     }
-
-    /// Empties the HashMap so that all previous function calls
-    /// are forgotten.
-    ///
-    /// # Examples
-    /// ```
-    /// # use contest_algorithms::cashing::Casher;
-    /// let mut squared = Casher::new(|n: u32| n*n);
-    /// let nine = squared.on(3);
-    /// let four = squared.on(2);
-    ///
-    /// // Forget these values
-    /// squared.forget();
-    /// ```
-    pub fn forget(&mut self) {
-        self.values = HashMap::new();
-    }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use super::Casher;
+    use super::Cacher;
     use std::collections::HashMap;
 
     #[test]
-    fn test_casher_basically_works() {
-        let mut word_len = Casher::new(|word: &str| word.len());
-        let hello = word_len.on("hello");
+    fn test_cacher_basically_works() {
+        let mut word_len = Cacher::new(|word: &str| word.len());
+        let hello = word_len.call("hello");
 
         // Test function returns correctly
         assert_eq!(hello, 5);
@@ -114,28 +106,28 @@ mod tests {
         assert_eq!(word_len.values, test_map);
 
         // Test HashMap has correct value after duplicate insert
-        word_len.on("hello");
+        word_len.call("hello");
         assert_eq!(word_len.values, test_map);
 
         // Test HashMap has correct values after unique input
-        word_len.on("wazzup");
+        word_len.call("wazzup");
         test_map.insert("wazzup", 6);
         assert_eq!(word_len.values, test_map);
     }
 
     #[test]
-    fn testing_call_and_replace_and_forget() {
-        // I'm honestly not sure how to write a good test
-        // for call_and_replace, but if you have an idea let
-        // me know and I'll put it here and in the docs
+    fn call_and_replace() {
+        use std::time::Instant;
 
-        // Testing forget
-        let mut func = Casher::new(|x: usize| x * 2);
-        func.on(27);
-        func.on(54);
-        func.on(222);
-        func.forget();
+        let mut func = Cacher::new(|_param: usize| Instant::now());
+        let first_instant = func.call(0);
+        let lookup_instant = func.call(0);
 
-        assert_eq!(func.values, HashMap::new());
+        assert_eq!(first_instant, lookup_instant);
+        assert_eq!(1, func.values.len());
+
+        let second_instant = func.call_and_replace(0);
+        assert_eq!(1, func.values.len());
+        assert_ne!(second_instant, lookup_instant);
     }
 }
