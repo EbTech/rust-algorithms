@@ -43,7 +43,7 @@ where
 
     /// Performs a lookup into the HashMap to see if the value has already
     /// been calculated. If it has, returns the value. If it has not,
-    /// calls the function, stores the value, then returns the value
+    /// calls the function, stores the value, then returns the value.
     /// # Examples
     /// ```
     /// # use contest_algorithms::caching::Cacher;
@@ -52,30 +52,19 @@ where
     /// // This is where we call the function
     /// let sixteen = squared.call(4);
     /// ```
+    // TODO: whenever Rust's Entry API gains the ability to take ownership of
+    // arg only when necessary, this method should follow the same practice.
+    // Also, Cacher should implement Fn(U)->V once this is possible.
     pub fn call(&mut self, arg: U) -> V {
-        // This is basically the magic of the whole
-        // structure. You can do this with the entry
-        // api, but I like how readable this particular
-        // block of code is.
-        if let Some(&val) = self.values.get(&arg) {
-            val
-        } else {
-            let val = (self.calculation)(arg);
-            self.values.insert(arg, val);
-            val
-        }
+        let calc = &self.calculation;
+        *self.values.entry(arg).or_insert_with_key(|&key| calc(key))
     }
 
     /// Calls the function without performing a lookup and replaces
-    /// the old calculation with the new one, then returns the value
-    ///
-    /// # Use Case
-    /// If you're wondering, this is for if some sort of "state" has changed
-    /// underneath you, so your same function call with the same input
-    /// might now have different output. For instance, if part of your function
-    /// reads from a file and
-    /// you think the contents of that file have changed even though the name
-    /// has not.
+    /// the old return value with the new one, and returns it.
+    /// Potentially useful if the function reads from a file or RNG
+    /// whose state may have changed.
+    // TODO: if there's state, FnMut seems more appropriate.
     pub fn call_and_replace(&mut self, arg: U) -> V {
         let new_val = (self.calculation)(arg);
         self.values.insert(arg, new_val);
@@ -85,9 +74,7 @@ where
 
 #[cfg(test)]
 mod tests {
-
-    use super::Cacher;
-    use std::collections::HashMap;
+    use super::*;
 
     #[test]
     fn test_cacher_basically_works() {
@@ -116,7 +103,21 @@ mod tests {
     }
 
     #[test]
-    fn call_and_replace() {
+    fn test_cacher_speed() {
+        // Simulate a function that takes 1 second to complete
+        let mut func = Cacher::new(|x| {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            x * x
+        });
+
+        // Would take 10 minutes without caching
+        for _ in 0..6000 {
+            assert_eq!(25, func.call(5));
+        }
+    }
+
+    #[test]
+    fn test_call_and_replace() {
         use std::time::Instant;
 
         let mut func = Cacher::new(|_param: usize| Instant::now());
