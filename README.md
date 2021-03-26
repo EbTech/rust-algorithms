@@ -43,7 +43,7 @@ For help in getting started, you may check out [some of my past submissions](htt
 
 My other goal is to appeal to developers who feel limited by ancient (yet still mainstream) programming languages, by demonstrating the power of modern techniques.
 
-Rather than try to persuade you with words, this repository aims to show by example. If you're new to Rust, see [Jim Blandy's *Why Rust?*](http://www.oreilly.com/programming/free/files/why-rust.pdf) for a brief introduction, or just [dive in!](https://doc.rust-lang.org/book/)
+Rather than try to persuade you with words, this repository aims to show by example. If you'd like to learn the language, I recommend [the official book](https://doc.rust-lang.org/book/) or [Programming Rust](https://www.amazon.com/Programming-Rust-Fast-Systems-Development-dp-1492052590/dp/1492052590).
 
 # Contents
 
