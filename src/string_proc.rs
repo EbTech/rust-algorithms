@@ -316,6 +316,46 @@ pub fn palindromes(text: &[impl Eq]) -> Vec<usize> {
     pal
 }
 
+/// Z algorithm for computing an array Z[..], where Z[i] is the length of the
+/// longest text substring starting from index i that is **also a prefix** of
+/// the text.
+///
+/// This runs in O(n) time. It can be embedded in a larger algorithm, or used
+/// for string searching as an alternative to KMP above.
+///
+/// # Example
+///
+/// ```
+/// use contest_algorithms::string_proc::z_algorithm;
+/// let z = z_algorithm("ababbababbabababbabababbababbaba".as_bytes());
+/// assert_eq!(
+///     z,
+///     vec![
+///         32, 0, 2, 0, 0, 9, 0, 2, 0, 0, 4, 0, 9, 0, 2, 0, 0, 4, 0, 13, 0, 2,
+///         0, 0, 8, 0, 2, 0, 0, 3, 0, 1,
+///     ],
+/// );
+/// ```
+pub fn z_algorithm(text: &[impl Eq]) -> Vec<usize> {
+    let n = text.len();
+    let (mut l, mut r) = (0, 0);
+    let mut z = vec![0; n];
+    z[0] = n;
+    for i in 1..n {
+        if i < r {
+            z[i] = min(r - i, z[i - l]);
+        }
+        while i + z[i] < n && text[i + z[i]] == text[z[i]] {
+            z[i] += 1;
+        }
+        if i + z[i] > r {
+            l = i;
+            r = i + z[i];
+        }
+    }
+    z
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
