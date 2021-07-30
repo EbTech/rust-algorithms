@@ -49,8 +49,8 @@ impl<C: std::hash::Hash + Eq> Trie<C> {
 pub struct Matcher<'a, C: Eq> {
     /// The string pattern to search for.
     pub pattern: &'a [C],
-    /// KMP match failure automaton. fail[i] is the length of the longest
-    /// proper prefix-suffix of pattern[0..=i].
+    /// KMP match failure automaton: fail[i] is the length of the longest
+    /// string that's both a proper prefix and a proper suffix of pattern[0..=i].
     pub fail: Vec<usize>,
 }
 
@@ -316,18 +316,18 @@ pub fn palindromes(text: &[impl Eq]) -> Vec<usize> {
     pal
 }
 
-/// Z algorithm for computing an array Z[..], where Z[i] is the length of the
-/// longest text substring starting from index i that is **also a prefix** of
-/// the text.
+/// Z algorithm: computes the array Z[..], where Z[i] is the length of the
+/// longest text prefix of text[i..] that is **also a prefix** of text.
 ///
-/// This runs in O(n) time. It can be embedded in a larger algorithm, or used
-/// for string searching as an alternative to KMP above.
+/// It runs in O(n) time, maintaining the invariant that l <= i and
+/// text[0..r-l] == text[l..r]. It can be embedded in a larger algorithm,
+/// or used for string searching as an alternative to KMP.
 ///
 /// # Example
 ///
 /// ```
 /// use contest_algorithms::string_proc::z_algorithm;
-/// let z = z_algorithm("ababbababbabababbabababbababbaba".as_bytes());
+/// let z = z_algorithm(b"ababbababbabababbabababbababbaba");
 /// assert_eq!(
 ///     z,
 ///     vec![
@@ -338,19 +338,18 @@ pub fn palindromes(text: &[impl Eq]) -> Vec<usize> {
 /// ```
 pub fn z_algorithm(text: &[impl Eq]) -> Vec<usize> {
     let n = text.len();
-    let (mut l, mut r) = (0, 0);
-    let mut z = vec![0; n];
-    z[0] = n;
+    let (mut l, mut r) = (1, 1);
+    let mut z = Vec::with_capacity(n);
+    z.push(n);
     for i in 1..n {
-        if i < r {
-            z[i] = min(r - i, z[i - l]);
-        }
-        while i + z[i] < n && text[i + z[i]] == text[z[i]] {
-            z[i] += 1;
-        }
-        if i + z[i] > r {
+        if r > i + z[i - l] {
+            z.push(z[i - l]);
+        } else {
             l = i;
-            r = i + z[i];
+            while r < i || (r < n && text[r - i] == text[r]) {
+                r += 1;
+            }
+            z.push(r - i);
         }
     }
     z
