@@ -45,7 +45,7 @@ impl ConnectivityData {
 ///
 /// Multiple-edges and self-loops are correctly handled.
 pub struct ConnectivityGraph<'a> {
-    // Immutable graph, frozen for the lifetime of the ConnectivityGraph object.
+    /// Immutable graph, frozen for the lifetime of the ConnectivityGraph object.
     pub graph: &'a Graph,
     /// ID of a vertex's CC, SCC or 2ECC, whichever applies. Range 1 to num_cc.
     pub cc: Vec<usize>,
