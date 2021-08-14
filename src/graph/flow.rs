@@ -13,7 +13,7 @@ pub struct FlowGraph {
 
 impl FlowGraph {
     /// An upper limit to the flow.
-    const INF: i64 = 0x3f3f_3f3f_3f3f_3f3f;
+    const INF: i64 = i64::MAX;
 
     /// Initializes an flow network with vmax vertices and no edges.
     pub fn new(vmax: usize, emax_hint: usize) -> Self {
