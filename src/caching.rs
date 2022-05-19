@@ -1,5 +1,5 @@
 //! Basic Cacher struct which stores a closure and a hashmap.
-//! The hasmap stores key value pairs representing previous
+//! The hashmap stores key value pairs representing previous
 //! function calls.
 //!
 //! When the Cacher function is run, it first does a lookup
