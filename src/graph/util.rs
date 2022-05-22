@@ -61,14 +61,16 @@ impl Graph {
         dist
     }
 
-    pub fn dfs(&self, u: usize) -> DfsIterator {
+    pub fn dfs(&self, root: usize) -> DfsIterator {
+        let mut visited = vec![false; self.num_v()];
+        visited[root] = true;
         let adj_iters = (0..self.num_v())
             .map(|u| self.adj_list(u))
             .collect::<Vec<_>>();
 
         DfsIterator {
-            visited: vec![false; self.num_v()],
-            stack: vec![u],
+            visited,
+            stack: vec![root],
             adj_iters,
         }
     }
@@ -81,32 +83,23 @@ pub struct DfsIterator<'a> {
 }
 
 impl<'a> Iterator for DfsIterator<'a> {
-    type Item = usize;
+    type Item = (usize, usize);
 
-    /// Returns next vertex in the DFS
+    /// Returns next edge and vertex in the depth-first traversal
+    // Refs: https://www.geeksforgeeks.org/iterative-depth-first-traversal/
+    //       https://en.wikipedia.org/wiki/Depth-first_search
     fn next(&mut self) -> Option<Self::Item> {
-        // Sources:
-        // https://www.geeksforgeeks.org/iterative-depth-first-traversal/
-        // https://en.wikipedia.org/wiki/Depth-first_search
-        while let Some(&u) = self.stack.last() {
-            if let Some((_, v)) = self.adj_iters[u].next() {
+        loop {
+            let &u = self.stack.last()?;
+            while let Some((e, v)) = self.adj_iters[u].next() {
                 if !self.visited[v] {
+                    self.visited[v] = true;
                     self.stack.push(v);
+                    return Some((e, v));
                 }
-            } else {
-                self.stack.pop();
             }
-
-            // Stack may contain same vertex twice. So
-            // we return the popped item only
-            // if it is not visited.
-            if !self.visited[u] {
-                self.visited[u] = true;
-                return Some(u);
-            }
+            self.stack.pop();
         }
-
-        None
     }
 }
 
@@ -153,7 +146,7 @@ mod test {
 
     #[test]
     fn test_dfs() {
-        let mut graph = Graph::new(4, 8);
+        let mut graph = Graph::new(4, 6);
         graph.add_edge(0, 2);
         graph.add_edge(2, 0);
         graph.add_edge(1, 2);
@@ -161,13 +154,17 @@ mod test {
         graph.add_edge(3, 3);
         graph.add_edge(2, 3);
 
-        let dfs_search = graph.dfs(2).collect::<Vec<_>>();
-        assert_eq!(dfs_search, vec![2, 3, 0, 1]);
+        let dfs_root = 2;
+        let dfs_traversal = std::iter::once(dfs_root)
+            .chain(graph.dfs(dfs_root).map(|(_, v)| v))
+            .collect::<Vec<_>>();
+
+        assert_eq!(dfs_traversal, vec![2, 3, 0, 1]);
     }
 
     #[test]
     fn test_dfs2() {
-        let mut graph = Graph::new(5, 8);
+        let mut graph = Graph::new(5, 6);
         graph.add_edge(0, 2);
         graph.add_edge(2, 1);
         graph.add_edge(1, 0);
@@ -175,9 +172,12 @@ mod test {
         graph.add_edge(3, 4);
         graph.add_edge(4, 0);
 
-        let dfs_search = graph.dfs(0).collect::<Vec<_>>();
-        //Note this is not the only valid DFS
-        assert_eq!(dfs_search, vec![0, 3, 4, 2, 1]);
+        let dfs_root = 0;
+        let dfs_traversal = std::iter::once(dfs_root)
+            .chain(graph.dfs(dfs_root).map(|(_, v)| v))
+            .collect::<Vec<_>>();
+
+        assert_eq!(dfs_traversal, vec![0, 3, 4, 2, 1]);
     }
 
     #[test]
@@ -190,10 +190,11 @@ mod test {
             }
         }
 
-        let mut dfs_search = graph.dfs(7);
-        let mut dfs_check = vec![];
-        for _ in 0..num_v {
-            dfs_check.push(dfs_search.next().unwrap());
+        let dfs_root = 7;
+        let mut dfs_search = graph.dfs(dfs_root);
+        let mut dfs_check = vec![dfs_root];
+        for _ in 1..num_v {
+            dfs_check.push(dfs_search.next().unwrap().1);
             assert!(dfs_search.stack.len() <= num_v + 1);
         }
 

@@ -1,5 +1,5 @@
 //! The Fast Fourier Transform (FFT) and Number Theoretic Transform (NTT)
-use super::num::{Complex, Field, PI};
+use super::num::{CommonField, Complex, PI};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 // We can delete this struct once f64::reverse_bits() stabilizes.
@@ -30,6 +30,7 @@ impl Iterator for BitRevIterator {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub trait FFT: Sized + Copy {
     type F: Sized
         + Copy
@@ -77,7 +78,7 @@ impl FFT for f64 {
 // 440564289 and 1713844692 are inverses and 2^27th roots of 1 mod (15<<27)+1
 //       125 and 2267742733 are inverses and 2^30th roots of 1 mod (3<<30)+1
 impl FFT for i64 {
-    type F = Field;
+    type F = CommonField;
 
     const ZERO: Self = 0;
 
@@ -197,9 +198,9 @@ mod test {
         let dft_v = dft_from_reals(&v, v.len());
         let new_v: Vec<i64> = idft_to_reals(&dft_v, v.len());
 
-        let seven = Field::from(7);
-        let one = Field::from(1);
-        let prim = Field::from(15_311_432).pow(1 << 21);
+        let seven = CommonField::from(7);
+        let one = CommonField::from(1);
+        let prim = CommonField::from(15_311_432).pow(1 << 21);
         let prim2 = prim * prim;
 
         let eval0 = seven + one + one;
@@ -230,6 +231,6 @@ mod test {
         let m = convolution(&vec![999], &vec![1_000_000]);
 
         assert_eq!(z, vec![14, 30, 6, 4]);
-        assert_eq!(m, vec![999_000_000 - Field::MOD]);
+        assert_eq!(m, vec![999_000_000 - super::super::num::COMMON_PRIME]);
     }
 }

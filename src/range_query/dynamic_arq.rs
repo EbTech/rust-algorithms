@@ -68,8 +68,10 @@ impl<T: ArqSpec> DynamicArq<T> {
     /// Builds a tree whose leaves are set to a given non-empty slice.
     pub fn build_from_slice(&mut self, init_val: &[T::S]) -> ArqView {
         if init_val.len() == 1 {
-            let mut root = DynamicArqNode::default();
-            root.val = init_val[0].clone();
+            let root = DynamicArqNode {
+                val: init_val[0].clone(),
+                ..Default::default()
+            };
             self.nodes.push(root);
             (self.nodes.len() - 1, 1)
         } else {
@@ -85,8 +87,10 @@ impl<T: ArqSpec> DynamicArq<T> {
     pub fn merge_equal_sized(&mut self, (lp, ls): ArqView, (rp, rs): ArqView) -> ArqView {
         assert!(ls == rs || ls + 1 == rs);
         let p = self.nodes.len();
-        let mut root = DynamicArqNode::default();
-        root.down = (lp, rp);
+        let root = DynamicArqNode {
+            down: (lp, rp),
+            ..Default::default()
+        };
         self.nodes.push(root);
         self.pull(p);
         (p, ls + rs)

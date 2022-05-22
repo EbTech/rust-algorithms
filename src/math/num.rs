@@ -165,27 +165,24 @@ impl Div for Complex {
     }
 }
 
-/// Represents an element of the finite (Galois) field of prime order, given by
-/// MOD. Until Rust gets const generics, MOD must be hardcoded, but any prime in
-/// [1, 2^31.5] will work. If MOD is not prime, ring operations are still valid
+/// Represents an element of the finite (Galois) field of prime order M, where
+/// 1 <= M < 2^31.5. If M is not prime, ring operations are still valid
 /// but recip() and division are not. Note that the latter operations are also
 /// the slowest, so precompute any inverses that you intend to use frequently.
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Hash)]
-pub struct Field {
+pub struct Modulo<const M: i64> {
     pub val: i64,
 }
-impl Field {
-    pub const MOD: i64 = 998_244_353; // 2^23 * 7 * 17 + 1
-
-    /// Computes self^exp in O(log(exp)) time
-    pub fn pow(mut self, mut exp: u64) -> Self {
+impl<const M: i64> Modulo<M> {
+    /// Computes self^n in O(log n) time
+    pub fn pow(mut self, mut n: u64) -> Self {
         let mut result = Self::from_small(1);
-        while exp > 0 {
-            if exp % 2 == 1 {
+        while n > 0 {
+            if n % 2 == 1 {
                 result = result * self;
             }
             self = self * self;
-            exp /= 2;
+            n /= 2;
         }
         result
     }
@@ -193,58 +190,62 @@ impl Field {
     pub fn vec_of_recips(n: i64) -> Vec<Self> {
         let mut recips = vec![Self::from(0), Self::from(1)];
         for i in 2..=n {
-            let (md, dv) = (Self::MOD % i, Self::MOD / i);
+            let (md, dv) = (M % i, M / i);
             recips.push(recips[md as usize] * Self::from_small(-dv));
         }
         recips
     }
-    /// Computes self^-1 in O(log(Self::MOD)) time
+    /// Computes self^-1 in O(log M) time
     pub fn recip(self) -> Self {
-        self.pow(Self::MOD as u64 - 2)
+        self.pow(M as u64 - 2)
     }
-    /// Avoids the % operation but requires -Self::MOD <= x < Self::MOD
+    /// Avoids the % operation but requires -M <= x < M
     fn from_small(s: i64) -> Self {
-        let val = if s < 0 { s + Self::MOD } else { s };
+        let val = if s < 0 { s + M } else { s };
         Self { val }
     }
 }
-impl From<i64> for Field {
+impl<const M: i64> From<i64> for Modulo<M> {
     fn from(val: i64) -> Self {
-        // Self { val: val.rem_euclid(Self::MOD) }
-        Self::from_small(val % Self::MOD)
+        // Self { val: val.rem_euclid(M) }
+        Self::from_small(val % M)
     }
 }
-impl Neg for Field {
+impl<const M: i64> Neg for Modulo<M> {
     type Output = Self;
     fn neg(self) -> Self {
         Self::from_small(-self.val)
     }
 }
-impl Add for Field {
+impl<const M: i64> Add for Modulo<M> {
     type Output = Self;
     fn add(self, other: Self) -> Self {
-        Self::from_small(self.val + other.val - Self::MOD)
+        Self::from_small(self.val + other.val - M)
     }
 }
-impl Sub for Field {
+impl<const M: i64> Sub for Modulo<M> {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         Self::from_small(self.val - other.val)
     }
 }
-impl Mul for Field {
+impl<const M: i64> Mul for Modulo<M> {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
         Self::from(self.val * other.val)
     }
 }
 #[allow(clippy::suspicious_arithmetic_impl)]
-impl Div for Field {
+impl<const M: i64> Div for Modulo<M> {
     type Output = Self;
     fn div(self, other: Self) -> Self {
         self * other.recip()
     }
 }
+
+/// Prime modulus that's commonly used in programming competitions
+pub const COMMON_PRIME: i64 = 998_244_353; // 2^23 * 7 * 17 + 1;
+pub type CommonField = Modulo<COMMON_PRIME>;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Matrix {
@@ -268,15 +269,15 @@ impl Matrix {
         let inner = vec.to_vec().into_boxed_slice();
         Self { cols, inner }
     }
-    pub fn pow(&self, mut exp: u64) -> Self {
+    pub fn pow(&self, mut n: u64) -> Self {
         let mut base = self.clone();
         let mut result = Self::one(self.cols);
-        while exp > 0 {
-            if exp % 2 == 1 {
+        while n > 0 {
+            if n % 2 == 1 {
                 result = &result * &base;
             }
             base = &base * &base;
-            exp /= 2;
+            n /= 2;
         }
         result
     }
@@ -417,10 +418,10 @@ mod test {
 
     #[test]
     fn test_field() {
-        let base = Field::from(1234);
+        let base = CommonField::from(1234);
         let zero = base - base;
         let one = base.recip() * base;
-        let two = Field::from(2 - 5 * Field::MOD);
+        let two = CommonField::from(2 - 5 * COMMON_PRIME);
 
         assert_eq!(zero.val, 0);
         assert_eq!(one.val, 1);
@@ -430,11 +431,11 @@ mod test {
 
     #[test]
     fn test_vec_of_recips() {
-        let recips = Field::vec_of_recips(20);
+        let recips = CommonField::vec_of_recips(20);
 
         assert_eq!(recips.len(), 21);
         for i in 1..recips.len() {
-            assert_eq!(recips[i], Field::from(i as i64).recip());
+            assert_eq!(recips[i], CommonField::from(i as i64).recip());
         }
     }
 
