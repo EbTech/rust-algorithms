@@ -1,12 +1,15 @@
-/// A structure for answering minimum queries on a set of linear functions. Supports two
-/// operations: inserting a linear function and querying for minimum at a given point. Unlike the
+/// A structure for answering maximum queries on a set of linear functions. Supports two
+/// operations: inserting a linear function and querying for maximum at a given point. Unlike the
 /// simplest convex hull trick implementation, the queries can be done in any order, and we can do
 /// all the calculations using integers.
+/// https://cp-algorithms.com/geometry/convex_hull_trick.html#li-chao-tree
+/// Compared to the code in the above link, this implementation further improves the algorithm by
+/// reducing the number of nodes to (right - left). This is done by removing the midpoint of a
+/// segment from both children. Even better, this allows the index of a node to just be the
+/// midpoint of the interval!
 
-/// This data structure builds a static segment tree over the interval of x-coordinates
-/// [left,right), so requires O(right-left) memory. Just like normal segment trees, this could be
-/// modified to a dynamic tree when the range is huge (it can also be made persistent!).
-/// It can also probably be done as an AlCash style iterative segment tree in the static case.
+/// Just like normal segment trees, this could be modified to a dynamic tree when the range is huge
+/// (it can also be made persistent!).
 
 pub struct LiChaoTree {
     left: i64,
@@ -20,54 +23,60 @@ impl LiChaoTree {
         Self {
             left,
             right,
-            lines: vec![(0, i64::MIN); 4 * (right - left + 1) as usize],
+            lines: vec![(0, std::i64::MIN); (right - left) as usize],
         }
     }
 
-    /// Every node in the tree has the property that the line that minimizes its midpoint is found
+    /// Every node in the tree has the property that the line that maximizes its midpoint is found
     /// either in the node or one of its ancestors.  When we visit a node, we compute the winner at
     /// the midpoint of the node. The winner is stored in the node. The loser can still possibly
     /// beat the winner on some segment, either to the left or to the right of the current
     /// midpoint, so we propagate it to that segment. This sequence ensures that the invariant is
     /// kept.
-    fn add_line_impl(&mut self, mut m: i64, mut b: i64, ix: usize, l: i64, r: i64) {
-        let x = (l + r) / 2;
+    fn add_line_impl(&mut self, mut m: i64, mut b: i64, l: i64, r: i64) {
+        if r <= l {
+            return;
+        }
+        let ix = ((r - self.left + l - self.left) / 2) as usize;
+        let x = self.left + (ix as i64);
         let (ref mut m_ix, ref mut b_ix) = self.lines[ix];
         if m * x + b > *m_ix * x + *b_ix {
             std::mem::swap(&mut m, m_ix);
             std::mem::swap(&mut b, b_ix);
         }
-        if r - l > 1 {
-            if m < self.lines[ix].0 {
-                self.add_line_impl(m, b, 2 * ix, l, x);
-            } else {
-                self.add_line_impl(m, b, 2 * ix + 1, x, r);
-            }
+        if m < self.lines[ix].0 {
+            self.add_line_impl(m, b, l, x);
+        } else {
+            self.add_line_impl(m, b, x + 1, r);
         }
     }
 
     /// Adds the line with slope m and intercept b. O(log N) complexity.
     pub fn add_line(&mut self, m: i64, b: i64) {
-        self.add_line_impl(m, b, 1, self.left, self.right);
+        self.add_line_impl(m, b, self.left, self.right);
     }
 
     /// Because of the invariant established by add_line, we know that the best line for a given
-    /// point is stored in one of the ancestors of its node. So we accumulate the minimum answer as
+    /// point is stored in one of the ancestors of its node. So we accumulate the maximum answer as
     /// we go back up the tree.
-    fn query_impl(&self, x: i64, ix: usize, l: i64, r: i64) -> i64 {
+    fn query_impl(&self, x: i64, l: i64, r: i64) -> i64 {
+        if r == l {
+            return std::i64::MIN;
+        }
+        let ix = ((r - self.left + l - self.left) / 2) as usize;
         let y = self.lines[ix].0 * x + self.lines[ix].1;
         if r - l == 1 {
             y
         } else if x < (l + r) / 2 {
-            self.query_impl(x, 2 * ix, l, (l + r) / 2).max(y)
+            self.query_impl(x, l, self.left + ix as i64).max(y)
         } else {
-            self.query_impl(x, 2 * ix + 1, (l + r) / 2, r).max(y)
+            self.query_impl(x, self.left + 1 + ix as i64, r).max(y)
         }
     }
 
-    /// Finds the minimum mx+b among all lines in the structure. O(log N) complexity.
+    /// Finds the maximum mx+b among all lines in the structure. O(log N) complexity.
     pub fn query(&self, x: i64) -> i64 {
-        self.query_impl(x, 1, self.left, self.right)
+        self.query_impl(x, self.left, self.right)
     }
 }
 
@@ -90,7 +99,7 @@ mod test {
         ];
         let mut li_chao = LiChaoTree::new(0, 6);
 
-        assert_eq!(li_chao.query(0), i64::MIN);
+        assert_eq!(li_chao.query(0), std::i64::MIN);
         for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
             li_chao.add_line(slope, intercept);
             let ys: Vec<i64> = xs.iter().map(|&x| li_chao.query(x)).collect();
