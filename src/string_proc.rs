@@ -142,6 +142,7 @@ impl<C: std::hash::Hash + Eq> MultiMatcher<C> {
     /// If there are duplicate patterns, all but one copy will be ignored.
     pub fn new(patterns: impl IntoIterator<Item = impl IntoIterator<Item = C>>) -> Self {
         let mut trie = Trie::default();
+        #[allow(clippy::needless_collect)] // It's not needless: it affects trie.links.len()
         let pat_nodes: Vec<usize> = patterns.into_iter().map(|pat| trie.insert(pat)).collect();
 
         let mut pat_id = vec![None; trie.links.len()];
@@ -155,7 +156,7 @@ impl<C: std::hash::Hash + Eq> MultiMatcher<C> {
 
         while let Some(node) = q.pop_front() {
             for (ch, &child) in &trie.links[node] {
-                let nx = Self::next(&trie, &fail, fail[node], &ch);
+                let nx = Self::next(&trie, &fail, fail[node], ch);
                 fail[child] = nx;
                 fast[child] = if pat_id[nx].is_some() { nx } else { fast[nx] };
                 q.push_back(child);
@@ -246,7 +247,7 @@ impl SuffixArray {
             let mut cur_rank = prev_rank.clone();
 
             let pos = (n - skip..n).chain(sfx.into_iter().filter_map(|p| p.checked_sub(skip)));
-            sfx = Self::counting_sort(pos, &prev_rank, max(n, 256));
+            sfx = Self::counting_sort(pos, prev_rank, max(n, 256));
 
             let mut prev = sfx[0];
             cur_rank[prev] = 0;

@@ -35,7 +35,6 @@ impl<R: io::BufRead> Scanner<R> {
 }
 
 /// Same API as Scanner but nearly twice as fast, using horribly unsafe dark arts
-/// **REQUIRES** Rust 1.34 or higher
 pub struct UnsafeScanner<R> {
     reader: R,
     buf_str: Vec<u8>,
@@ -118,9 +117,8 @@ mod test {
 
     #[test]
     fn test_compile_stdio() {
-        let (stdin, stdout) = (io::stdin(), io::stdout());
-        let mut scan = Scanner::new(stdin.lock());
-        let mut out = io::BufWriter::new(stdout.lock());
+        let mut scan = Scanner::new(io::stdin().lock());
+        let mut out = io::BufWriter::new(io::stdout().lock());
 
         if false {
             solve(&mut scan, &mut out);

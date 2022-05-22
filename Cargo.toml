@@ -1,8 +1,8 @@
 [package]
 name = "contest-algorithms"
-version = "0.3.0"
+version = "0.3.1-alpha.0"
 authors = ["Aram Ebtekar"]
-edition = "2018"
+edition = "2021"
 
 description = "Common algorithms and data structures for programming contests"
 repository = "https://github.com/EbTech/rust-algorithms"
