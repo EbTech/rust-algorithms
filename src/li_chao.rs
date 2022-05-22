@@ -38,16 +38,16 @@ impl LiChaoTree {
             return;
         }
         let ix = ((r - self.left + l - self.left) / 2) as usize;
-        let x = self.left + (ix as i64);
+        let mid = self.left + (ix as i64);
         let (ref mut m_ix, ref mut b_ix) = self.lines[ix];
-        if m * x + b > *m_ix * x + *b_ix {
+        if m * mid + b > *m_ix * mid + *b_ix {
             std::mem::swap(&mut m, m_ix);
             std::mem::swap(&mut b, b_ix);
         }
         if m < self.lines[ix].0 {
-            self.add_line_impl(m, b, l, x);
+            self.add_line_impl(m, b, l, mid);
         } else {
-            self.add_line_impl(m, b, x + 1, r);
+            self.add_line_impl(m, b, mid + 1, r);
         }
     }
 
