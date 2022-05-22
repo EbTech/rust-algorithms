@@ -91,7 +91,7 @@ impl<'a> Iterator for DfsIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let &u = self.stack.last()?;
-            while let Some((e, v)) = self.adj_iters[u].next() {
+            for (e, v) in self.adj_iters[u].by_ref() {
                 if !self.visited[v] {
                     self.visited[v] = true;
                     self.stack.push(v);
