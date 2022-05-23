@@ -46,7 +46,7 @@ impl LiChaoTree {
         }
         if m < self.lines[ix].0 {
             self.add_line_impl(m, b, l, mid);
-        } else {
+        } else if m > self.lines[ix].0 {
             self.add_line_impl(m, b, mid + 1, r);
         }
     }
@@ -61,16 +61,17 @@ impl LiChaoTree {
     /// we go back up the tree.
     fn query_impl(&self, x: i64, l: i64, r: i64) -> i64 {
         if r == l {
-            return std::i64::MIN;
+            return i64::MIN;
         }
         let ix = ((r - self.left + l - self.left) / 2) as usize;
+        let mid = ix as i64 + self.left;
         let y = self.lines[ix].0 * x + self.lines[ix].1;
-        if r - l == 1 {
+        if x == mid {
             y
-        } else if x < (l + r) / 2 {
-            self.query_impl(x, l, self.left + ix as i64).max(y)
+        } else if x < mid {
+            self.query_impl(x, l, mid).max(y)
         } else {
-            self.query_impl(x, self.left + 1 + ix as i64, r).max(y)
+            self.query_impl(x, mid + 1, r).max(y)
         }
     }
 
