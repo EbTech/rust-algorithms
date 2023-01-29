@@ -1,5 +1,5 @@
 //! Graph connectivity structures.
-use super::Graph;
+use super::graph::Graph;
 
 /// Helper struct that carries data needed for the depth-first searches in
 /// ConnectivityGraph's constructor.
@@ -197,11 +197,11 @@ mod test {
     #[test]
     fn test_toposort() {
         let mut graph = Graph::new(4, 5);
-        graph.add_edge(0, 0);
-        graph.add_edge(0, 2);
-        graph.add_edge(3, 2);
-        graph.add_edge(3, 1);
-        graph.add_edge(1, 0);
+        graph.add_directed_edge(0, 0);
+        graph.add_directed_edge(0, 2);
+        graph.add_directed_edge(3, 2);
+        graph.add_directed_edge(3, 1);
+        graph.add_directed_edge(1, 0);
 
         assert_eq!(
             ConnectivityGraph::new(&graph, true).topological_sort(),

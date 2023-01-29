@@ -1,5 +1,5 @@
 //! Maximum flows, matchings, and minimum cuts.
-use super::{AdjListIterator, Graph};
+use super::graph::{AdjListIterator, Graph};
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
@@ -143,7 +143,7 @@ impl FlowGraph {
         let (mut min_cost, mut max_flow) = (0, 0);
         loop {
             let par = self.mcf_search(s, &flow, &mut pot);
-            if par[t] == None {
+            if par[t].is_none() {
                 break;
             }
             let (dc, df) = self.mcf_augment(t, &par, &mut flow);
