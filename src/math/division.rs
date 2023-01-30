@@ -1,6 +1,6 @@
-//! Number-theoretic utilities for contest problems.
-pub mod fft;
-pub mod num;
+use super::num;
+
+//Number-theoretic utilities for contest problems.
 
 /// Finds (d, coef_a, coef_b) such that d = gcd(a, b) = a * coef_a + b * coef_b.
 pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {

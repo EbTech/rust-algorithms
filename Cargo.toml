@@ -1,11 +1,11 @@
 [package]
-name = "contest-algorithms"
+name = "contest-llamas"
 version = "0.3.1-alpha.0"
-authors = ["Aram Ebtekar"]
+authors = ["Luis Galup"]
 edition = "2021"
 
 description = "Common algorithms and data structures for programming contests"
-repository = "https://github.com/EbTech/rust-algorithms"
+repository = "https://github.com/legalup/rust-llama-cookbook"
 readme = "README.md"
 keywords = ["competitive", "programming", "codeforces"]
 categories = ["algorithms", "data-structures"]

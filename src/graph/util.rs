@@ -1,10 +1,9 @@
+use super::disjoint_set::DisjointSets;
 use super::graph::{AdjListIterator, Graph};
-use super::DisjointSets;
 use std::cmp::Reverse;
 
 impl Graph {
-
-     // Helper function used by euler_path. Note that we can't use a for-loop
+    // Helper function used by euler_path. Note that we can't use a for-loop
     // that would consume the adjacency list as recursive calls may need it.
     fn euler_recurse(u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
         while let Some((e, v)) = adj[u].next() {
@@ -25,8 +24,6 @@ impl Graph {
         edges.reverse();
         edges
     }
-
-   
 
     /// Kruskal's minimum spanning tree algorithm on an undirected graph.
     pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {

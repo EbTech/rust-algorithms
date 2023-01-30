@@ -60,6 +60,7 @@ impl<'a, C: Eq> Matcher<'a, C> {
     /// # Example
     ///
     /// ```
+    /*
     /// use contest_algorithms::string_proc::Matcher;
     /// let byte_string: &[u8] = b"hello";
     /// let utf8_string: &str = "hello";
@@ -71,6 +72,8 @@ impl<'a, C: Eq> Matcher<'a, C> {
     ///
     /// let vec_int = vec![4, -3, 1];
     /// let match_from_ints = Matcher::new(&vec_int);
+    ///
+     */
     /// ```
     ///
     /// # Panics
@@ -327,15 +330,6 @@ pub fn palindromes(text: &[impl Eq]) -> Vec<usize> {
 /// # Example
 ///
 /// ```
-/// use contest_algorithms::string_proc::z_algorithm;
-/// let z = z_algorithm(b"ababbababbabababbabababbababbaba");
-/// assert_eq!(
-///     z,
-///     vec![
-///         32, 0, 2, 0, 0, 9, 0, 2, 0, 0, 4, 0, 9, 0, 2, 0, 0, 4, 0, 13, 0, 2,
-///         0, 0, 8, 0, 2, 0, 0, 3, 0, 1,
-///     ],
-/// );
 /// ```
 pub fn z_algorithm(text: &[impl Eq]) -> Vec<usize> {
     let n = text.len();

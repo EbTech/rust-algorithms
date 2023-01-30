@@ -1,5 +1,5 @@
 //! Associative Range Query Tree
-use super::ArqSpec;
+use super::specs::ArqSpec;
 
 /// Colloquially known as a "segtree" in the sport programming literature, it
 /// represents a sequence of elements a_i (0 <= i < size) from a monoid (S, +)

@@ -1,6 +1,6 @@
 //! Associative Range Query Tree with dynamic allocation, supporting sparse
 //! initialization and persistence
-use super::ArqSpec;
+use super::specs::ArqSpec;
 
 pub struct DynamicArqNode<T: ArqSpec> {
     val: T::S,
