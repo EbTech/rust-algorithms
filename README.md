@@ -1,4 +1,4 @@
-# Contest Algorithms in Rust
+# Rust Leet Llama AlgorithM Anthology (Rust Llama)
 
 [![Crates.io Version](https://img.shields.io/crates/v/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
 [![Documentation](https://docs.rs/contest-algorithms/badge.svg)](https://docs.rs/contest-algorithms)
