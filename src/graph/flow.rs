@@ -1,10 +1,10 @@
 //! Maximum flows, matchings, and minimum cuts.
-use super::graph::{AdjListIterator, Graph};
+use super::graph::{AdjListIterator, DirectedGraph};
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph {
     /// Owned graph, managed by this FlowGraph object.
-    pub graph: Graph,
+    pub graph: DirectedGraph,
     /// Edge capacities.
     pub cap: Vec<i64>,
     /// Edge cost per unit flow.
@@ -18,7 +18,7 @@ impl FlowGraph {
     /// Initializes an flow network with vmax vertices and no edges.
     pub fn new(vmax: usize, emax_hint: usize) -> Self {
         Self {
-            graph: Graph::new(vmax, 2 * emax_hint),
+            graph: DirectedGraph::new(vmax, 2 * emax_hint),
             cap: Vec::with_capacity(2 * emax_hint),
             cost: Vec::with_capacity(2 * emax_hint),
         }
@@ -31,7 +31,8 @@ impl FlowGraph {
         self.cap.push(rcap);
         self.cost.push(cost);
         self.cost.push(-cost);
-        self.graph.add_undirected_edge(u, v);
+        self.graph.add_edge(u, v);
+        self.graph.add_edge(v,u);
     }
 
     /// Dinic's algorithm to find the maximum flow from s to t where s != t.

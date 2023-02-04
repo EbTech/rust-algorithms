@@ -8,7 +8,7 @@
 ///
 use std::collections::HashMap;
 
-pub struct Graph {
+pub struct DirectedGraph {
     /// Maps a vertex id to the first edge in its adjacency list.
     pub first: Vec<Option<usize>>,
     /// Maps an edge id to the next edge in the same adjacency list.
@@ -16,10 +16,10 @@ pub struct Graph {
     /// Maps an edge id to the vertex that it points to.
     pub endp: Vec<usize>,
     /// Set containing all the edges, used for quick look up
-    pub edge_weights: HashMap<(usize, usize), i32>,
+    pub edge_weights: HashMap<(usize, usize), i64>,
 }
 
-impl Graph {
+impl DirectedGraph {
     /// Initializes a graph with vmax vertices and no edges. To reduce
     /// unnecessary allocations, emax_hint should be close to the number of
     /// edges that will be inserted.
@@ -43,18 +43,33 @@ impl Graph {
     }
 
     /// Adds a directed edge from u to v.
-    pub fn add_directed_edge(&mut self, u: usize, v: usize) {
+    pub fn add_edge(&mut self, u: usize, v: usize) {
         self.next.push(self.first[u]);
         self.first[u] = Some(self.num_e());
         self.endp.push(v);
-        self.edge_weights.insert((u, v), 1i32);
+        self.edge_weights.insert((u, v), 1i64);
     }
 
-    /// An undirected edge is two directed edges. If edges are added only via
-    /// this funcion, the reverse of any edge e can be found at e^1.
-    pub fn add_undirected_edge(&mut self, u: usize, v: usize) {
-        self.add_directed_edge(u, v);
-        self.add_directed_edge(v, u);
+    /// Adds a weighted directed edge from u to v.
+    pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
+        self.next.push(self.first[u]);
+        self.first[u] = Some(self.num_e());
+        self.endp.push(v);
+        self.edge_weights.insert((u, v), w);
+    }
+
+    /// this retrieves a weight vector, where index is the edge index
+    /// probably this should not be public, since edge index is internal representation
+    pub fn get_weights(&self) -> Vec<i64> {
+        let mut ret = vec![0i64; self.num_e()];
+
+        for idx in 0..self.num_v() {
+            for e_iter in self.adj_list(idx) {
+                ret[e_iter.0] = self.edge_weights[&(idx, e_iter.1)];
+            }
+        }
+
+        ret
     }
 
     /// If we think of each even-numbered vertex as a variable, and its
@@ -62,8 +77,8 @@ impl Graph {
     /// implication graph corresponding to any 2-CNF formula.
     /// Note that u||v == !u -> v == !v -> u.
     pub fn add_two_sat_clause(&mut self, u: usize, v: usize) {
-        self.add_directed_edge(u ^ 1, v);
-        self.add_directed_edge(v ^ 1, u);
+        self.add_edge(u ^ 1, v);
+        self.add_edge(v ^ 1, u);
     }
 
     /// This tests if an edge is contained here
@@ -82,11 +97,12 @@ impl Graph {
 
 /// An iterator for convenient adjacency list traversal.
 pub struct AdjListIterator<'a> {
-    graph: &'a Graph,
+    graph: &'a DirectedGraph,
     next_e: Option<usize>,
 }
 
 impl<'a> Iterator for AdjListIterator<'a> {
+    /// first is vertex index, second is edge index
     type Item = (usize, usize);
 
     /// Produces an outgoing edge and vertex.
@@ -99,18 +115,69 @@ impl<'a> Iterator for AdjListIterator<'a> {
     }
 }
 
+pub struct UndirectedGraph {
+    /// underlying representation. wouldnt it be nice if we had inheritance
+    pub directed_graph: DirectedGraph,
+}
+
+impl UndirectedGraph {
+    /// Initializes a graph with vmax vertices and no edges. To reduce
+    /// unnecessary allocations, emax_hint should be close to the number of
+    /// edges that will be inserted.
+    pub fn new(vmax: usize, emax_hint: usize) -> Self {
+        Self {
+            directed_graph: DirectedGraph::new(vmax, 2*emax_hint),
+        }
+    }
+
+    /// Returns the number of vertices.
+    pub fn num_v(&self) -> usize {
+        self.directed_graph.num_v()
+    }
+
+    /// Returns the number of edges, double-counting Undirected edges.
+    pub fn num_e(&self) -> usize {
+        self.directed_graph.num_e()
+    }
+
+    /// Adds a directed edge from u to v.
+    pub fn add_edge(&mut self, u: usize, v: usize) {
+        self.directed_graph.add_edge(u, v);
+        self.directed_graph.add_edge(v, u);
+    }
+
+    /// Adds a weighted directed edge from u to v.
+    pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
+        self.directed_graph.add_weighted_edge(u, v, w);
+        self.directed_graph.add_weighted_edge(v, u, w);
+    }
+
+    /// this retrieves a weight vector, where index is the edge index
+    /// probably this should not be public, since edge index is internal representation
+    pub fn get_weights(&self) -> Vec<i64> {
+        self.directed_graph
+            .get_weights()
+            .into_iter()
+            .enumerate()
+            .filter(|e_idx| e_idx.0 % 2 == 0)
+            .map(|(_, v)| v)
+            .collect::<Vec<_>>() //turbofish!
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
     fn test_adj_list() {
-        let mut graph = Graph::new(5, 6);
-        graph.add_directed_edge(2, 3);
-        graph.add_directed_edge(2, 4);
-        graph.add_directed_edge(4, 1);
-        graph.add_directed_edge(1, 2);
-        graph.add_undirected_edge(0, 2);
+        let mut graph = DirectedGraph::new(5, 6);
+        graph.add_edge(2, 3);
+        graph.add_edge(2, 4);
+        graph.add_edge(4, 1);
+        graph.add_edge(1, 2);
+        graph.add_edge(0, 2);
+        graph.add_edge(2, 0);
 
         let adj = graph.adj_list(2).collect::<Vec<_>>();
 

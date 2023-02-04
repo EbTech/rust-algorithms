@@ -1,8 +1,8 @@
 use super::disjoint_set::DisjointSets;
-use super::graph::{AdjListIterator, Graph};
+use super::graph::{AdjListIterator, DirectedGraph, UndirectedGraph};
 use std::cmp::Reverse;
 
-impl Graph {
+impl DirectedGraph {
     // Helper function used by euler_path. Note that we can't use a for-loop
     // that would consume the adjacency list as recursive calls may need it.
     fn euler_recurse(u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
@@ -23,19 +23,6 @@ impl Graph {
         Self::euler_recurse(u, &mut adj_iters, &mut edges);
         edges.reverse();
         edges
-    }
-
-    /// Kruskal's minimum spanning tree algorithm on an undirected graph.
-    pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
-        assert_eq!(self.num_e(), 2 * weights.len());
-        let mut edges = (0..weights.len()).collect::<Vec<_>>();
-        edges.sort_unstable_by_key(|&e| weights[e]);
-
-        let mut components = DisjointSets::new(self.num_v());
-        edges
-            .into_iter()
-            .filter(|&e| components.merge(self.endp[2 * e], self.endp[2 * e + 1]))
-            .collect()
     }
 
     // Single-source shortest paths on a directed graph with non-negative weights
@@ -75,6 +62,25 @@ impl Graph {
     }
 }
 
+impl UndirectedGraph {
+    /// Kruskal's minimum spanning tree algorithm on an undirected graph.
+    pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
+        assert_eq!(self.num_e(), 2 * weights.len());
+        let mut edges = (0..weights.len()).collect::<Vec<_>>();
+        edges.sort_unstable_by_key(|&e| weights[e]);
+
+        let mut components = DisjointSets::new(self.num_v());
+        edges
+            .into_iter()
+            .filter(|&e| {
+                components.merge(
+                    self.directed_graph.endp[2 * e],
+                    self.directed_graph.endp[2 * e + 1],
+                )
+            })
+            .collect()
+    }
+}
 pub struct DfsIterator<'a> {
     visited: Vec<bool>,
     stack: Vec<usize>,
@@ -108,24 +114,25 @@ mod test {
 
     #[test]
     fn test_euler() {
-        let mut graph = Graph::new(3, 4);
-        graph.add_directed_edge(0, 1);
-        graph.add_directed_edge(1, 0);
-        graph.add_directed_edge(1, 2);
-        graph.add_directed_edge(2, 1);
+        let mut graph = DirectedGraph::new(3, 4);
+        graph.add_edge(0, 1);
+        graph.add_edge(1, 0);
+        graph.add_edge(1, 2);
+        graph.add_edge(2, 1);
 
         assert_eq!(graph.euler_path(0), vec![0, 2, 3, 1]);
     }
 
     #[test]
     fn test_min_spanning_tree() {
-        let mut graph = Graph::new(3, 6);
-        graph.add_undirected_edge(0, 1);
-        graph.add_undirected_edge(1, 2);
-        graph.add_undirected_edge(2, 0);
+        let mut graph = UndirectedGraph::new(3, 6);
+        graph.add_weighted_edge(0, 1, 7);
+        graph.add_weighted_edge(1, 2, 3);
+        graph.add_weighted_edge(2, 0, 5);
         let weights = [7, 3, 5];
+        //let weights = graph.get_weights();
 
-        let mst = graph.min_spanning_tree(&weights);
+        let mst = graph.min_spanning_tree(weights.as_slice());
         let mst_cost = mst.iter().map(|&e| weights[e]).sum::<i64>();
         assert_eq!(mst, vec![1, 2]);
         assert_eq!(mst_cost, 8);
@@ -133,10 +140,10 @@ mod test {
 
     #[test]
     fn test_dijkstra() {
-        let mut graph = Graph::new(3, 3);
-        graph.add_directed_edge(0, 1);
-        graph.add_directed_edge(1, 2);
-        graph.add_directed_edge(2, 0);
+        let mut graph = DirectedGraph::new(3, 3);
+        graph.add_edge(0, 1);
+        graph.add_edge(1, 2);
+        graph.add_edge(2, 0);
         let weights = [7, 3, 5];
 
         let dist = graph.dijkstra(&weights, 0);
@@ -145,13 +152,13 @@ mod test {
 
     #[test]
     fn test_dfs() {
-        let mut graph = Graph::new(4, 6);
-        graph.add_directed_edge(0, 2);
-        graph.add_directed_edge(2, 0);
-        graph.add_directed_edge(1, 2);
-        graph.add_directed_edge(0, 1);
-        graph.add_directed_edge(3, 3);
-        graph.add_directed_edge(2, 3);
+        let mut graph = DirectedGraph::new(4, 6);
+        graph.add_edge(0, 2);
+        graph.add_edge(2, 0);
+        graph.add_edge(1, 2);
+        graph.add_edge(0, 1);
+        graph.add_edge(3, 3);
+        graph.add_edge(2, 3);
 
         let dfs_root = 2;
         let dfs_traversal = std::iter::once(dfs_root)
@@ -163,13 +170,13 @@ mod test {
 
     #[test]
     fn test_dfs2() {
-        let mut graph = Graph::new(5, 6);
-        graph.add_directed_edge(0, 2);
-        graph.add_directed_edge(2, 1);
-        graph.add_directed_edge(1, 0);
-        graph.add_directed_edge(0, 3);
-        graph.add_directed_edge(3, 4);
-        graph.add_directed_edge(4, 0);
+        let mut graph = DirectedGraph::new(5, 6);
+        graph.add_edge(0, 2);
+        graph.add_edge(2, 1);
+        graph.add_edge(1, 0);
+        graph.add_edge(0, 3);
+        graph.add_edge(3, 4);
+        graph.add_edge(4, 0);
 
         let dfs_root = 0;
         let dfs_traversal = std::iter::once(dfs_root)
@@ -182,10 +189,11 @@ mod test {
     #[test]
     fn test_dfs_space_complexity() {
         let num_v = 20;
-        let mut graph = Graph::new(num_v, 0);
+        let mut graph = DirectedGraph::new(num_v, 0);
         for i in 0..num_v {
             for j in 0..num_v {
-                graph.add_undirected_edge(i, j);
+                graph.add_edge(i, j);
+                graph.add_edge(j, i);
             }
         }
 

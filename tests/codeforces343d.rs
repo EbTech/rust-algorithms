@@ -3,7 +3,7 @@
 //! module's contents directly here instead of the use statements.
 //! Also, use the commented code in main() to employ standard I/O.
 extern crate contest_llamas;
-use contest_llamas::graph::graph::Graph;
+use contest_llamas::graph::graph::DirectedGraph;
 use contest_llamas::range_query::specs::AssignSum;
 use contest_llamas::range_query::static_arq::StaticArq;
 use contest_llamas::scanner::Scanner;
@@ -41,7 +41,7 @@ const SAMPLE_OUTPUT: &[u8] = b"\
 ";
 
 fn dfs(
-    graph: &Graph,
+    graph: &DirectedGraph,
     u: usize,
     l: &mut [usize],
     r: &mut [usize],
@@ -63,11 +63,12 @@ fn dfs(
 
 fn solve<R: io::BufRead, W: io::Write>(scan: &mut Scanner<R>, out: &mut W) {
     let n = scan.token::<usize>();
-    let mut tree = Graph::new(n, 2 * (n - 1));
+    let mut tree = DirectedGraph::new(n, 2 * (n - 1));
     for _ in 1..n {
         let u = scan.token::<usize>() - 1;
         let v = scan.token::<usize>() - 1;
-        tree.add_undirected_edge(u, v);
+        tree.add_edge(u, v);
+        tree.add_edge(v,u);
     }
 
     let mut l = vec![0; n];
