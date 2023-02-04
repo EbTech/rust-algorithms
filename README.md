@@ -1,4 +1,4 @@
-# Rust Leet Llama AlgorithM Anthology (Rust Llama)
+# Rust LLeet AlgorithMAs (Rust Llamas)
 
 [![Crates.io Version](https://img.shields.io/crates/v/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
 [![Documentation](https://docs.rs/contest-algorithms/badge.svg)](https://docs.rs/contest-algorithms)
@@ -6,6 +6,8 @@
 [![Crates.io Downloads](https://img.shields.io/crates/d/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
 [![Build Status](https://travis-ci.org/EbTech/rust-algorithms.svg?branch=master)](https://travis-ci.org/EbTech/rust-algorithms)
 [![Gitter](https://badges.gitter.im/rust-algos/community.svg)](https://gitter.im/rust-algos/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+ 
+Definition: An *algorithma* is the smallest functional unit of algorithm. Larger algorithms that live in the wild consist of these building blocks.
 
 A collection of classic data structures and algorithms, emphasizing usability, beauty and clarity over full generality. As such, this should be viewed not as a blackbox *library*, but as a whitebox *cookbook* demonstrating the design and implementation of algorithms. I hope it will be useful to students and educators, as well as fans of algorithmic programming contests.
 
