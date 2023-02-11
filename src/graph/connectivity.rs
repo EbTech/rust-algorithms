@@ -85,11 +85,11 @@ impl<'a> ConnectivityDirectedGraph<'a> {
     fn scc(&mut self, data: &mut ConnectivityData, u: usize) {
         data.visit(u);
         for (_, v) in self.graph.adj_list(u) {
-            if data.vis[v] == 0 {
-                self.scc(data, v);
+            if data.vis[*v] == 0 {
+                self.scc(data, *v);
             }
-            if self.cc[v] == 0 {
-                data.lower(u, data.low[v]);
+            if self.cc[*v] == 0 {
+                data.lower(u, data.low[*v]);
             }
         }
         if data.vis[u] == data.low[u] {
@@ -169,7 +169,9 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
 
     fn bcc(&mut self, data: &mut ConnectivityData, u: usize, par: usize) {
         data.visit(u);
-        for (e, v) in self.graph.directed_graph.adj_list(u) {
+        for (er, vr) in self.graph.directed_graph.adj_list(u) {
+            let e = *er;
+            let v = *vr;
             if data.vis[v] == 0 {
                 data.e_stack.push(e);
                 self.bcc(data, v, e);
@@ -209,13 +211,11 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
 
     /// In an undirected graph, determines whether u is an articulation vertex.
     pub fn is_cut_vertex(&self, u: usize) -> bool {
-        if let Some(first_e) = self.graph.directed_graph.first[u] {
-            self.graph
-                .directed_graph.adj_list(u)
-                .any(|(e, _)| self.vcc[first_e] != self.vcc[e])
-        } else {
-            false
-        }
+        let first_e = self.graph.directed_graph.adj_lists[u].first().unwrap().0;
+        self.graph
+            .directed_graph
+            .adj_list(u)
+            .any(|(e, _)| self.vcc[first_e] != self.vcc[*e])
     }
 
     /// In an undirected graph, determines whether e is a bridge
@@ -259,7 +259,10 @@ mod test {
         );
 
         graph.add_two_sat_clause(z, z);
-        assert_eq!(ConnectivityDirectedGraph::new(&graph).two_sat_assign(), None);
+        assert_eq!(
+            ConnectivityDirectedGraph::new(&graph).two_sat_assign(),
+            None
+        );
     }
 
     #[test]

@@ -7,8 +7,8 @@ impl DirectedGraph {
     // that would consume the adjacency list as recursive calls may need it.
     fn euler_recurse(u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
         while let Some((e, v)) = adj[u].next() {
-            Self::euler_recurse(v, adj, edges);
-            edges.push(e);
+            Self::euler_recurse(*v, adj, edges);
+            edges.push(*e);
         }
     }
     /// Finds the sequence of edges in an Euler path starting from u, assuming
@@ -36,10 +36,10 @@ impl DirectedGraph {
         while let Some((Reverse(dist_u), u)) = heap.pop() {
             if dist[u] == dist_u {
                 for (e, v) in self.adj_list(u) {
-                    let dist_v = dist_u + weights[e];
-                    if dist[v] > dist_v {
-                        dist[v] = dist_v;
-                        heap.push((Reverse(dist_v), v));
+                    let dist_v = dist_u + weights[*e];
+                    if dist[*v] > dist_v {
+                        dist[*v] = dist_v;
+                        heap.push((Reverse(dist_v), *v));
                     }
                 }
             }
@@ -97,10 +97,10 @@ impl<'a> Iterator for DfsIterator<'a> {
         loop {
             let &u = self.stack.last()?;
             for (e, v) in self.adj_iters[u].by_ref() {
-                if !self.visited[v] {
-                    self.visited[v] = true;
-                    self.stack.push(v);
-                    return Some((e, v));
+                if !self.visited[*v] {
+                    self.visited[*v] = true;
+                    self.stack.push(*v);
+                    return Some((*e, *v));
                 }
             }
             self.stack.pop();
@@ -165,7 +165,7 @@ mod test {
             .chain(graph.dfs(dfs_root).map(|(_, v)| v))
             .collect::<Vec<_>>();
 
-        assert_eq!(dfs_traversal, vec![2, 3, 0, 1]);
+        assert_eq!(dfs_traversal, vec![2, 0, 1, 3]);
     }
 
     #[test]
@@ -183,7 +183,7 @@ mod test {
             .chain(graph.dfs(dfs_root).map(|(_, v)| v))
             .collect::<Vec<_>>();
 
-        assert_eq!(dfs_traversal, vec![0, 3, 4, 2, 1]);
+        assert_eq!(dfs_traversal, vec![0, 2, 1, 3, 4]);
     }
 
     #[test]

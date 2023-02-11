@@ -52,9 +52,9 @@ fn dfs(
     l[u] = *time;
 
     for (_, v) in graph.adj_list(u) {
-        if l[v] == 0 {
-            p[v] = l[u];
-            dfs(graph, v, l, r, p, time);
+        if l[*v] == 0 {
+            p[*v] = l[u];
+            dfs(graph, *v, l, r, p, time);
         }
     }
 
@@ -68,7 +68,7 @@ fn solve<R: io::BufRead, W: io::Write>(scan: &mut Scanner<R>, out: &mut W) {
         let u = scan.token::<usize>() - 1;
         let v = scan.token::<usize>() - 1;
         tree.add_edge(u, v);
-        tree.add_edge(v,u);
+        tree.add_edge(v, u);
     }
 
     let mut l = vec![0; n];

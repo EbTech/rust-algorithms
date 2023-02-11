@@ -32,7 +32,7 @@ impl FlowGraph {
         self.cost.push(cost);
         self.cost.push(-cost);
         self.graph.add_edge(u, v);
-        self.graph.add_edge(v,u);
+        self.graph.add_edge(v, u);
     }
 
     /// Dinic's algorithm to find the maximum flow from s to t where s != t.
@@ -68,9 +68,9 @@ impl FlowGraph {
         q.push_back(s);
         while let Some(u) = q.pop_front() {
             for (e, v) in self.graph.adj_list(u) {
-                if dist[v] == Self::INF && flow[e] < self.cap[e] {
-                    dist[v] = dist[u] + 1;
-                    q.push_back(v);
+                if dist[*v] == Self::INF && flow[*e] < self.cap[*e] {
+                    dist[*v] = dist[u] + 1;
+                    q.push_back(*v);
                 }
             }
         }
@@ -93,11 +93,11 @@ impl FlowGraph {
         let mut df = 0;
 
         while let Some(&(e, v)) = adj[u].peek() {
-            let rem_cap = (self.cap[e] - flow[e]).min(f - df);
-            if rem_cap > 0 && dist[v] == dist[u] + 1 {
-                let cf = self.dinic_augment(v, t, rem_cap, dist, adj, flow);
-                flow[e] += cf;
-                flow[e ^ 1] -= cf;
+            let rem_cap = (self.cap[*e] - flow[*e]).min(f - df);
+            if rem_cap > 0 && dist[*v] == dist[u] + 1 {
+                let cf = self.dinic_augment(*v, t, rem_cap, dist, adj, flow);
+                flow[*e] += cf;
+                flow[(*e) ^ 1] -= cf;
                 df += cf;
                 if df == f {
                     break;
@@ -169,9 +169,9 @@ impl FlowGraph {
             vis[u] = true;
             pot[u] = dist[u];
             for (e, v) in self.graph.adj_list(u) {
-                if dist[v] > dist[u] + self.cost[e] && flow[e] < self.cap[e] {
-                    dist[v] = dist[u] + self.cost[e];
-                    par[v] = Some(e);
+                if dist[*v] > dist[u] + self.cost[*e] && flow[*e] < self.cap[*e] {
+                    dist[*v] = dist[u] + self.cost[*e];
+                    par[*v] = Some(*e);
                 }
             }
         }

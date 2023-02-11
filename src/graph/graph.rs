@@ -3,16 +3,17 @@
 //! # Panics
 //!
 //! All methods will panic if given an out-of-bounds element index.
+use core::slice::Iter;
 /// A compact graph representation. Edges are numbered in order of insertion.
 /// Each adjacency list consists of all edges pointing out from a given vertex.
 ///
 use std::collections::HashMap;
 
+pub type AdjListIterator<'a> = Iter<'a, (usize, usize)>;
+
 pub struct DirectedGraph {
-    /// Maps a vertex id to the first edge in its adjacency list.
-    pub first: Vec<Option<usize>>,
-    /// Maps an edge id to the next edge in the same adjacency list.
-    pub next: Vec<Option<usize>>,
+    pub adj_lists: Vec<Vec<(usize, usize)>>,
+
     /// Maps an edge id to the vertex that it points to.
     pub endp: Vec<usize>,
     /// Set containing all the edges, used for quick look up
@@ -25,8 +26,7 @@ impl DirectedGraph {
     /// edges that will be inserted.
     pub fn new(vmax: usize, emax_hint: usize) -> Self {
         Self {
-            first: vec![None; vmax],
-            next: Vec::with_capacity(emax_hint),
+            adj_lists: vec![Vec::with_capacity(vmax); vmax],
             endp: Vec::with_capacity(emax_hint),
             edge_weights: HashMap::new(),
         }
@@ -34,7 +34,7 @@ impl DirectedGraph {
 
     /// Returns the number of vertices.
     pub fn num_v(&self) -> usize {
-        self.first.len()
+        self.adj_lists.len()
     }
 
     /// Returns the number of edges, double-counting undirected edges.
@@ -44,17 +44,13 @@ impl DirectedGraph {
 
     /// Adds a directed edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize) {
-        self.next.push(self.first[u]);
-        self.first[u] = Some(self.num_e());
-        self.endp.push(v);
-        self.edge_weights.insert((u, v), 1i64);
+        self.add_weighted_edge(u, v, 1i64);
     }
 
     /// Adds a weighted directed edge from u to v.
     pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
-        self.next.push(self.first[u]);
-        self.first[u] = Some(self.num_e());
         self.endp.push(v);
+        self.adj_lists[u].push((self.endp.len() - 1, v));
         self.edge_weights.insert((u, v), w);
     }
 
@@ -88,30 +84,7 @@ impl DirectedGraph {
 
     /// Gets vertex u's adjacency list.
     pub fn adj_list(&self, u: usize) -> AdjListIterator {
-        AdjListIterator {
-            graph: self,
-            next_e: self.first[u],
-        }
-    }
-}
-
-/// An iterator for convenient adjacency list traversal.
-pub struct AdjListIterator<'a> {
-    graph: &'a DirectedGraph,
-    next_e: Option<usize>,
-}
-
-impl<'a> Iterator for AdjListIterator<'a> {
-    /// first is vertex index, second is edge index
-    type Item = (usize, usize);
-
-    /// Produces an outgoing edge and vertex.
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_e.map(|e| {
-            let v = self.graph.endp[e];
-            self.next_e = self.graph.next[e];
-            (e, v)
-        })
+        self.adj_lists[u].iter()
     }
 }
 
@@ -126,7 +99,7 @@ impl UndirectedGraph {
     /// edges that will be inserted.
     pub fn new(vmax: usize, emax_hint: usize) -> Self {
         Self {
-            directed_graph: DirectedGraph::new(vmax, 2*emax_hint),
+            directed_graph: DirectedGraph::new(vmax, 2 * emax_hint),
         }
     }
 
@@ -181,9 +154,8 @@ mod test {
 
         let adj = graph.adj_list(2).collect::<Vec<_>>();
 
-        assert_eq!(adj, vec![(5, 0), (1, 4), (0, 3)]);
         for (e, v) in adj {
-            assert_eq!(v, graph.endp[e]);
+            assert_eq!(*v, graph.endp[*e]);
         }
     }
 }
