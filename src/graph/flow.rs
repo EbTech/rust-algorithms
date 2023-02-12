@@ -113,8 +113,8 @@ impl FlowGraph {
     pub fn min_cut(&self, dist: &[i64]) -> Vec<usize> {
         (0..self.graph.num_e())
             .filter(|&e| {
-                let u = self.graph.endp[e ^ 1];
-                let v = self.graph.endp[e];
+                let u = self.graph.edges[e ^ 1];
+                let v = self.graph.edges[e];
                 dist[u] < Self::INF && dist[v] == Self::INF
             })
             .collect()
@@ -133,8 +133,8 @@ impl FlowGraph {
         for _ in 1..self.graph.num_v() {
             for e in 0..self.graph.num_e() {
                 if self.cap[e] > 0 {
-                    let u = self.graph.endp[e ^ 1];
-                    let v = self.graph.endp[e];
+                    let u = self.graph.edges[e ^ 1];
+                    let v = self.graph.edges[e];
                     pot[v] = pot[v].min(pot[u] + self.cost[e]);
                 }
             }
@@ -184,14 +184,14 @@ impl FlowGraph {
         let mut u = t;
         while let Some(e) = par[u] {
             df = df.min(self.cap[e] - flow[e]);
-            u = self.graph.endp[e ^ 1];
+            u = self.graph.edges[e ^ 1];
         }
         u = t;
         while let Some(e) = par[u] {
             flow[e] += df;
             flow[e ^ 1] -= df;
             dc += df * self.cost[e];
-            u = self.graph.endp[e ^ 1];
+            u = self.graph.edges[e ^ 1];
         }
         (dc, df)
     }
@@ -263,7 +263,7 @@ mod test {
             .enumerate()
             .filter(|&(_e, f)| f > 0)
             //map to u->v
-            .map(|(e, _f)| (graph.graph.endp[e ^ 1], graph.graph.endp[e]))
+            .map(|(e, _f)| (graph.graph.edges[e ^ 1], graph.graph.edges[e]))
             //leave out source and sink nodes
             .filter(|&(u, v)| u != source && v != sink)
             .collect::<Vec<_>>();

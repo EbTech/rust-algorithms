@@ -65,7 +65,6 @@ impl DirectedGraph {
 impl UndirectedGraph {
     /// Kruskal's minimum spanning tree algorithm on an undirected graph.
     pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
-        assert_eq!(self.num_e(), 2 * weights.len());
         let mut edges = (0..weights.len()).collect::<Vec<_>>();
         edges.sort_unstable_by_key(|&e| weights[e]);
 
@@ -73,10 +72,8 @@ impl UndirectedGraph {
         edges
             .into_iter()
             .filter(|&e| {
-                components.merge(
-                    self.directed_graph.endp[2 * e],
-                    self.directed_graph.endp[2 * e + 1],
-                )
+                let (u, v) = self.edges[e];
+                components.merge(u, v)
             })
             .collect()
     }
