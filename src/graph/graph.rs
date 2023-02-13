@@ -15,7 +15,7 @@ pub struct DirectedGraph {
     /// adjacency list. each vertex has a list of (edge index, destination vertex index)
     pub adj_lists: Vec<Vec<(usize, usize)>>,
     /// Maps an edge id to the vertex that it points to.
-    pub edges: Vec<(usize,usize)>,
+    pub edges: Vec<(usize, usize)>,
     /// edge weights
     pub edge_weights: Vec<i64>,
 }
@@ -49,11 +49,10 @@ impl DirectedGraph {
 
     /// Adds a weighted directed edge from u to v.
     pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
-        self.edges.push((u,v));
+        self.edges.push((u, v));
         self.edge_weights.push(w);
         self.adj_lists[u].push((self.edges.len() - 1, v));
     }
-    
 
     /// If we think of each even-numbered vertex as a variable, and its
     /// odd-numbered successor as its negation, then we can build the

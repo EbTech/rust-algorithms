@@ -113,7 +113,7 @@ impl FlowGraph {
     pub fn min_cut(&self, dist: &[i64]) -> Vec<usize> {
         (0..self.graph.num_e())
             .filter(|&e| {
-                let (u,v) = self.graph.edges[e];
+                let (u, v) = self.graph.edges[e];
                 dist[u] < Self::INF && dist[v] == Self::INF
             })
             .collect()
@@ -132,7 +132,7 @@ impl FlowGraph {
         for _ in 1..self.graph.num_v() {
             for e in 0..self.graph.num_e() {
                 if self.cap[e] > 0 {
-                    let (u,v) = self.graph.edges[e];
+                    let (u, v) = self.graph.edges[e];
                     pot[v] = pot[v].min(pot[u] + self.cost[e]);
                 }
             }

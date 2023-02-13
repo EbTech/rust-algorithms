@@ -63,10 +63,10 @@ impl DirectedGraph {
 }
 
 impl UndirectedGraph {
-    /// Kruskal's minimum spanning tree algorithm on an undirected graph.
-    pub fn min_spanning_tree(&self, weights: &[i64]) -> Vec<usize> {
-        let mut edges = (0..weights.len()).collect::<Vec<_>>();
-        edges.sort_unstable_by_key(|&e| weights[e]);
+    /// Kruskal's minimum spanning tree algorithm on an undirected weighted graph.
+    pub fn min_spanning_tree(&self) -> Vec<usize> {
+        let mut edges = (0..self.edge_weights.len()).collect::<Vec<_>>();
+        edges.sort_unstable_by_key(|&e| self.edge_weights[e]);
 
         let mut components = DisjointSets::new(self.num_v());
         edges
@@ -126,10 +126,8 @@ mod test {
         graph.add_weighted_edge(0, 1, 7);
         graph.add_weighted_edge(1, 2, 3);
         graph.add_weighted_edge(2, 0, 5);
-        //let weights = [7, 3, 5];
-        //let weights = graph.edge_weights;
 
-        let mst = graph.min_spanning_tree(graph.edge_weights.as_slice());
+        let mst = graph.min_spanning_tree();
         let mst_cost = mst.iter().map(|&e| graph.edge_weights[e]).sum::<i64>();
         assert_eq!(mst, vec![1, 2]);
         assert_eq!(mst_cost, 8);
