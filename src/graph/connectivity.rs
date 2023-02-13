@@ -226,7 +226,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
         }
     }
 
-    /// In an undirected graph, determines whether u is an articulation vertex.
+    /// In an undirected graph, determines whether u is an cut vertex.
     pub fn is_cut_vertex(&self, u: usize) -> bool {
         //return self.is_articulation_point[u];
 
@@ -298,7 +298,7 @@ mod test {
             .filter(|&u| cg.is_cut_vertex(u))
             .collect::<Vec<_>>();
 
-        //assert_eq!(bridges, vec![0, 1]);
+        assert_eq!(bridges, vec![0, 1]);
         assert_eq!(articulation_points, vec![1]);
     }
 }

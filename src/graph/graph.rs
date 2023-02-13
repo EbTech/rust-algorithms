@@ -14,7 +14,7 @@ pub type AdjListIterator<'a> = Iter<'a, (usize, usize)>;
 pub struct DirectedGraph {
     /// adjacency list. each vertex has a list of (edge index, destination vertex index)
     pub adj_lists: Vec<Vec<(usize, usize)>>,
-    /// Maps an edge id to the vertex that it points to.
+    /// Maps an edge id to the directed edge that it points to.
     pub edges: Vec<(usize, usize)>,
     /// edge weights
     pub edge_weights: Vec<i64>,
@@ -37,7 +37,7 @@ impl DirectedGraph {
         self.adj_lists.len()
     }
 
-    /// Returns the number of edges, double-counting undirected edges.
+    /// Returns the number of edges
     pub fn num_e(&self) -> usize {
         self.edges.len()
     }
@@ -72,7 +72,7 @@ impl DirectedGraph {
 pub struct UndirectedGraph {
     /// adjacency list. each vertex has a list of (edge index, neighor vertex index)
     pub adj_lists: Vec<Vec<(usize, usize)>>,
-    /// Maps an edge id to vertices. is stored as smalles index first
+    /// Maps an edge id to vertices. is stored as smallest index first
     pub edges: Vec<(usize, usize)>,
     /// edge weights
     pub edge_weights: Vec<i64>,
@@ -95,17 +95,17 @@ impl UndirectedGraph {
         self.adj_lists.len()
     }
 
-    /// Returns the number of edges, double-counting Undirected edges.
+    /// Returns the number of edges
     pub fn num_e(&self) -> usize {
         self.edges.len()
     }
 
-    /// Adds a directed edge from u to v.
+    /// Adds a edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize) {
         self.add_weighted_edge(u, v, 1i64);
     }
 
-    /// Adds a weighted directed edge from u to v.
+    /// Adds a weighted edge from u to v.
     pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
         let minv = std::cmp::min(u, v);
         let maxv = std::cmp::max(u, v);
