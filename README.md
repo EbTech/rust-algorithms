@@ -1,4 +1,4 @@
-# Rust Algorithmica 
+# Rust Llama AlgorithMicA 
 
 A collection of classic data structures and algorithms, emphasizing usability, beauty and clarity over full generality. As such, this should be viewed not as a blackbox *library*, but as a whitebox *cookbook* demonstrating the design and implementation of algorithms. I hope it will be useful to students and educators, as well as fans of algorithmic programming contests.
 
