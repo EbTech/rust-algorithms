@@ -9,6 +9,8 @@ Its functional nature enforces elegance and compactness.
 
 Why Llama? Cuz I happen to like llamas.
 
+![llama](https://user-images.githubusercontent.com/9121210/218507152-5a9646d5-c8bb-4937-acfb-8834410975fd.jpg)
+
 Some contest sites and online judges that support Rust:
 - [Codeforces](https://codeforces.com)
 - [AtCoder](https://atcoder.jp)
