@@ -7,7 +7,7 @@ use core::slice::Iter;
 /// A compact graph representation. Edges are numbered in order of insertion.
 /// Each adjacency list consists of all edges pointing out from a given vertex.
 ///
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 pub type AdjListIterator<'a> = Iter<'a, (usize, usize)>;
 
@@ -72,8 +72,8 @@ impl DirectedGraph {
 pub struct UndirectedGraph {
     /// adjacency list. each vertex has a list of (edge index, neighor vertex index)
     pub adj_lists: Vec<Vec<(usize, usize)>>,
-    /// Maps an edge id to vertices. is stored as smallest index first
-    pub edges: Vec<(usize, usize)>,
+    /// Maps an edge id to vertices.
+    pub edges: Vec<HashSet<usize>>,
     /// edge weights
     pub edge_weights: Vec<i64>,
 }
@@ -107,9 +107,8 @@ impl UndirectedGraph {
 
     /// Adds a weighted edge from u to v.
     pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
-        let minv = std::cmp::min(u, v);
-        let maxv = std::cmp::max(u, v);
-        self.edges.push((minv, maxv));
+        let undirected_edge = HashSet::from([u,v]);
+        self.edges.push(undirected_edge);
         self.edge_weights.push(w);
         self.adj_lists[u].push((self.edges.len() - 1, v));
         self.adj_lists[v].push((self.edges.len() - 1, u));

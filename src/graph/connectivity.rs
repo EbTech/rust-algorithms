@@ -160,7 +160,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
         let mut data = ConnectivityData::new(graph.num_v());
         for u in 0..graph.num_v() {
             if data.visited[u] == 0 {
-                connect.bcc(&mut data, u, usize::MAX);
+                connect.biconnected(&mut data, u, usize::MAX);
             }
         }
         connect
@@ -168,7 +168,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
 
     ///Tarjans algorithm  for finding cut vertex. this also find biconnected components
     /// https://www.geeksforgeeks.org/articulation-points-or-cut-vertices-in-a-graph/
-    fn bcc(&mut self, data: &mut ConnectivityData, u: usize, parent: usize) {
+    fn biconnected(&mut self, data: &mut ConnectivityData, u: usize, parent: usize) {
         data.visit(u);
         let mut children = 0usize;
         for (er, vr) in self.graph.adj_list(u) {
@@ -177,7 +177,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
             if data.visited[v] == 0 {
                 children += 1;
                 data.e_stack.push(e);
-                self.bcc(data, v, u);
+                self.biconnected(data, v, u);
 
                 data.lower(u, data.low[v]);
                 if parent < usize::MAX && data.visited[u] <= data.low[v] {
@@ -195,7 +195,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
                     }
                     self.is_articulation_point[u] = true;
                 }
-            } else if data.visited[v] < data.visited[u] {
+            } else if data.visited[v] < data.visited[u] &&  e != parent{
                 data.lower(u, data.visited[v]);
                 data.e_stack.push(e);
             } else if v == u {
@@ -214,7 +214,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
 
             self.is_articulation_point[u] = true;
         }
-        if parent < usize::MAX && data.visited[u] == data.low[u] {
+        if data.visited[u] == data.low[u] {
             // par is a cut edge unless par==-1
             self.num_cc += 1;
             while let Some(v) = data.v_stack.pop() {
@@ -238,9 +238,8 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
 
     /// In an undirected graph, determines whether e is a bridge
     pub fn is_cut_edge(&self, e: usize) -> bool {
-        let (u, v) = self.graph.edges[e];
-
-        self.cc[u] != self.cc[v]
+        let ev = Vec::from_iter(&self.graph.edges[e]);
+        self.cc[*ev[0]] != self.cc[*ev[1]]
     }
 }
 
@@ -298,7 +297,37 @@ mod test {
             .filter(|&u| cg.is_cut_vertex(u))
             .collect::<Vec<_>>();
 
-        assert_eq!(bridges, vec![0, 1]);
+        for idx in 0..graph.num_e(){
+
+            if cg.is_cut_edge(idx){
+                println!(" edge {} is a cut edge",idx)
+            }
+            else{
+                println!(" edge {} is not a cut edge",idx)
+            }
+        }
+        assert_eq!(bridges, vec![0]);
+        assert_eq!(articulation_points, vec![1]);
+    }
+
+    #[test]
+    fn test_articulation_points() {
+        let mut graph = UndirectedGraph::new(7, 8);
+        graph.add_edge(0, 1);
+        graph.add_edge(1, 2);
+        graph.add_edge(0, 2);
+        graph.add_edge(1, 3);
+        graph.add_edge(3, 5);
+        graph.add_edge(5, 4);
+        graph.add_edge(4, 1);
+        graph.add_edge(1, 6);
+
+        let cg = ConnectivityUndirectedGraph::new(&graph);
+       
+        let articulation_points = (0..graph.num_v())
+            .filter(|&u| cg.is_cut_vertex(u))
+            .collect::<Vec<_>>();
+
         assert_eq!(articulation_points, vec![1]);
     }
 }

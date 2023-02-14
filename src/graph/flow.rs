@@ -125,7 +125,7 @@ impl FlowGraph {
     /// # Panics
     ///
     /// Panics if the flow or cost overflow a 64-bit signed integer.
-    pub fn mcf(&self, s: usize, t: usize) -> (i64, i64, Vec<i64>) {
+    pub fn min_cost_flow(&self, s: usize, t: usize) -> (i64, i64, Vec<i64>) {
         let mut pot = vec![0; self.graph.num_v()];
 
         // Bellman-Ford deals with negative-cost edges at initialization.
@@ -141,11 +141,11 @@ impl FlowGraph {
         let mut flow = vec![0; self.graph.num_e()];
         let (mut min_cost, mut max_flow) = (0, 0);
         loop {
-            let par = self.mcf_search(s, &flow, &mut pot);
+            let par = self.min_cost_flow_search(s, &flow, &mut pot);
             if par[t].is_none() {
                 break;
             }
-            let (dc, df) = self.mcf_augment(t, &par, &mut flow);
+            let (dc, df) = self.min_cost_flow_augment(t, &par, &mut flow);
             min_cost += dc;
             max_flow += df;
         }
@@ -154,7 +154,7 @@ impl FlowGraph {
 
     // Maintains Johnson's potentials to prevent negative-cost residual edges.
     // This allows running Dijkstra instead of the slower Bellman-Ford.
-    fn mcf_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>> {
+    fn min_cost_flow_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>> {
         let mut vis = vec![false; self.graph.num_v()];
         let mut dist = vec![Self::INF; self.graph.num_v()];
         let mut par = vec![None; self.graph.num_v()];
@@ -177,7 +177,7 @@ impl FlowGraph {
     }
 
     // Pushes flow along an augmenting path of minimum cost.
-    fn mcf_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64) {
+    fn min_cost_flow_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64) {
         let (mut dc, mut df) = (0, Self::INF);
         let mut u = t;
         while let Some(e) = par[u] {
@@ -217,7 +217,7 @@ mod test {
         graph.add_edge(2, 3, 7, 0, 8);
         graph.add_edge(1, 3, 7, 0, 10);
 
-        let (cost, flow, _) = graph.mcf(0, 3);
+        let (cost, flow, _) = graph.min_cost_flow(0, 3);
         assert_eq!(cost, 18);
         assert_eq!(flow, 10);
     }
