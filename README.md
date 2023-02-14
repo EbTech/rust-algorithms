@@ -1,31 +1,15 @@
-# Rust LLeet AlgorithMAs (Rust Llamas)
-
-[![Crates.io Version](https://img.shields.io/crates/v/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
-[![Documentation](https://docs.rs/contest-algorithms/badge.svg)](https://docs.rs/contest-algorithms)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bevyengine/bevy/blob/master/LICENSE)
-[![Crates.io Downloads](https://img.shields.io/crates/d/contest-algorithms.svg)](https://crates.io/crates/contest-algorithms)
-[![Build Status](https://travis-ci.org/EbTech/rust-algorithms.svg?branch=master)](https://travis-ci.org/EbTech/rust-algorithms)
-[![Gitter](https://badges.gitter.im/rust-algos/community.svg)](https://gitter.im/rust-algos/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
- 
-Definition: An *algorithma* is the smallest functional unit of algorithm. Larger algorithms that live in the wild consist of these building blocks.
+# Rust LLama AlgorithMicA 
 
 A collection of classic data structures and algorithms, emphasizing usability, beauty and clarity over full generality. As such, this should be viewed not as a blackbox *library*, but as a whitebox *cookbook* demonstrating the design and implementation of algorithms. I hope it will be useful to students and educators, as well as fans of algorithmic programming contests.
 
-This repository is distributed under the [MIT License](LICENSE). Contest submissions need not include the license text. Enjoy!
+This is a fork of EbTech's amazing repo. My intention is to change the fundamental graph base classes to more in keeping with our intuition and understanding of graphs, do more data and data representation encapsulation, so that the algorithms dont need to know the specifics of the graph data representation, put in more tests of algorithms validity and speed,and when happy with that, start adding far more algorithms. 
 
-## For Students and Educators
+Rust is a language that makes algorithms smaller and simpler, eliminating some deep bugs that are otherwise possible in other languages (like c++).
+Its functional nature enforces elegance and compactness. 
 
-When learning a new algorithm or data structure, it's often helpful to see or play with a concrete implementation. As such, this repository catalogues several classic algorithms in their simplest forms.
+Why Llama? Cuz I happen to like llamas.
 
-In addition, the Rust language has outstanding pedagogical attributes. Its compiler acts as a teacher, enforcing strict discipline while pointing to clearer ways to structure one's logic.
-
-## For Programming Contests
-
-The original intent of this project was to build a reference for use in programming contests. As a result, it contains algorithms that are frequently useful to have in one's toolkit, with an emphasis on code that is concise and easy to modify under time pressure.
-
-Most competitive programmers rely on C++ for its fast execution time. However, it's notoriously unsafe, diverting a considerable share of the contestant's time and attention on mistake prevention and debugging. Java is the next most popular choice, offering a little safety at some expense to speed of coding and execution.
-
-To my delight, I found that Rust eliminates entire classes of bugs, while reducing visual clutter to make the rest easier to spot. And, it's *fast*. There's a learning curve, to be sure. However, a proficient Rust programmer stands to gain a competitive advantage as well as a more pleasant experience!
+![llama](https://user-images.githubusercontent.com/9121210/218507152-5a9646d5-c8bb-4937-acfb-8834410975fd.jpg)
 
 Some contest sites and online judges that support Rust:
 - [Codeforces](https://codeforces.com)
@@ -35,17 +19,6 @@ Some contest sites and online judges that support Rust:
 - [LeetCode](https://leetcode.com/contest)
 - [HackerRank](https://www.hackerrank.com/contests)
 - [Timus](http://acm.timus.ru/help.aspx?topic=rust)
-
-The following support pre-2018 versions of Rust:
-- [Google Kick Start and Code Jam](https://codingcompetitions.withgoogle.com)
-
-For help in getting started, you may check out [some of my past submissions](https://codeforces.com/contest/1168/submission/55200038).
-
-## Programming Language Advocacy
-
-My other goal is to appeal to developers who feel limited by ancient (yet still mainstream) programming languages, by demonstrating the power of modern techniques.
-
-Rather than try to persuade you with words, this repository aims to show by example. If you'd like to learn the language, I recommend [the official book](https://doc.rust-lang.org/book/) or [Programming Rust](https://www.amazon.com/Programming-Rust-Fast-Systems-Development-dp-1492052590/dp/1492052590).
 
 # Contents
 
