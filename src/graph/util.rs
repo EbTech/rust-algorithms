@@ -72,8 +72,8 @@ impl UndirectedGraph {
         edges
             .into_iter()
             .filter(|&e| {
-                let (u, v) = self.edges[e];
-                components.merge(u, v)
+                let edge_vec = Vec::from_iter(&self.edges[e]);
+                components.merge(*edge_vec[0],*edge_vec[1])
             })
             .collect()
     }
