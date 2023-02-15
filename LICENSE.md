@@ -1,6 +1,7 @@
 BSD 3-Clause License
 
-Copyright (c) 2023, luis galup
+Copyright (c) for portions of project Foo are held by Aram Ebtekar 2017 as part of project rust-algorithms. All other copyright for project rust-ars-algorithmica are held by Luis Galup 2023. 
+
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
