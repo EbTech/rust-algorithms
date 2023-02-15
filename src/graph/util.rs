@@ -26,9 +26,9 @@ impl DirectedGraph {
     }
 
     // Single-source shortest paths on a directed graph with non-negative weights
-    pub fn dijkstra(&self, weights: &[u64], u: usize) -> Vec<u64> {
-        assert_eq!(self.num_e(), weights.len());
-        let mut dist = vec![u64::max_value(); weights.len()];
+    pub fn dijkstra(&self, u: usize) -> Vec<u64> {
+        
+        let mut dist = vec![u64::max_value(); self.edge_weights.len()];
         let mut heap = std::collections::BinaryHeap::new();
 
         dist[u] = 0;
@@ -36,7 +36,7 @@ impl DirectedGraph {
         while let Some((Reverse(dist_u), u)) = heap.pop() {
             if dist[u] == dist_u {
                 for (e, v) in self.adj_list(u) {
-                    let dist_v = dist_u + weights[*e];
+                    let dist_v = dist_u + self.edge_weights[*e] as u64;
                     if dist[*v] > dist_v {
                         dist[*v] = dist_v;
                         heap.push((Reverse(dist_v), *v));
@@ -136,12 +136,11 @@ mod test {
     #[test]
     fn test_dijkstra() {
         let mut graph = DirectedGraph::new(3, 3);
-        graph.add_edge(0, 1);
-        graph.add_edge(1, 2);
-        graph.add_edge(2, 0);
-        let weights = [7, 3, 5];
+        graph.add_weighted_edge(0, 1, 7);
+        graph.add_weighted_edge(1, 2, 3);
+        graph.add_weighted_edge(2, 0, 5);
 
-        let dist = graph.dijkstra(&weights, 0);
+        let dist = graph.dijkstra(0);
         assert_eq!(dist, vec![0, 7, 10]);
     }
 
