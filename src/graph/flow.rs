@@ -177,7 +177,12 @@ impl FlowGraph {
     }
 
     // Pushes flow along an augmenting path of minimum cost.
-    fn min_cost_flow_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64) {
+    fn min_cost_flow_augment(
+        &self,
+        t: usize,
+        par: &[Option<usize>],
+        flow: &mut [i64],
+    ) -> (i64, i64) {
         let (mut dc, mut df) = (0, Self::INF);
         let mut u = t;
         while let Some(e) = par[u] {

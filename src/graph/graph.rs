@@ -107,7 +107,7 @@ impl UndirectedGraph {
 
     /// Adds a weighted edge from u to v.
     pub fn add_weighted_edge(&mut self, u: usize, v: usize, w: i64) {
-        let undirected_edge = HashSet::from([u,v]);
+        let undirected_edge = HashSet::from([u, v]);
         self.edges.push(undirected_edge);
         self.edge_weights.push(w);
         self.adj_lists[u].push((self.edges.len() - 1, v));

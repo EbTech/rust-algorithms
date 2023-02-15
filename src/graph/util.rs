@@ -27,7 +27,6 @@ impl DirectedGraph {
 
     // Single-source shortest paths on a directed graph with non-negative weights
     pub fn dijkstra(&self, u: usize) -> Vec<u64> {
-        
         let mut dist = vec![u64::max_value(); self.edge_weights.len()];
         let mut heap = std::collections::BinaryHeap::new();
 
@@ -73,7 +72,7 @@ impl UndirectedGraph {
             .into_iter()
             .filter(|&e| {
                 let edge_vec = Vec::from_iter(&self.edges[e]);
-                components.merge(*edge_vec[0],*edge_vec[1])
+                components.merge(*edge_vec[0], *edge_vec[1])
             })
             .collect()
     }

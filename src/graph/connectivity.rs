@@ -195,7 +195,7 @@ impl<'a> ConnectivityUndirectedGraph<'a> {
                     }
                     self.is_articulation_point[u] = true;
                 }
-            } else if data.visited[v] < data.visited[u] &&  e != parent{
+            } else if data.visited[v] < data.visited[u] && e != parent {
                 data.lower(u, data.visited[v]);
                 data.e_stack.push(e);
             } else if v == u {
@@ -297,13 +297,11 @@ mod test {
             .filter(|&u| cg.is_cut_vertex(u))
             .collect::<Vec<_>>();
 
-        for idx in 0..graph.num_e(){
-
-            if cg.is_cut_edge(idx){
-                println!(" edge {} is a cut edge",idx)
-            }
-            else{
-                println!(" edge {} is not a cut edge",idx)
+        for idx in 0..graph.num_e() {
+            if cg.is_cut_edge(idx) {
+                println!(" edge {} is a cut edge", idx)
+            } else {
+                println!(" edge {} is not a cut edge", idx)
             }
         }
         assert_eq!(bridges, vec![0]);
@@ -323,7 +321,7 @@ mod test {
         graph.add_edge(1, 6);
 
         let cg = ConnectivityUndirectedGraph::new(&graph);
-       
+
         let articulation_points = (0..graph.num_v())
             .filter(|&u| cg.is_cut_vertex(u))
             .collect::<Vec<_>>();
