@@ -1,6 +1,7 @@
 use super::disjoint_set::DisjointSets;
 use super::graph::{AdjListIterator, DirectedGraph, UndirectedGraph};
 use std::cmp::Reverse;
+use std::f32::consts::E;
 
 impl DirectedGraph {
     // Helper function used by euler_path. Note that we can't use a for-loop
@@ -58,6 +59,33 @@ impl DirectedGraph {
             stack: vec![root],
             adj_iters,
         }
+    }
+    // this does not check for overflow
+    // you can have negative edge weights, but you also need to have no negative cycles
+    pub fn floyd_warshall(&self) -> Vec<Vec<i64>> {
+        let numv = self.num_v();
+        let mut dist = vec![vec![i64::MAX; numv]; numv];
+
+        for v_idx in 0..numv {
+            dist[v_idx][v_idx] = 0;
+        }
+
+        for (idx, edge) in self.edges.iter().enumerate() {
+            dist[edge.0][edge.1] = self.edge_weights[idx];
+        }
+
+        for k in 0..numv {
+            for i in 0..numv {
+                for j in 0..numv {
+                    if dist[i][k] < i64::MAX && dist[k][j] < i64::MAX {
+                        if dist[i][j] > dist[i][k] + dist[k][j] {
+                            dist[i][j] = dist[i][k] + dist[k][j];
+                        }
+                    }
+                }
+            }
+        }
+        dist
     }
 }
 

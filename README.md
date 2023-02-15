@@ -1,11 +1,10 @@
 # Rust LLama AlgorithMicA 
 
-A collection of classic data structures and algorithms, emphasizing usability, beauty and clarity over full generality. As such, this should be viewed not as a blackbox *library*, but as a whitebox *cookbook* demonstrating the design and implementation of algorithms. I hope it will be useful to students and educators, as well as fans of algorithmic programming contests.
+Llama is a collection of classic algorithms, emphasizing usability, elegance and clarity over full generality. 
 
 This is a fork of EbTech's amazing repo. My intention is to change the fundamental graph base classes to more in keeping with our intuition and understanding of graphs, do more data and data representation encapsulation, so that the algorithms dont need to know the specifics of the graph data representation, put in more tests of algorithms validity and speed,and when happy with that, start adding far more algorithms. 
 
-Rust is a language that makes algorithms smaller and simpler, eliminating some deep bugs that are otherwise possible in other languages (like c++).
-Its functional nature enforces elegance and compactness. 
+Rust is a language that makes algorithms smaller and simpler, eliminating some deep bugs that are otherwise possible in other languages (like c++). Its functional nature enforces elegance and compactness. 
 
 Why Llama? Cuz I happen to like llamas.
 
@@ -24,7 +23,7 @@ Some contest sites and online judges that support Rust:
 
 ## [Graphs](src/graph/)
 
-### [Graph representations](src/graph/mod.rs)
+### [Graph representations](src/graph/graph.rs)
 
 - Integer index-based adjacency list representation
 - Disjoint set union
@@ -49,12 +48,12 @@ Some contest sites and online judges that support Rust:
 
 - Dinic's blocking maximum flow
 - Minimum cut
-- Hopcroft-Karp bipartite matching
+- Hopcroft-Karp bipartite maximum matching O(\sqrt(V)*E)
 - Minimum cost maximum flow
 
 ## [Math](src/math/)
 
-### [Number theory](src/math/mod.rs)
+### [Number theory](src/math/division.rs)
 
 - Greatest common divisor
 - Canonical solution to Bezout's identity
