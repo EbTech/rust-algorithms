@@ -1,12 +1,13 @@
-# Rust LLama AlgorithMicA 
+# Rust /\r5 /\lgorithmic/\
 
-Llama is a collection of classic algorithms, emphasizing usability, elegance and clarity over full generality. 
+This is a collection of classic data structures and interesting algorithms, emphasizing clarity, elegance and understanding over generality and speed. One design criterion is to transparency: explain the names and concepts, annotate with complexity, be obvious in intention. Another is simplicity: the Rust ecosystem is full of well meaning crates, and I have intentionally decided to stick with data structures and algorithms only found in std for universality.
 
-This is a fork of EbTech's amazing repo. My intention is to change the fundamental graph base classes to more in keeping with our intuition and understanding of graphs, do more data and data representation encapsulation, so that the algorithms dont need to know the specifics of the graph data representation, put in more tests of algorithms validity and speed,and when happy with that, start adding far more algorithms. 
+This is a fork of EbTech's amazing repo. My intention is to change the fundamental graph base classes to more in keeping with our intuition and understanding of graphs, do more data representation encapsulation, decouple algorithm implementation from knowledge of the internals of their datastructures, put in more tests of algorithms validity and speed,and when happy with that, start adding far more algorithms. 
 
-Rust is a language that makes algorithms smaller and simpler, eliminating some deep bugs that are otherwise possible in other languages (like c++). Its functional nature enforces elegance and compactness. 
+My hope is that someday my kids will use this to learn about algorithms, something that I have always been obsessed about. Its also intended for students/teachers of algorithmica. I also think that its useful for competive programming; and that Rust is in many ways a good language for that. Except for the fact that its not easy to make a linked list...
 
-Why Llama? Cuz I happen to like llamas.
+Rust is a language that makes algorithms smaller and simpler, eliminating some deep bugs that are inevitable from the complexity in other languages (like c++). Its functional nature enforces elegance and compactness, its compiler assists in correctness.
+
 
 ![llama](https://user-images.githubusercontent.com/9121210/218507152-5a9646d5-c8bb-4937-acfb-8834410975fd.jpg)
 
