@@ -2,7 +2,7 @@
 
 This is a collection of classic data structures and interesting algorithms, emphasizing clarity, elegance and understanding over generality and speed. One design criterion is to transparency: explain the names and concepts, annotate with complexity, be obvious in intention. Another is simplicity: the Rust ecosystem is full of well meaning crates, and I have intentionally decided to stick with data structures and algorithms only found in std for universality.
 
-This is a fork of EbTech's amazing repo. My intention is to change the fundamental graph base classes to more in keeping with our intuition and understanding of graphs, do more data representation encapsulation, decouple algorithm implementation from knowledge of the internals of their datastructures, put in more tests of algorithms validity and speed,and when happy with that, start adding far more algorithms. 
+This is a fork of EbTech's amazing repo. My intention is to change the fundamental graph base classes to be more in keeping with our intuition and understanding of graphs, do more data representation encapsulation, decouple algorithm implementation from knowledge of the internals of their datastructures, put in more tests of algorithms validity and speed,and when happy with that, start adding far more algorithms. 
 
 My hope is that someday my kids will use this to learn about algorithms, something that I have always been obsessed about. Its also intended for students/teachers of algorithmica. I also think that its useful for competive programming; and that Rust is in many ways a good language for that. Except for the fact that its not easy to make a linked list...
 
@@ -35,6 +35,7 @@ Some contest sites and online judges that support Rust:
 - Kruskal's minimum spanning tree 
 - Dijkstra's single-source shortest paths
 - DFS pre-order traversal
+- Floyd warshall shortest paths
 
 ### [Connected components](src/graph/connectivity.rs)
 
