@@ -232,4 +232,24 @@ mod test {
         assert_eq!(num_v, dfs_check.len());
         assert_eq!(num_v - 1, dfs_check[num_v - 1]);
     }
+
+     #[test]
+    fn test_floyd_warshall() {
+        let num_v = 8;
+        let mut graph = DirectedGraph::new(num_v, 10);
+        graph.add_weighted_edge(0, 1, 1);
+        graph.add_weighted_edge(1, 2, 2);
+        graph.add_weighted_edge(1, 4, 4);
+        graph.add_weighted_edge(2, 5, 3);
+        graph.add_weighted_edge(4, 3, 6);
+        graph.add_weighted_edge(5, 4, 10);
+        graph.add_weighted_edge(3, 6, 2);
+        graph.add_weighted_edge(4, 6, 7);
+        graph.add_weighted_edge(6, 7, 2);
+        graph.add_weighted_edge(5, 7, 9);
+
+        let dist = graph.floyd_warshall();
+
+        assert_eq!(dist[0][7], 14i64);
+    }
 }
