@@ -350,6 +350,40 @@ pub fn z_algorithm(text: &[impl Eq]) -> Vec<usize> {
     z
 }
 
+///Levenshtein distance :is a string metric for measuring the difference between two sequences.
+/// Informally, the Levenshtein distance between two words is the minimum number of single-character edits
+/// (insertions, deletions or substitutions) required to change one word into the other.
+/// It is named after the Soviet mathematician Vladimir Levenshtein, who considered this distance in 1965.
+///
+/// for all i and j, d[i,j] will hold the Levenshtein distance between
+/// the first i characters of s and the first j characters of t; starting at 1.
+/// in other words, m is length of s, n is length of t.
+/// note that dist has (m+1)x(n+1) values,
+pub fn levenshtein_distance(s: &str, m: usize, t: &str, n: usize) -> Vec<Vec<u64>> {
+    let mut dist = vec![vec![0u64; n + 1]; m + 1];
+    for i in 0..m + 1 {
+        dist[i][0] = i as u64;
+    }
+    for j in 0..n + 1 {
+        dist[0][j] = j as u64;
+    }
+
+    for j in 1..n + 1 {
+        for i in 1..m + 1 {
+            dist[i][j] = dist[i - 1][j - 1]
+                + if s.chars().nth(i - 1) != t.chars().nth(j - 1) {
+                    1u64
+                } else {
+                    0u64
+                };
+
+            dist[i][j] = std::cmp::min(dist[i][j], dist[i - 1][j] + 1);
+            dist[i][j] = std::cmp::min(dist[i][j], dist[i][j - 1] + 1);
+        }
+    }
+
+    dist
+}
 #[cfg(test)]
 mod test {
     use super::*;
@@ -425,5 +459,15 @@ mod test {
         let pal_len = palindromes(text.as_bytes());
 
         assert_eq!(pal_len, vec![1, 0, 1, 0, 3, 0, 5, 0, 3, 0, 1]);
+    }
+
+    #[test]
+    fn test_levenshtein_distance() {
+        let text1 = "Saturday";
+        let text2 = "Sunday";
+
+        let d = levenshtein_distance(text1, 8, text2, 6);
+
+        assert_eq!(d[8][6], 3);
     }
 }
