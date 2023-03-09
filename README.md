@@ -27,6 +27,7 @@ To my delight, I found that Rust eliminates entire classes of bugs, while reduci
 
 Some contest sites and online judges that support Rust:
 - [Codeforces](https://codeforces.com)
+- [CodeChef](https://www.codechef.com)
 - [AtCoder](https://atcoder.jp)
 - [Kattis](https://open.kattis.com/help/rust)
 - [SPOJ](https://www.spoj.com/)
