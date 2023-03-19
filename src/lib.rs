@@ -2,6 +2,7 @@
 
 pub mod caching;
 pub mod graph;
+pub mod li_chao;
 pub mod math;
 pub mod order;
 pub mod range_query;
