@@ -1,14 +1,14 @@
 /// A structure for answering maximum queries on a set of linear functions. Supports two
-/// operations: inserting a linear function and querying for maximum at a given point. Unlike the
-/// simplest convex hull trick implementation, the queries can be done in any order, and we can do
-/// all the calculations using integers.
+/// operations: inserting a linear function and querying for maximum at a given point. 
+/// The queries can be done in any order, and we can do all the calculations using integers.
 /// https://cp-algorithms.com/geometry/convex_hull_trick.html#li-chao-tree
 /// Compared to the code in the above link, this implementation further improves the algorithm by
 /// reducing the number of nodes to (right - left). This is done by removing the midpoint of a
 /// segment from both children. Even better, this allows the index of a node to just be the
 /// midpoint of the interval!
 
-/// Just like normal segment trees, this could be modified to a dynamic tree when the range is huge
+/// Just like normal segment trees, this could be modified to a dynamic tree when the range is
+/// huge, or if the queries are known in advance the x-coordinates can be compressed.
 /// (it can also be made persistent!).
 
 pub struct LiChaoTree {
