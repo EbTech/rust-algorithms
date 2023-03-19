@@ -33,7 +33,7 @@ impl LiChaoTree {
     /// beat the winner on some segment, either to the left or to the right of the current
     /// midpoint, so we propagate it to that segment. This sequence ensures that the invariant is
     /// kept.
-    fn add_line_impl(&mut self, mut m: i64, mut b: i64, l: i64, r: i64) {
+    fn max_with_impl(&mut self, mut m: i64, mut b: i64, l: i64, r: i64) {
         if r <= l {
             return;
         }
@@ -44,22 +44,22 @@ impl LiChaoTree {
             std::mem::swap(&mut m, m_ix);
             std::mem::swap(&mut b, b_ix);
         }
-        if m < self.lines[ix].0 {
-            self.add_line_impl(m, b, l, mid);
-        } else if m > self.lines[ix].0 {
-            self.add_line_impl(m, b, mid + 1, r);
+        if m < *m_ix {
+            self.max_with_impl(m, b, l, mid);
+        } else if m > *m_ix {
+            self.max_with_impl(m, b, mid + 1, r);
         }
     }
 
     /// Adds the line with slope m and intercept b. O(log N) complexity.
-    pub fn add_line(&mut self, m: i64, b: i64) {
-        self.add_line_impl(m, b, self.left, self.right);
+    pub fn max_with(&mut self, m: i64, b: i64) {
+        self.max_with_impl(m, b, self.left, self.right);
     }
 
     /// Because of the invariant established by add_line, we know that the best line for a given
     /// point is stored in one of the ancestors of its node. So we accumulate the maximum answer as
     /// we go back up the tree.
-    fn query_impl(&self, x: i64, l: i64, r: i64) -> i64 {
+    fn evaluate_impl(&self, x: i64, l: i64, r: i64) -> i64 {
         if r == l {
             return i64::MIN;
         }
@@ -69,15 +69,15 @@ impl LiChaoTree {
         if x == mid {
             y
         } else if x < mid {
-            self.query_impl(x, l, mid).max(y)
+            self.evaluate_impl(x, l, mid).max(y)
         } else {
-            self.query_impl(x, mid + 1, r).max(y)
+            self.evaluate_impl(x, mid + 1, r).max(y)
         }
     }
 
     /// Finds the maximum mx+b among all lines in the structure. O(log N) complexity.
-    pub fn query(&self, x: i64) -> i64 {
-        self.query_impl(x, self.left, self.right)
+    pub fn evaluate(&self, x: i64) -> i64 {
+        self.evaluate_impl(x, self.left, self.right)
     }
 }
 
@@ -93,17 +93,17 @@ mod test {
         // the first i+1 lines.
         let results = [
             [-3, -3, -3, -3, -3, -3],
-            [-0, -1, -2, -3, -3, -3],
-            [-0, -1, -2, -3, -3, -3],
+            [0, -1, -2, -3, -3, -3],
+            [0, -1, -2, -3, -3, -3],
             [1, -1, -2, -3, -3, -3],
-            [1, -1, -2, -1, -0, 1],
+            [1, -1, -2, -1, 0, 1],
         ];
         let mut li_chao = LiChaoTree::new(0, 6);
 
-        assert_eq!(li_chao.query(0), std::i64::MIN);
+        assert_eq!(li_chao.evaluate(0), std::i64::MIN);
         for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
-            li_chao.add_line(slope, intercept);
-            let ys: Vec<i64> = xs.iter().map(|&x| li_chao.query(x)).collect();
+            li_chao.max_with(slope, intercept);
+            let ys: Vec<i64> = xs.iter().map(|&x| li_chao.evaluate(x)).collect();
             assert_eq!(expected, &ys[..]);
         }
     }
