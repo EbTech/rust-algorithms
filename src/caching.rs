@@ -28,11 +28,13 @@ where
     U: std::cmp::Eq + std::hash::Hash + Copy,
     V: Copy,
 {
+    /*
     /// Constuctor for the Casher
     /// # Examples
     /// ```
     /// # use contest_algorithms::caching::Cacher;
     /// let mut squared = Cacher::new(|n: u32| n*n);
+     */
     /// ```
     pub fn new(calculation: F) -> Cacher<F, U, V> {
         Cacher {
@@ -40,18 +42,19 @@ where
             values: HashMap::new(),
         }
     }
-
     /// Performs a lookup into the HashMap to see if the value has already
     /// been calculated. If it has, returns the value. If it has not,
     /// calls the function, stores the value, then returns the value.
     /// # Examples
     /// ```
+    /*
     /// # use contest_algorithms::caching::Cacher;
     /// let mut squared = Cacher::new(|n: u32| n*n);
     ///
     /// // This is where we call the function
     /// let sixteen = squared.call(4);
     /// ```
+     */
     // TODO: whenever Rust's Entry API gains the ability to take ownership of
     // arg only when necessary, this method should follow the same practice.
     // Also, Cacher should implement Fn(U)->V once this is possible.

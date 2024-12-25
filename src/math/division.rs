@@ -1,6 +1,6 @@
-//! Number-theoretic utilities for contest problems.
-pub mod fft;
-pub mod num;
+use super::num;
+
+//Number-theoretic utilities for contest problems.
 
 /// Finds (d, coef_a, coef_b) such that d = gcd(a, b) = a * coef_a + b * coef_b.
 pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
@@ -86,6 +86,37 @@ pub fn is_prime(n: i64) -> bool {
     }
 }
 
+// Steins algorithm: Stein’s algorithm or binary GCD algorithm is an algorithm that
+// computes the greatest common divisor of two non-negative integers.
+// Stein’s algorithm replaces division with arithmetic shifts,
+// comparisons, and subtraction.
+// Use Stein's algorithm
+fn gcd_stein(mut m: u64, mut n: u64) -> u64 {
+    if m == 0 || n == 0 {
+        return m | n;
+    }
+
+    // find common factors of 2
+    let shift = (m | n).trailing_zeros();
+    m >>= m.trailing_zeros();
+    n >>= n.trailing_zeros();
+
+    while m != n {
+        if m > n {
+            m -= n;
+            m >>= m.trailing_zeros();
+        } else {
+            n -= m;
+            n >>= n.trailing_zeros();
+        }
+    }
+    m << shift
+}
+
+// Pollard's rho algorithm is an algorithm for integer factorization.
+// It was invented by John Pollard in 1975.[1] It uses only a small amount of space,
+// and its expected running time is proportional to the square root of the smallest
+// prime factor of the composite number being factorized.
 fn pollard_rho(n: i64) -> i64 {
     for a in 1..n {
         let f = |x| pos_mod(mod_mul(x, x, n) + a, n);
@@ -176,5 +207,20 @@ mod test {
             factorize(7156857700403137441),
             vec![11, 13, 17, 19, 29, 37, 41, 43, 61, 97, 109, 127]
         );
+    }
+
+    #[test]
+    fn test_steins() {
+        let (a, b) = (14, 35);
+        let d = gcd_stein(a, b);
+        assert_eq!(d, 7u64);
+
+        let (p1, p2) = (393919, 919393);
+        let d1 = gcd_stein(p1, p2);
+        assert_eq!(d1, 1u64);
+
+        let (p3, p4) = (679389209, 696729599);
+        let d2 = gcd_stein(p3, p4);
+        assert_eq!(d2, 1u64);
     }
 }
