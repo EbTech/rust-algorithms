@@ -1,6 +1,6 @@
 //! String processing algorithms.
 use std::cmp::{max, min};
-use std::collections::{hash_map::Entry, HashMap, VecDeque};
+use std::collections::{HashMap, VecDeque, hash_map::Entry};
 
 /// Prefix trie, easily augmentable by adding more fields and/or methods
 pub struct Trie<C: std::hash::Hash + Eq> {

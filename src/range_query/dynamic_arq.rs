@@ -24,7 +24,7 @@ impl<T: ArqSpec> Default for DynamicArqNode<T> {
         Self {
             val: T::identity(),
             app: None,
-            down: (usize::max_value(), usize::max_value()),
+            down: (usize::MAX, usize::MAX),
         }
     }
 }
@@ -97,7 +97,7 @@ impl<T: ArqSpec> DynamicArq<T> {
     }
 
     pub fn push(&mut self, (p, s): ArqView) -> (ArqView, ArqView) {
-        if self.nodes[p].down.0 == usize::max_value() {
+        if self.nodes[p].down.0 == usize::MAX {
             self.nodes.push(DynamicArqNode::default());
             self.nodes.push(DynamicArqNode::default());
             self.nodes[p].down = (self.nodes.len() - 2, self.nodes.len() - 1)

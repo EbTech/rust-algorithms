@@ -1,16 +1,15 @@
 /// A structure for answering maximum queries on a set of linear functions. Supports two
-/// operations: inserting a linear function and querying for maximum at a given point. 
+/// operations: inserting a linear function and querying for maximum at a given point.
 /// The queries can be done in any order, and we can do all the calculations using integers.
 /// https://cp-algorithms.com/geometry/convex_hull_trick.html#li-chao-tree
 /// Compared to the code in the above link, this implementation further improves the algorithm by
 /// reducing the number of nodes to (right - left). This is done by removing the midpoint of a
 /// segment from both children. Even better, this allows the index of a node to just be the
 /// midpoint of the interval!
-
+///
 /// Just like normal segment trees, this could be modified to a dynamic tree when the range is
 /// huge, or if the queries are known in advance the x-coordinates can be compressed.
 /// (it can also be made persistent!).
-
 pub struct LiChaoTree {
     left: i64,
     right: i64,
@@ -23,7 +22,7 @@ impl LiChaoTree {
         Self {
             left,
             right,
-            lines: vec![(0, std::i64::MIN); (right - left) as usize],
+            lines: vec![(0, i64::MIN); (right - left) as usize],
         }
     }
 
@@ -100,7 +99,7 @@ mod test {
         ];
         let mut li_chao = LiChaoTree::new(0, 6);
 
-        assert_eq!(li_chao.evaluate(0), std::i64::MIN);
+        assert_eq!(li_chao.evaluate(0), i64::MIN);
         for (&(slope, intercept), expected) in lines.iter().zip(results.iter()) {
             li_chao.max_with(slope, intercept);
             let ys: Vec<i64> = xs.iter().map(|&x| li_chao.evaluate(x)).collect();

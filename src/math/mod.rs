@@ -31,11 +31,7 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
 
 // TODO: deduplicate modular arithmetic code with num::Field
 fn pos_mod(n: i64, m: i64) -> i64 {
-    if n < 0 {
-        n + m
-    } else {
-        n
-    }
+    if n < 0 { n + m } else { n }
 }
 fn mod_mul(a: i64, b: i64, m: i64) -> i64 {
     pos_mod((a as i128 * b as i128 % m as i128) as i64, m)

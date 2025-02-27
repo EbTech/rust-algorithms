@@ -111,7 +111,7 @@ pub struct AdjListIterator<'a> {
     next_e: Option<usize>,
 }
 
-impl<'a> Iterator for AdjListIterator<'a> {
+impl Iterator for AdjListIterator<'_> {
     type Item = (usize, usize);
 
     /// Produces an outgoing edge and vertex.

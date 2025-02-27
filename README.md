@@ -35,10 +35,7 @@ Some contest sites and online judges that support Rust:
 - [HackerRank](https://www.hackerrank.com/contests)
 - [Timus](http://acm.timus.ru/help.aspx?topic=rust)
 
-The following support pre-2018 versions of Rust:
-- [Google Kick Start and Code Jam](https://codingcompetitions.withgoogle.com)
-
-For help in getting started, you may check out [some of my past submissions](https://codeforces.com/contest/1168/submission/55200038).
+For help in getting started, you may check out [some of my past submissions](https://codeforces.com/contest/1168/submission/55200038) (requires login).
 
 ## Programming Language Advocacy
 

@@ -50,14 +50,14 @@ impl<T: ArqSpec> StaticArq<T> {
 
     fn push(&mut self, p: usize) {
         if let Some(ref f) = self.app[p].take() {
-            let s = ((self.app.len() + p - 1) / p / 2).next_power_of_two() as i64;
+            let s = (self.app.len().div_ceil(p) / 2).next_power_of_two() as i64;
             self.apply(p << 1, f, s);
-            self.apply(p << 1 | 1, f, s);
+            self.apply((p << 1) | 1, f, s);
         }
     }
 
     fn pull(&mut self, p: usize) {
-        self.val[p] = T::op(&self.val[p << 1], &self.val[p << 1 | 1]);
+        self.val[p] = T::op(&self.val[p << 1], &self.val[(p << 1) | 1]);
     }
 
     fn push_to(&mut self, p: usize) {

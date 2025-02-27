@@ -50,7 +50,7 @@ impl ArqSpec for AssignMin {
         a.min(b)
     }
     fn identity() -> Self::S {
-        i64::max_value()
+        i64::MAX
     }
     fn compose(&f: &Self::F, _: &Self::F) -> Self::F {
         f

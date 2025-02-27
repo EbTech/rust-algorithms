@@ -12,16 +12,16 @@ impl Graph {
             .map(|u| self.adj_list(u))
             .collect::<Vec<_>>();
         let mut edges = Vec::with_capacity(self.num_e());
-        self.euler_recurse(u, &mut adj_iters, &mut edges);
+        Self::euler_recurse(u, &mut adj_iters, &mut edges);
         edges.reverse();
         edges
     }
 
     // Helper function used by euler_path. Note that we can't use a for-loop
     // that would consume the adjacency list as recursive calls may need it.
-    fn euler_recurse(&self, u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
+    fn euler_recurse(u: usize, adj: &mut [AdjListIterator], edges: &mut Vec<usize>) {
         while let Some((e, v)) = adj[u].next() {
-            self.euler_recurse(v, adj, edges);
+            Self::euler_recurse(v, adj, edges);
             edges.push(e);
         }
     }
@@ -42,7 +42,7 @@ impl Graph {
     // Single-source shortest paths on a directed graph with non-negative weights
     pub fn dijkstra(&self, weights: &[u64], u: usize) -> Vec<u64> {
         assert_eq!(self.num_e(), weights.len());
-        let mut dist = vec![u64::max_value(); weights.len()];
+        let mut dist = vec![u64::MAX; weights.len()];
         let mut heap = std::collections::BinaryHeap::new();
 
         dist[u] = 0;
@@ -82,7 +82,7 @@ pub struct DfsIterator<'a> {
     adj_iters: Vec<AdjListIterator<'a>>,
 }
 
-impl<'a> Iterator for DfsIterator<'a> {
+impl Iterator for DfsIterator<'_> {
     type Item = (usize, usize);
 
     /// Returns next edge and vertex in the depth-first traversal

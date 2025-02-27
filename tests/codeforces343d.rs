@@ -4,7 +4,7 @@
 //! Also, use the commented code in main() to employ standard I/O.
 extern crate contest_algorithms;
 use contest_algorithms::graph::Graph;
-use contest_algorithms::range_query::{specs::AssignSum, StaticArq};
+use contest_algorithms::range_query::{StaticArq, specs::AssignSum};
 use contest_algorithms::scanner::Scanner;
 use std::io;
 
